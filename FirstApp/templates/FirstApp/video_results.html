@@ -1,0 +1,805 @@
+{% extends 'FirstApp/template.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<body id="page-top">
+<!-- Page Wrapper -->
+
+{% block javascript %}
+        {% load static %}
+
+        <!-- Bootstrap core JavaScript-->
+      <script src="{% static 'FirstApp/vendor/jquery/jquery.min.js' %}"></script>
+      <script src="{% static 'FirstApp/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+
+    <!-- Page level plugins -->
+    <script src="{% static 'FirstApp/vendor/datatables/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'FirstApp/vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+
+    <!-- Page level custom scripts -->
+    <script src="{% static 'FirstApp/js/demo/datatables-demo.js' %}"></script>
+
+      <!-- Core plugin JavaScript-->
+      <script src="{% static 'FirstApp/vendor/jquery-easing/jquery.easing.min.js' %}"></script>
+
+
+    <script type="text/javascript">
+
+        //jquery
+        $(document).ready(function () {
+            let folder = '';
+
+            //select a particular subject
+            $('input[type=radio]').click(function () {
+                let subject_id = $(this).attr('id');
+                let subject_name = $(this).attr('data-name');
+
+                $('#timetable').attr('hidden', false);
+                $('#no_subject_selected').attr('hidden', true);
+
+                $('#timetable_caption').text('subject: ' +subject_name);
+
+            });
+
+            //view the video details
+            $('.modal-expand').click(function () {
+                let clicked_id = $(this).attr('id');
+                folder = clicked_id;
+
+                $('input[type=hidden]').each(function () {
+                    let hidden_id = $(this).attr('id');
+
+                    if (clicked_id === hidden_id) {
+                        let duration = $(this).attr('data-duration');
+                        $('#video_name').text(clicked_id);
+                        $('#video_duration').text(duration);
+                        $('#video_date').text(new Date().toDateString());
+
+                    }
+                });
+
+
+                //after data assigning, load the modal
+                $('#video_modal').modal();
+            });
+
+            //retrieve the lecture details
+            $('.retrieve').click(function () {
+                let lecture = $(this).attr('data-id');
+
+                //removing the previous frames
+                $('#main_frames').remove();
+
+                $('#error_message').attr('hidden', true);
+                $('#nav_bar').attr('hidden', true);
+                $('#tabContentDetails').attr('hidden', true);
+
+                //disabling all the 'retrive' buttons
+                $('.retrieve').each(function () {
+                    $(this).attr('disabled', 'disabled');
+
+                });
+
+
+                let url = 'http://127.0.0.1:8000/videoExtract/?folder_name=' + lecture;
+                //retrieve frames
+                fetch(url)
+                    .then((res) => res.json())
+                    .then((out) => {
+                        //create the frames
+                        let frameHTML = createFrames(out.response, lecture);
+                        return frameHTML;
+                    })
+                    .then((obj) => {
+                        //after loading the frames, display the rest of the images
+                        $('#loader').attr('hidden', false);
+                        setTimeout(() => {
+                            $('#nav_bar').attr('hidden', false);
+                            $('#tabContentDetails').attr('hidden', false);
+                            $('#loader').attr('hidden', true);
+
+                            //enabling the 'retrive' buttons
+                            $('.retrieve').each(function () {
+                                $(this).removeAttr('disabled');
+
+                            });
+                        }, 65000);
+                        {#$('#nav_bar').attr('hidden', false);#}
+                        {#$('#tabContentDetails').attr('hidden', false);#}
+                        //load the frames
+                        $('#emotion_frames').prepend(obj);
+
+
+                    })
+                    .catch((error) => {
+                        $('#error_message').attr('hidden', false);
+                        //enabling the 'retrieve' buttons
+                        $('.retrieve').each(function () {
+                            $(this).removeAttr('disabled');
+
+                        });
+                    });
+
+                //setting some values
+                $('#no_content_message').attr('hidden', true);
+
+            });
+
+
+
+            //creating the frame content
+            function createFrames(response, folder) {
+                let main_frame_content = "<div class='row' id='main_frames'>";
+                main_frame_content += "<ul class='list-group list-group-horizontal'>";
+                let count = 0;
+                //loop through the frames
+                response.map((image) => {
+                    let img_src = "";
+
+                    if (count === 0) {
+                        main_frame_content += "<li class='list-group-item text-center' id='image_0'>";
+                        img_src = "<img src='{% static '' %}FirstApp/extracted/" + folder + "/" + response[0].image + "' width='500' height='500'>";
+                    }
+                    else {
+                        main_frame_content += "<li class='list-group-item other-frames' id='image_" +count+ "' hidden>";
+                        img_src = "<img src='{% static '' %}FirstApp/extracted/" + folder + "/" + image.image + "' width='500' height='500'>";
+                    }
+
+
+                    main_frame_content += img_src;
+                    main_frame_content += "</li>";
+                    count++;
+                });
+
+                main_frame_content += "</ul>";
+                main_frame_content += "</div>";
+
+
+                //setting the min, max values of the slider
+                $('#myRange').attr({'min': 0, 'max': count});
+
+                return main_frame_content;
+            }
+
+            //declaring the variable for setInterval function
+            let timeVar = null;
+
+            //handling the play button
+            $('#play_pause_icon').click(function () {
+                //defining the two possible classes
+                let play_class = "fas fa-play";
+                let pause_class = "fas fa-pause";
+
+                //retrieving the current icon class
+                let current_class = $(this).attr('class');
+
+                //assigning the correct class based on the icon clicked
+                let new_class = (current_class === play_class) ? pause_class : play_class;
+
+                //setting the new class
+                $(this).attr('class', new_class);
+
+                //handling the slider
+                let slider = document.getElementById("myRange");
+                let output = document.getElementById("demo");
+
+                //when the button is playing
+                if (current_class === play_class) {
+                    timeVar = setInterval(() => {
+                        let value = slider.value;
+                        let new_slider_value = Number(value) + 1;
+                        slider.value = new_slider_value;
+                        output.innerHTML = new_slider_value.toString();
+
+
+                        let selectedImage = '#image_' + Number(value);
+
+                        //displaying the relevant image
+                        $('#image_0').html($(selectedImage).html());
+
+                    }, 10);
+                }
+                //when the button is paused
+                else if (current_class === pause_class) {
+                    clearInterval(timeVar);
+                }
+
+
+            });
+
+
+            //handling the slider
+            let slider = document.getElementById("myRange");
+            let output = document.getElementById("demo");
+            output.innerHTML = slider.value;
+
+            slider.oninput = function () {
+                output.innerHTML = this.value;
+                let selectedImage = '#image_' + Number(this.value);
+
+                //hide
+                {#$('#image_0').attr('hidden', true);#}
+                $('#image_0').html($(selectedImage).html());
+
+                //setting the selected image
+                {#$(selectedImage).attr('hidden', false);#}
+
+
+            }
+        });
+
+    </script>
+
+
+{% endblock %}
+
+<div id="wrapper">
+    <!-- Sidebar -->
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+
+        <!-- Main Content -->
+        <div id="content">
+
+            <!-- Begin Page Content -->
+            {% block 'container-fluid' %}
+                <div class="container-fluid">
+                    {% load static %}
+
+                    <!-- Page Heading -->
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <h1 class="h3 mb-0 text-gray-800">Video Results</h1>
+                    </div>
+
+                    <!--first row -->
+                    <div class="row p-2">
+
+                        <!--first column -->
+                        <div class="col-lg-6">
+                            <div class="card shadow mb-4">
+                                <!--card header -->
+                                <div class="card-header py-3">
+                                    <h5 class="m-0 font-weight-bold text-primary">Lecturer Subjects</h5>
+                                </div>
+
+                                <!--card body -->
+                                <div class="card-body">
+                                    {% if lecturer_subjects.count == 0 %}
+                                        <div class="text-center">
+                                            <span class="font-italic">No subjects</span>
+                                        </div>
+                                    {% else %}
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered" id="datatable">
+                                                <thead>
+                                                    <tr>
+                                                        <th></th>
+                                                        <th>Subject Name</th>
+                                                        <th>Year</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for subject in subjects %}
+                                                        <tr class="subjects not_clicked" id="{{ subject.0.subject_code }}">
+                                                            <td>
+                                                                <div class="radio">
+                                                                    <label><input type="radio" id="{{ subject.0.subject_code }}" name="subject_radio" data-name="{{ subject.0.name }}"></label>
+                                                                </div>
+                                                            </td>
+                                                            <td>{{ subject.0.name}}</td>
+                                                            <td>{{ subject.0.year }}</td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <!--end of first column -->
+
+
+                        <!--second column (timetable column) -->
+                        <div class="col-lg-6">
+                            <div class="card shadow mb-4">
+                                <!--card header -->
+                                <div class="card-header py-3">
+                                    <h5 class="m-0 font-weight-bold text-primary">View timetable</h5>
+                                </div>
+
+                                <!--card body -->
+                                <div class="card-body">
+                                    <!--no lecture selected message -->
+                                    <div class="text-center" id="no_subject_selected">
+                                        <span class="font-italic">No lecture is selected</span>
+                                    </div>
+
+                                    <!--displaying the timetable -->
+                                    <table class="table table-striped" id="timetable" hidden>
+                                    <caption id="timetable_caption"></caption>
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Hall No.</th>
+                                                <th>Time</th>
+                                            </tr>
+                                        </thead>
+                                    </table>
+
+
+                                </div>
+                            </div>
+                        </div>
+                        <!--end of first column -->
+
+                    </div>
+
+                    <div class="row p-2">
+
+                        <!--first column-->
+                        <div class="col-lg-6">
+
+                            <!-- card content -->
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h5 class="m-0 font-weight-bold text-primary">List of Lecture Videos</h5>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                        <tr>
+                                            <th>Video Name</th>
+                                            <th>Length</th>
+                                            <th></th>
+                                            <th></th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for video in Videos %}
+                                            <tr class="video_row" id="{{ video.name }}" data-duration="{{ video.duration }}">
+                                                <td>
+                                                    {{ video.name }}
+                                                </td>
+                                                <td>{{ video.duration }}</td>
+                                                <td>
+                                                    <button class="btn btn-link modal-expand" id="{{ video.name }}">View</button>
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-info retrieve" data-id="{{ video.name }}">Retrieve</button>
+                                                </td>
+                                                <!--<td>
+                                                    <select name="category" id="select_{{ video.name }}" class="form-control select_cat">
+                                                        <option value="">-------</option>
+                                                        <option value="Emotion">Emotion</option>
+                                                        <option value="Gaze">Gaze</option>
+                                                        <option value="Activity">Activity</option>
+                                                    </select>
+                                                </td>-->
+                                                <!-- to store the video details -->
+                                                <td hidden>
+                                                    <input type="hidden" id="{{ video.name }}" data-duration="{{ video.duration }}">
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+
+                                </div>
+                            </div>
+
+                        </div>
+
+
+                    <!--second column-->
+                        <div class="col-lg-6">
+
+                            <!-- card content -->
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h5 class="m-0 font-weight-bold text-primary">Emotion Detection</h5>
+                                </div>
+                                <div class="card-body">
+                                    <!-- no video selected messge -->
+                                    <div class="text-center" id="no_content_message">
+                                        <p>No content to be displayed</p>
+                                    </div>
+
+                                    <!-- error messge -->
+                                    <div class="text-center text-danger" id="error_message" hidden>
+                                        <p class="font-italic">No frames were found for this video</p>
+                                    </div>
+
+                                    <!-- loader -->
+                                    <div class="text-center" id="loader" hidden>
+                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="Loading image">
+                                    </div>
+
+
+                                    <!--nav tabs-->
+                                    <ul class="nav nav-tabs nav-fill" id="nav_bar" role="tablist" hidden>
+                                        <li class="nav-item">
+                                            <a class="nav-link active" id="frame-tab" data-toggle="tab" href="#frame" role="tab" aria-controls="frame" aria-selected="true">Frame</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" id="graph-tab" data-toggle="tab" href="#graph" role="tab" aria-controls="graph" aria-selected="false">Graphs</a>
+                                        </li>
+                                    </ul>
+
+                                    <!--tab content -->
+                                    <div class="tab-content" id="tabContentDetails" hidden>
+                                        <div class="tab-pane fade show active" id="frame" role="tabpanel" aria-labelledby="home-tab">
+                                            <div class="text-center p-4" id="emotion_frames">
+                                                <!-- slide container -->
+                                                <div class="slidecontainer">
+                                                    <div class="row">
+                                                        <div class="col-1">0</div>
+                                                        <div class="col-9"></div>
+                                                        <div class="col-2">100</div>
+                                                    </div>
+                                                    <!-- play/pause icon -->
+                                                    <div class="row">
+                                                        <span><i class="fas fa-play" id="play_pause_icon"></i></span>
+                                                    </div>
+                                                    <input type="range" min="1" max="100" value="0" class="slider" id="myRange">
+                                                    <p>No of frames: <span id="demo"></span></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- graph content -->
+                                        <div class="tab-pane fade" id="graph" role="tabpanel" aria-labelledby="profile-tab">
+                                            <!--card content -->
+                                            <div class="card shadow mb-4 p-3">
+                                                <!-- Card Header - Dropdown -->
+                                                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                                    <h6 class="m-0 font-weight-bold text-primary">Revenue Sources</h6>
+                                                    <div class="dropdown no-arrow">
+                                                        <a class="dropdown-toggle" href="#" role="button"
+                                                           id="dropdownMenuLink" data-toggle="dropdown"
+                                                           aria-haspopup="true" aria-expanded="false">
+                                                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                                        </a>
+                                                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                                                             aria-labelledby="dropdownMenuLink">
+                                                            <div class="dropdown-header">Dropdown Header:</div>
+                                                            <a class="dropdown-item" href="#">Action</a>
+                                                            <a class="dropdown-item" href="#">Another action</a>
+                                                            <div class="dropdown-divider"></div>
+                                                            <a class="dropdown-item" href="#">Something else here</a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- Card Body -->
+                                                <div class="card-body">
+                                                    <div class="chart-pie pt-4 pb-2">
+                                                        <canvas id="myPieChart"></canvas>
+                                                    </div>
+                                                    <div class="mt-4 text-center small">
+                    <span class="mr-2">
+                      <i class="fas fa-circle text-primary"></i> Direct
+                    </span>
+                                                        <span class="mr-2">
+                      <i class="fas fa-circle text-success"></i> Social
+                    </span>
+                                                        <span class="mr-2">
+                      <i class="fas fa-circle text-info"></i> Referral
+                    </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                        </div>
+
+
+                    </div>
+                    <!-- end of 2nd row -->
+
+                    <!--3rd row -->
+                    <div class="row p-2">
+
+                        <!--1st column -->
+                        <!--second column-->
+                        <div class="col-lg-6">
+
+                            <!-- card content -->
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h5 class="m-0 font-weight-bold text-primary">Gaze Estimation</h5>
+                                </div>
+                                <div class="card-body">
+                                    <!-- no video selected messge -->
+                                    <div class="text-center" id="no_content_message_gaze">
+                                        <p>No Gaze estimation content to be displayed</p>
+                                    </div>
+
+                                    <!-- error message -->
+                                    <div class="text-center text-danger" id="error_message_gaze" hidden>
+                                        <p class="font-italic">No frames were found for this video</p>
+                                    </div>
+
+                                    <!-- loader -->
+                                    <div class="text-center" id="loader_gaze" hidden>
+                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="Loading image">
+                                    </div>
+
+
+                                    <!--nav tabs-->
+                                    <ul class="nav nav-tabs nav-fill" id="nav_bar_gaze" role="tablist" hidden>
+                                        <li class="nav-item">
+                                            <a class="nav-link active" id="frame-tab_gaze" data-toggle="tab" href="#frame_gaze"
+                                               role="tab" aria-controls="frame_gaze" aria-selected="true">Frame</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" id="graph-tab_gaze" data-toggle="tab" href="#graph_gaze"
+                                               role="tab" aria-controls="graph_gaze" aria-selected="false">Graphs</a>
+                                        </li>
+                                    </ul>
+
+                                    <!--tab content -->
+                                    <div class="tab-content" id="tabContentDetails_gaze" hidden>
+                                        <div class="tab-pane fade show active" id="frame_gaze" role="tabpanel"
+                                             aria-labelledby="frame-tab_gaze">
+                                            <div class="text-center p-4" id="gaze_frames">
+                                                <!-- slide container -->
+                                                <div class="slidecontainer_gaze">
+                                                    <div class="row">
+                                                        <div class="col-1">0</div>
+                                                        <div class="col-9"></div>
+                                                        <div class="col-2">100</div>
+                                                    </div>
+                                                    <!-- play/pause icon -->
+                                                    <div class="row">
+                                                        <span><i class="fas fa-play" id="play_pause_icon_gaze"></i></span>
+                                                    </div>
+                                                    <input type="range" min="1" max="100" value="0" class="slider"
+                                                           id="myRange_gaze">
+                                                    <p>No of frames: <span id="demo_gaze"></span></p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- graph content -->
+                                        <div class="tab-pane fade" id="graph_gaze" role="tabpanel"
+                                             aria-labelledby="graph-tab_gaze">
+                                            <!--card content -->
+                                            <div class="card shadow mb-4 p-3">
+                                                <!-- Card Header - Dropdown -->
+                                                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                                    <h6 class="m-0 font-weight-bold text-primary">Gaze distribution</h6>
+                                                    <div class="dropdown no-arrow">
+                                                        <a class="dropdown-toggle" href="#" role="button"
+                                                           id="dropdownMenuLink" data-toggle="dropdown"
+                                                           aria-haspopup="true" aria-expanded="false">
+                                                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                                        </a>
+                                                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                                                             aria-labelledby="dropdownMenuLink">
+                                                            <div class="dropdown-header">Graph options:</div>
+                                                            <a class="dropdown-item" href="#">Pie</a>
+                                                            <a class="dropdown-item" href="#">Bar</a>
+                                                            <div class="dropdown-divider">Column</div>
+                                                            <a class="dropdown-item" href="#">Line</a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- Card Body -->
+                                                <div class="card-body">
+                                                    <div class="chart-pie pt-4 pb-2">
+                                                        <canvas id="myPieChart_gaze"></canvas>
+                                                    </div>
+                                                    <div class="mt-4 text-center small">
+                    <span class="mr-2">
+                      <i class="fas fa-circle text-primary"></i> Direct
+                    </span>
+                                                        <span class="mr-2">
+                      <i class="fas fa-circle text-success"></i> Social
+                    </span>
+                                                        <span class="mr-2">
+                      <i class="fas fa-circle text-info"></i> Referral
+                    </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                        </div>
+                        <!-- end of gaze column -->
+
+
+                        <!-- student activity column -->
+                        <div class="col-lg-6">
+
+                            <!-- card content -->
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h5 class="m-0 font-weight-bold text-primary">Student Activity Recognition</h5>
+                                </div>
+                                <div class="card-body">
+                                    <!-- no video selected messge -->
+                                    <div class="text-center" id="no_content_message_activity">
+                                        <p>No Activity Recognition content to be displayed</p>
+                                    </div>
+
+                                    <!-- error messge -->
+                                    <div class="text-center text-danger" id="error_message_activity" hidden>
+                                        <p class="font-italic">No frames were found for this video</p>
+                                    </div>
+
+                                    <!-- loader -->
+                                    <div class="text-center" id="loader_activity" hidden>
+                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="Loading image">
+                                    </div>
+
+
+                                    <!--nav tabs-->
+                                    <ul class="nav nav-tabs nav-fill" id="nav_bar_activity" role="tablist" hidden>
+                                        <li class="nav-item">
+                                            <a class="nav-link active" id="frame-tab_activity" data-toggle="tab" href="#frame_activity" role="tab" aria-controls="frame_activity" aria-selected="true">Frame</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" id="graph-tab_activity" data-toggle="tab" href="#graph_activity" role="tab" aria-controls="graph_activity" aria-selected="false">Graphs</a>
+                                        </li>
+                                    </ul>
+
+                                    <!--tab content -->
+                                    <div class="tab-content" id="tabContentDetails_activity" hidden>
+                                        <div class="tab-pane fade show active" id="frame_activity" role="tabpanel" aria-labelledby="frame-tab_activity">
+                                            <div class="text-center p-4" id="activity_frames">
+                                                <!-- slide container -->
+                                                <div class="slidecontainer_activity">
+                                                    <div class="row">
+                                                        <div class="col-1">0</div>
+                                                        <div class="col-9"></div>
+                                                        <div class="col-2">100</div>
+                                                    </div>
+                                                    <!-- play/pause icon -->
+                                                    <div class="row">
+                                                        <span><i class="fas fa-play" id="play_pause_icon_activity"></i></span>
+                                                    </div>
+                                                    <input type="range" min="1" max="100" value="0" class="slider" id="myRange_activity">
+                                                    <p>No of frames: <span id="demo_activity"></span></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- graph content -->
+                                        <div class="tab-pane fade" id="graph_activity" role="tabpanel" aria-labelledby="graph-tab_gaze">
+                                            <!--card content -->
+                                            <div class="card shadow mb-4 p-3">
+                                                <!-- Card Header - Dropdown -->
+                                                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                                    <h6 class="m-0 font-weight-bold text-primary">Activity Distribution</h6>
+                                                    <div class="dropdown no-arrow">
+                                                        <a class="dropdown-toggle" href="#" role="button"
+                                                           id="dropdownMenuLink" data-toggle="dropdown"
+                                                           aria-haspopup="true" aria-expanded="false">
+                                                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                                        </a>
+                                                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                                                             aria-labelledby="dropdownMenuLink">
+                                                            <div class="dropdown-header">Graph options:</div>
+                                                            <a class="dropdown-item" href="#">Pie</a>
+                                                            <a class="dropdown-item" href="#">Bar</a>
+                                                            <div class="dropdown-divider">Column</div>
+                                                            <a class="dropdown-item" href="#">Line</a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- Card Body -->
+                                                <div class="card-body">
+                                                    <div class="chart-pie pt-4 pb-2">
+                                                        <canvas id="myPieChart"></canvas>
+                                                    </div>
+                                                    <div class="mt-4 text-center small">
+                    <span class="mr-2">
+                      <i class="fas fa-circle text-primary"></i> Direct
+                    </span>
+                                                        <span class="mr-2">
+                      <i class="fas fa-circle text-success"></i> Social
+                    </span>
+                                                        <span class="mr-2">
+                      <i class="fas fa-circle text-info"></i> Referral
+                    </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                        </div>
+                        <!--end of student activity column -->
+
+                    </div>
+                    <!--end of 3rd row -->
+
+
+
+
+
+                </div>
+            {% endblock %}
+            <!-- End of container-fluid -->
+
+        </div>
+        <!-- End of Main Content -->
+
+    </div>
+    <!-- End of Content Wrapper -->
+
+</div>
+
+{% block 'modal' %}
+    <div class="modal fade" id="video_modal" role="dialog" aria-labelledby="gif-body">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Video details</h2>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="font-weight-bold">Video Name</td>
+                            <td id="video_name"></td>
+                        </tr>
+                        <tr>
+                            <td class="font-weight-bold">Duration</td>
+                            <td id="video_duration"></td>
+                        </tr>
+                        <tr>
+                            <td class="font-weight-bold">Date of Creation</td>
+                            <td id="video_date"></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- modal footer -->
+                <div class="modal-footer">
+                    <button type="button" data-dismiss="modal" class="btn btn-danger text-white">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Logout Modal-->
+        <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
+                        <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">×</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                        <a class="btn btn-primary" href="/logout">Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+{% endblock %}
+
+</body>
+</html>

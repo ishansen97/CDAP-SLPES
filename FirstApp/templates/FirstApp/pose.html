@@ -1,0 +1,1265 @@
+{% extends 'FirstApp/template.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<body id="page-top">
+<!-- Page Wrapper -->
+
+{% block javascript %}
+    {% load static %}
+
+    <!-- Bootstrap core JavaScript-->
+    <script src="{% static 'FirstApp/vendor/jquery/jquery.min.js' %}"></script>
+    <script src="{% static 'FirstApp/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+
+    <!-- Page level plugins -->
+    <script src="{% static 'FirstApp/vendor/datatables/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'FirstApp/vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+
+    <!-- Page level custom scripts -->
+    <script src="{% static 'FirstApp/js/demo/datatables-demo.js' %}"></script>
+
+    <!-- Core plugin JavaScript-->
+    <script src="{% static 'FirstApp/vendor/jquery-easing/jquery.easing.min.js' %}"></script>
+
+    <!-- Load TensorFlow.js -->
+    <script src="https://unpkg.com/@tensorflow/tfjs"></script>
+    <!-- Load Posenet -->
+    <script src="https://unpkg.com/@tensorflow-models/posenet">
+    </script>
+
+    <script type="text/javascript">
+
+        var global_subject = '';
+        var global_lecturer = '';
+        var global_lecture_video_id = '';
+        var global_video_name = '';
+        var global_lecturer_subject_index = 0;
+
+        //jquery
+        $(document).ready(function () {
+
+            //select a particular subject
+            $('input[type=radio]').click(function () {
+                let subject_id = $(this).attr('id');
+                global_subject = subject_id;
+                let lecturer = $(this).attr('data-lecturer');
+                global_lecturer = lecturer;
+                let subject_name = $(this).attr('data-name');
+
+                $('#timetable').attr('hidden', true);
+                $('#no_timetable_content').attr('hidden', true);
+                $('.student-detection-rows').remove();
+
+                $('#timetable_body').children().map(function () {
+                    $(this).remove();
+                });
+
+
+                $('#no_subject_selected').attr('hidden', true);
+
+                $('#timetable_caption').text('subject: ' + subject_name);
+                $('#loader').attr('hidden', false);
+
+                //fetching the timetable from the db
+                fetch('http://127.0.0.1:8000/timetables')
+                    .then((res) => res.json())
+                    .then((out) => createTimeTable(out, subject_id, lecturer))
+                    .catch((error) => alert('this is the error: ' + error))
+
+            });
+
+
+            $(document).on('click', '.btn-info', function (e) {
+
+                let clicked_class = e.target.className;
+                let object = e;
+                let real_class = clicked_class.split(' ')[1];
+                real_class = '.' + real_class;
+
+                let date = e.target.parentNode.parentNode.firstChild.innerHTML;
+
+                fetch('http://127.0.0.1:8000/get-lecture-video-for-pose/?lecturer=' + global_lecturer + '&date=' + date + '&index=' + global_lecturer_subject_index)
+                    .then((res) => res.json())
+                    .then((out) => displayLectureVideoDetails(out, object))
+                    .catch((error) => alert('an error occurred: ' + error));
+            });
+
+
+            function createTimeTable(timetable, subject, lecturer) {
+                $('#loader').attr('hidden', true);
+                $('#timetable').attr('hidden', false);
+                let isTimetableSubject = false;
+
+                timetable.map((item, i) => {
+                    item.timetable.map((table, index) => {
+
+                        let lecturer_subject_index_arr = [];
+
+
+                        //to get the number of subjects taught by the lecturer in a day
+                        table.time_slots.forEach((slot1, ind) => {
+                            let isLecturer = slot1.lecturer.id === Number(lecturer);
+
+                            if (isLecturer) {
+                                lecturer_subject_index_arr.push(ind);
+                            }
+                        });
+
+
+                        //iterating each slot (for a given day)
+                        table.time_slots.forEach((slot, in1) => {
+                            let isLecturer = slot.lecturer.id === Number(lecturer);
+                            let isLecSubject = slot.subject.subject_code === subject;
+                            if (isLecturer && isLecSubject) {
+                                let html = '';
+                                global_lecturer_subject_index = lecturer_subject_index_arr.findIndex((inner) => inner === in1);
+                                isTimetableSubject = true;
+                                html += "<tr class='lecture-details'><td class='slot_date'>" + table.date + "</td>"
+                                    + "<td>" + slot.location + "</td>"
+                                    + "<td>" + slot.start_time + "</td>"
+                                    + "<td>" + slot.end_time + "</td>"
+                                    + "<td><button type='button' class='btn btn-info'>Video</button></td>"
+                                    + "<td></td>"
+                                    + "</tr>";
+
+                                $('#timetable_body').append(html);
+
+                            }
+                        });
+                    });
+
+                    if (!isTimetableSubject) {
+                        $('#timetable').attr('hidden', true);
+                        $('#no_timetable_content').attr('hidden', false);
+                    }
+
+
+                });
+            }
+
+            //function to display lecture video details
+            function displayLectureVideoDetails(lectureVideo, e) {
+
+
+                //get the lecture video response
+                let video = lectureVideo.response;
+
+                $('#video_name').text(video.video_name);
+                $('#video_duration').text(video.video_length);
+                $('#video_date').text(video.date);
+                global_lecture_video_id = video.lecture_video_id;
+                global_video_name = video.video_name;
+
+                //display the modal
+                $('#video_modal').modal();
+
+                //showing the video frames
+                //removing the previous frames (if there is any)
+                $('#main_frames').remove();
+
+                //displaying the loader (for the frames)
+                $('#frame_loader').attr('hidden', false);
+                //hiding the temporary text
+                $('#temporary_text').attr('hidden', true);
+
+                fetch('http://127.0.0.1:8000/get-lecture-video-extracted-frames/?lecture_video_id=' + global_lecture_video_id + '&lecture_video_name=' + global_video_name)
+                    .then((res) => res.json())
+                    .then((out) => {
+                        let frames = createFrames(out);
+                        return frames
+                    })
+                    .then((obj) => {
+                        $('#video_frames').prepend(obj);
+                        $('#frame_loader').attr('hidden', true);
+                        $('#slidecontainer').attr('hidden', false);
+                    })
+                    .catch((error) => alert('this is the error: ' + error));
+            }
+
+
+            //to handle the 'btn-success' (process) button
+            $(document).on('click', '.btn-success', function (e) {
+
+                //sending the POST request to process the lecture activities
+                fetch('http://127.0.0.1:8000/process-lecture-activity/?lecture_video_name=' + global_video_name + '&lecture_video_id=' + global_lecture_video_id)
+                    .then((res) => res.json())
+                    .then((out) => handleResponse(out.response, e))
+                    .catch((error) => alert('error: ' + error));
+            });
+
+            //this is to change the button from 'process' to 'results'
+            function handleResponse(response, e) {
+                //change the button, if the response is positive
+                if (response) {
+                    e.target.parentNode.parentNode.lastChild.innerHTML = '<button type="button" class="btn btn-primary">Results</button>';
+                }
+            }
+
+
+            //this section is responsible for displaying the frames as  video
+            //creating the frame content
+            function createFrames(res) {
+                let main_frame_content = "<div class='row' id='main_frames'>";
+                main_frame_content += "<ul class='list-group list-group-horizontal'>";
+                let count = 0;
+                //loop through the frames
+                res.extracted.map((image) => {
+                    let img_src = "";
+                    let len = image.detections.length;
+
+
+                    if (count === 0) {
+                        main_frame_content += "<li class='list-group-item text-center' id='image_0'>";
+                        img_src = "<img src='{% static '' %}FirstApp/activity/" + global_video_name + "/" + res.extracted[0].frame + "/" + res.extracted[0].detections[0] + "' width='400' height='400'>";
+                    } else {
+                        main_frame_content += "<li class='list-group-item other-frames' id='image_" + count + "' hidden>";
+                        img_src = "<img src='{% static '' %}FirstApp/activity/" + global_video_name + "/" + image.frame + "/" + image.detections[len - 1] + "' class='img-link' width='400' height='400'>";
+                    }
+
+
+                    main_frame_content += img_src;
+                    main_frame_content += "</li>";
+                    count++;
+                });
+
+                main_frame_content += "</ul>";
+                main_frame_content += "</div>";
+
+
+                //setting the min, max values of the slider
+                $('#myActivityRange').attr({'min': 0, 'max': count});
+
+                //dsiplay the 'process' button
+                $('#process_btn').attr('hidden', false);
+
+                return main_frame_content;
+            }
+
+
+            //declaring the variable for setInterval function
+            let timeVar = null;
+
+            //handling the play button
+            $('#play_pause_icon_activity').click(function () {
+                //defining the two possible classes
+                let play_class = "fas fa-play";
+                let pause_class = "fas fa-pause";
+
+
+                //retrieving the current icon class
+                let current_class = $(this).attr('class');
+
+                //assigning the correct class based on the icon clicked
+                let new_class = (current_class === play_class) ? pause_class : play_class;
+
+                //setting the new class
+                $(this).attr('class', new_class);
+
+                //handling the slider
+                let slider = document.getElementById("myActivityRange");
+                let output = document.getElementById("demo");
+
+                //when the button is playing
+                if (current_class === play_class) {
+                    timeVar = setInterval(() => {
+                        let value = slider.value;
+                        let new_slider_value = Number(value) + 1;
+                        slider.value = new_slider_value;
+                        output.innerHTML = new_slider_value.toString();
+
+
+                        let selectedImage = '#image_' + Number(value);
+
+                        //displaying the relevant image
+                        $('#image_0').html($(selectedImage).html());
+
+                    }, 100);
+                }
+                //when the button is paused
+                else if (current_class === pause_class) {
+                    clearInterval(timeVar);
+                }
+
+
+            });
+
+
+            //handling the slider
+            let slider = document.getElementById("myActivityRange");
+            let output = document.getElementById("demo");
+            output.innerHTML = slider.value;
+
+            slider.oninput = function () {
+                output.innerHTML = this.value;
+                let selectedImage = '#image_' + Number(this.value);
+
+                //hide
+                {#$('#image_0').attr('hidden', true);#}
+                $('#image_0').html($(selectedImage).html());
+
+                //setting the selected image
+                {#$(selectedImage).attr('hidden', false);#}
+
+
+            };
+
+            $(document).on('click', '.img-link', function (e) {
+
+                //removing previously displayed detections
+                $('.detections').remove();
+
+                //removing the no-content message
+                $('#no_detection_message_content').hide();
+
+                //appearing the loader
+                $('#detection_loader').attr('hidden', false);
+
+                let img_src_arr = e.target.src.split('/');
+                let len = img_src_arr.length;
+                let src = img_src_arr[len - 1];
+                let frame_name_arr = src.split('.');
+                let frame_name = frame_name_arr[0];
+
+                //fetching the detection for the selected frame
+                fetch('http://127.0.0.1:8000/get-lecture-activity-frame-detection/?video_name=' + global_video_name + "&frame_name=" + frame_name)
+                    .then((res) => res.json())
+                    .then((out) => displayDetections(out.detections, frame_name))
+                    .catch((error) => alert('this is an error'));
+
+            });
+
+            //the function to display detections
+            function displayDetections(detections, frame_name) {
+                let img_string = '';
+                let no_of_detections = detections.length;
+
+                //disabling the loader
+                $('#detection_loader').attr('hidden', true);
+
+                //appearing the no of detections number area
+                $('#detection_number_area').attr('hidden', false);
+                $('#no_of_detections').text(no_of_detections);
+
+                detections.map((detection) => {
+                    img_string += "<img src='{% static '' %}FirstApp/activity/" + global_video_name + "/" + frame_name + "/" + detection + "' class='detections m-2' width='100' height='100' >"
+                });
+
+                $('#detection_frames').prepend(img_string);
+
+            }
+
+
+            //listening for click events in labels
+            $('.labels').click(function () {
+
+                let label = Number($(this).attr('data-number'));
+
+                //removing the previous student detection lists
+                $('.student_detection_lists').remove();
+
+                //appearing the loader
+                $('#detection_student_loader').attr('hidden', false);
+                //disappearing the no content message
+                $('#no_detection_student_content').attr('hidden', true);
+
+                //fetching from the api
+                fetch('http://127.0.0.1:8000/get-lecture-activity-detection-for-label/?video_name=' + global_video_name + '&label=' + label)
+                    .then((res) => res.json())
+                    .then((out) => createDetectedStudentFrames(out))
+                    .catch((error) => alert('this is the error: ' + error))
+            });
+
+
+            //creating the detected students frames
+            function createDetectedStudentFrames(detections) {
+
+                let htmlString = "";
+                //iterating through the student
+                detections.people.map((student) => {
+
+                    let title = student.split('.')[0];
+                    let images = "";
+                    htmlString += "<div class='row p-3 student-detection-rows'>";
+
+                    let student_count = 0;
+
+                    //iterating through the frames
+                    detections.response.map((frame) => {
+                        let frame_detections = frame.detections;
+
+                        if (frame_detections.includes(student)) {
+
+
+                            if (student_count === 0) {
+                                images += "<li class='list-group-item frame-0' id='image_0_" + title + "'>";
+                            } else {
+                                images += "<li class='list-group-item other-student-frames' id='image_" + student_count + "_" + title + "' hidden>";
+                            }
+
+                            images += "<img src='{% static '' %}FirstApp/Activity/" + global_video_name + "/" + frame.frame + "/" + student + "' width='200' height='200'>";
+                            images += "</li>";
+
+                            //increment the student count
+                            student_count++;
+                        }
+                    });
+
+                    htmlString += "<h6 class='font-italic'>" + title + "</h6>";
+                    htmlString += "<ul class='list-group list-group-horizontal student_detection_lists' style='overflow-x: scroll'>";
+                    htmlString += images;
+                    htmlString += "</ul>";
+                    htmlString += "<div class='slidecontainer'>";
+                    htmlString += "<div class='row m-3'></div>";
+                    htmlString += "<div class='row'>";
+                    htmlString += "<span><i class='fas fa-play play-pause-icon-student-frames' id='icon_" + title + "'></i></span>";
+                    htmlString += "</div>";
+                    htmlString += "<input type='range' min='1' max='100' value='0' class='slider' id='slider_" + title + "'>";
+                    htmlString += "<p>No of frames: <span id='demo_" + title + "'></span></p>";
+                    htmlString += "</div>";
+                    htmlString += "</div>";
+                });
+
+                //disappearing the loader
+                $('#detection_student_loader').attr('hidden', true);
+
+                //append to the relevant html card content
+                $('#detection_students').append(htmlString);
+
+            }
+
+
+            let studentTimeVar = null;
+
+            //playing the frames for each student detection
+            $(document).on('click', '.play-pause-icon-student-frames', function (e) {
+
+                //defining the two possible classes
+                let play_class = "fas fa-play play-pause-icon-student-frames";
+                let pause_class = "fas fa-pause play-pause-icon-student-frames";
+
+
+                //retrieving the current icon class
+                let current_class = $(this).attr('class');
+
+
+                //assigning the correct class based on the icon clicked
+                let new_class = (current_class === play_class) ? pause_class : play_class;
+
+
+                //setting the new class
+                $(this).attr('class', new_class);
+
+                //extracting the title pf the clicked icon
+                let title_part = $(this).attr('id');
+                let title = title_part.split("_")[1];
+
+
+                //handling the slider
+                let slider = document.getElementById("slider_" + title);
+                let output = document.getElementById("demo_" + title);
+
+
+                //when the button is playing
+                if (current_class === play_class) {
+                    studentTimeVar = setInterval(() => {
+                        let value = slider.value;
+                        let new_slider_value = Number(value) + 1;
+                        slider.value = new_slider_value;
+                        output.innerHTML = new_slider_value.toString();
+
+
+                        let selectedImage = '#image_' + Number(value) + '_' + title;
+
+                        //displaying the relevant image
+                        $('#image_0_' + title).html($(selectedImage).html());
+
+                    }, 100);
+                }
+
+                //when the button is paused
+                else if (current_class === pause_class) {
+                    clearInterval(studentTimeVar);
+                }
+
+            });
+
+
+            //processing the video frames for pose estimation
+            $('#process_btn').click(function () {
+                //hide the message
+                $('#no_individual_student_frames').attr('hidden', true);
+                //show the loader
+                $('#individual_student_frames_loader').attr('hidden', false);
+
+
+                //using the fetch api
+                fetch('http://127.0.0.1:8000/get-lecture-video-individual-student-frames/?video_name=' + global_video_name)
+                    .then((res) => res.json())
+                    .then((out) => displayStudentIndividualFrames(out))
+                    .catch((error) => alert('this is the error: ' + error))
+            });
+
+            //this function will display each student individual frames
+            function displayStudentIndividualFrames(response) {
+                let htmlString = "";
+                //iterating through the student
+                response.people.map((student) => {
+
+                    let title = student.split('.')[0];
+                    let images = "";
+                    htmlString += "<div class='row p-3 student-individual-rows'>";
+
+                    let student_count = 0;
+
+                    //iterating through the frames
+                    response.response.map((frame) => {
+                        let frame_detections = frame.detections;
+                        let frame_detection_length = frame_detections.length;
+
+                        if (frame_detections.includes(student)) {
+
+
+                            if (student_count === 0) {
+                                images += "<li class='list-group-item frame-0' id='image_0_individual_" + title + "'>";
+                            } else {
+                                images += "<li class='list-group-item other-student-frames' id='list_item_individual_" + student_count + "_" + title + "' hidden>";
+                            }
+
+                            images += "<img src='{% static '' %}FirstApp/Activity/" + global_video_name + "/" + frame.frame + "/" + student + "' id='image_individual_" + student_count + "_" + title + "' width='200' height='200'>";
+                            images += "</li>";
+
+                            if (student_count === (frame_detection_length - 1)) {
+                                images += "<li class='list-group-item'>";
+                                images += "<button type='button' class='btn btn-dark individual-student-frame' id='individual_student_" + title + "'>calculate</button>";
+                                images += "</li>";
+                            }
+
+
+                            //increment the student count
+                            student_count++;
+                        }
+                    });
+
+                    htmlString += "<ul class='list-group'>";
+                    htmlString += "<li class='list-group-item'>";
+                    htmlString += "<div class='row m-3'>";
+                    htmlString += "<h4 class='font-weight-bold'>Student ID: <span>" + title + "</span></h4>";
+                    htmlString += "</div>";
+                    htmlString += "</li>";
+                    htmlString += "<li class='list-group-item'>";
+                    htmlString += "<div class='row'>";
+                    htmlString += "<ul class='list-group list-group-horizontal student_individual_lists' id='student_individual_" + title + "' style='overflow-x: scroll'>";
+                    htmlString += images;
+                    htmlString += "</ul>";
+                    htmlString += "</div>";
+                    htmlString += "</li>";
+                    htmlString += "<li class='list-group-item'>";
+                    htmlString += "<div class='slidecontainer'>";
+                    htmlString += "<div class='row m-3'></div>";
+                    htmlString += "<div class='row'>";
+                    htmlString += "<span><i class='fas fa-play play-pause-icon-student-evaluations' id='icon_" + title + "'></i></span>";
+                    htmlString += "</div>";
+                    htmlString += "<input type='range' min='1' max='100' value='0' class='slider' id='slider_evaluation" + title + "'>";
+                    htmlString += "<p>No of frames: <span id='demo_evaluation" + title + "'></span></p>";
+                    htmlString += "</div>";
+                    htmlString += "</div>";
+                    htmlString += "</li>";
+                    htmlString += "</ul>";
+                });
+
+                //disappearing the loader
+                $('#individual_student_frames_loader').attr('hidden', true);
+
+                //append to the relevant html card content
+                $('#individual_student_frames').append(htmlString);
+            }
+
+            //to listen to click event from individual students
+            $(document).on('click', '.individual-student-frame', function (e) {
+                let student_id_parts = $(this).attr('id');
+                let student_id = student_id_parts.split('_')[2];
+
+                let frame_list_id = '#student_individual_' + student_id;
+
+                //traverse through the children of the selected list
+                let image_list = $(frame_list_id).children().map((i, child) => {
+                    //traversing the <li>
+                    return $(child).find('img').attr('id');
+
+                });
+
+                student_id += ".png";
+
+                e.target.innerHTML = "<span class='font-italic'>Processing</span>";
+
+                //running the posenet model
+                loadModel(image_list, student_id, e);
+            });
+
+
+            //POSENET model
+            //this function will load the posenet model
+            async function loadModel(imageList, student, e) {
+                const imageScaleFactor = 1.0;
+                const flipHorizontal = false;
+                const outputStride = 16;
+                // get up to 5 poses
+                const maxPoseDetections = 20;
+                // minimum confidence of the root part of a pose
+                const scoreThreshold = 0.2;
+                // minimum distance in pixels between the root parts of poses
+                const nmsRadius = 20;
+
+                //load the model
+                const model = await posenet.load();
+
+                //this array will keep all the detected poses
+                let keypoints_arr = [];
+
+                //loop through the selected image IDs
+                for (let i = 0; i < imageList.length; i++) {
+                    let image_id = imageList[i];
+                    let imageElement = document.getElementById(image_id);
+
+                    //estimate the poses
+                    const poses = await model.estimateSinglePose(imageElement, {
+                        imageScaleFactor: 1.0,
+                        flipHorizontal: false,
+                        outputStride: 8,
+                        maxDetections: 10,
+                        scoreThreshold: 0.5,
+                        nmsRadius: 20
+                    });
+
+                    //push to the created keypoints array
+                    keypoints_arr.push(poses)
+
+                }
+
+                //using the fetch API to POST the data
+                await fetch('http://127.0.0.1:8000/process-lecture-video-individual-pose-estimation', {
+                    method: 'POST',
+                    headers: {
+                        "Content-type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        "video_name": global_video_name,
+                        "student": student,
+                        "poses": keypoints_arr
+                    })
+                })
+                    .then((res) => res.json())
+                    .then((out) => {
+                        e.target.innerHTML = "<span>Completed</span>";
+                    })
+                    .catch((err) => alert('this is the error: ' + err));
+
+                /*
+                const imageElement = document.getElementById(id);
+
+                let isImageDisplayed = true;
+
+                if (isImageDisplayed) {
+                    $('#message').hide();
+                    $('#croppedMessage').hide();
+                }
+
+                let splitted = imageElement.src.split('/');
+
+                //assigning the image name
+                imageName = splitted[7].split('.')[0];
+
+
+                //show the loading screen
+                $('#loading').attr('hidden', false);
+                $('#cropped_loading').attr('hidden', false);
+
+                const model = await posenet.load();
+
+                const poses = await model.estimateMultiplePoses(imageElement, {
+                    imageScaleFactor: 1.0,
+                    flipHorizontal: false,
+                    outputStride: 8,
+                    maxDetections: 10,
+                    scoreThreshold: 0.5,
+                    nmsRadius: 20
+                });
+
+                let keypoints_arr = [];
+
+                //hide the loading screen
+                $('#loading').hide();
+                $('#cropped_loading').hide();
+
+                //removing the previous canvas
+                $('#showFace').remove();
+
+                //removing the previous canvas row
+                $('#canvas-frame').remove();
+
+                //creating the same canvas
+                let newCanvasContent = "<canvas id='showFace' width='500' height='300'></canvas>";
+                $(newCanvasContent).prependTo('#canvas-body');
+
+                let canvas = document.getElementById('showFace');
+
+                let context = canvas.getContext('2d');
+
+                context.drawImage(imageElement, 0, 0, 500, 300);
+
+
+                let htmlContent = "<div id='canvas-frame'><div class='row'>";
+
+
+
+
+                {#drawing rectangle for each person face#}
+                for (let count = 0; count < poses.length; count++) {
+                    let person = poses[count];
+
+                    let new_canvas_id = 'canvas-' + (count + 1);
+                    let new_canvas = document.getElementById(new_canvas_id);
+
+
+                {#let new_context = new_canvas.getContext('2d');#}
+
+                    let x1 = Math.round(Number(person.keypoints[5].position.x));
+                    let y1 = Math.round(Number(person.keypoints[5].position.y));
+                    let x2 = Math.round(Number(person.keypoints[6].position.x));
+                    let y2 = Math.round(Number(person.keypoints[6].position.y));
+
+                    let x_diff = x1 - x2;
+                    let y_diff = y1 - y2;
+                    let x_pow = Math.pow(x_diff, 2);
+                    let y_pow = Math.pow(y_diff, 2);
+                    let summation = x_pow + y_pow;
+
+                    let distance = Math.sqrt(summation);
+                    let fraction = Math.round(distance * 0.6);
+
+                    let middle_x = x2 + fraction;
+                    let middle_y = y2 - 20;
+
+                    let head_x = middle_x;
+                    let head_y = middle_y - fraction;
+
+                    let left_upper_x = middle_x - fraction;
+                    context.rect(left_upper_x, head_y, distance, fraction);
+
+
+                {#context.fillStyle = 'red';#}
+                    context.stroke();
+
+                    let canvasHtml = "<canvas id='" + new_canvas_id + "' height='200' width='200'></canvas>";
+
+
+                    htmlContent += "<div class='flex-column' style='width: 30%'>" +
+                        canvasHtml
+                        + "</div>";
+
+                    if (((count + 1)) % 3 === 0) {
+                        htmlContent += "</div><div class='row'>";
+                    }
+
+                    //appending the keypoints to the array
+                    keypoints_arr[keypoints_arr.length] = {
+                        'left_x': left_upper_x,
+                        'left_y': head_y,
+                        'width': distance,
+                        'height': fraction
+                    };
+
+                    //appending the keypoints to the global array
+                    points[points.length] = {
+                        'left_x': left_upper_x,
+                        'left_y': head_y,
+                        'width': distance,
+                        'height': fraction
+                    };
+
+                }
+
+                htmlContent += "</div>";
+                htmlContent += "</div>";
+
+
+                //append the html content
+                $('#test-canvas').prepend(htmlContent);
+
+
+
+                {#getting the natural dimensions of the image#}
+                let originalWidth = imageElement.naturalWidth;
+                let originalHeight = imageElement.naturalHeight;
+
+                //drawing extracted faces on the canvas
+                for (let i = 0; i < poses.length; i++) {
+                    let canvas_id = 'canvas-' + (i + 1);
+                    let canvasDoc = document.getElementById(canvas_id);
+                    let canvasCont = canvasDoc.getContext('2d');
+
+                    let left_x = keypoints_arr[i].left_x;
+                    let left_y = keypoints_arr[i].left_y;
+                    let width = keypoints_arr[i].width;
+                    let height = keypoints_arr[i].height;
+
+                    let x_scale = originalWidth / imageElement.offsetWidth;
+                    let y_scale = originalHeight / imageElement.offsetHeight;
+
+                    let x_corner = left_x * x_scale;
+                    let y_corner = left_y * y_scale;
+                    let modified_width = width * x_scale;
+                    let modified_height = height * y_scale;
+
+
+
+
+                {#canvasCont.drawImage(imageElement, left_x * 6, left_y * 6, width * 10, height * 10, 0, 0, 100, 150);#}
+
+
+                {#canvasCont.drawImage(imageElement, 0, 800, 800, 500, 0, 0, 100, 150);#}
+
+
+                {#canvasCont.drawImage(imageElement, 230.2, 700, 400, 400, 0, 0, 150, 150);#}
+
+
+                {#canvasCont.drawImage(imageElement, left_x, left_y, width * 10, height * 10, 0, 0, 100, 150);#}
+
+
+                {#canvasCont.drawImage(imageElement, left_x, left_y, width, height, 0, 0, 100, 150);#}
+
+
+                {#canvasCont.drawImage(imageElement, left_x * 10, left_y * 10, width * 10, height * 10, 0, 0, 100, 150);#}
+
+                    canvasCont.drawImage(imageElement, x_corner, y_corner, modified_width, modified_height, 0, 0, 199, 199);
+
+
+                }
+                //displaying the download button
+
+
+                {#$('#downloadBtn').attr('hidden', false);#}
+
+                //then save the images
+                //saveImages();
+                */
+            }
+
+
+        });
+
+    </script>
+
+
+{% endblock %}
+
+<div id="wrapper">
+    <!-- Sidebar -->
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+
+        <!-- Main Content -->
+        <div id="content">
+
+            <!-- Begin Page Content -->
+            {% block 'container-fluid' %}
+                <div class="container-fluid">
+                    {% load static %}
+
+                    <!-- Page Heading -->
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <h1 class="h3 mb-0 text-gray-800">Student Pose Estimation</h1>
+                    </div>
+
+                    <!--first row -->
+                    <div class="row p-2">
+
+                        <!--first column -->
+                        <div class="col-lg-6" style="overflow-x: scroll">
+                            <div class="card shadow mb-4">
+                                <!--card header -->
+                                <div class="card-header py-3">
+                                    <h5 class="m-0 font-weight-bold text-primary">Lecturer Subjects</h5>
+                                </div>
+
+                                <!--card body -->
+                                <div class="card-body">
+                                    {% if lecturer_subjects.count == 0 %}
+                                        <div class="text-center">
+                                            <span class="font-italic">No subjects</span>
+                                        </div>
+                                    {% else %}
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered" id="datatable">
+                                                <thead>
+                                                <tr>
+                                                    <th></th>
+                                                    <th>Subject Name</th>
+                                                    <th>Code</th>
+                                                    <th>Year</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                {% for subject in subjects %}
+                                                    <tr class="subjects not_clicked" id="{{ subject.0.subject_code }}">
+                                                        <td>
+                                                            <div class="radio">
+                                                                <label><input type="radio"
+                                                                              id="{{ subject.0.subject_code }}"
+                                                                              name="subject_radio"
+                                                                              data-name="{{ subject.0.name }}"
+                                                                              data-lecturer="{{ lecturer }}"></label>
+                                                            </div>
+                                                        </td>
+                                                        <td>{{ subject.0.name }}</td>
+                                                        <td>{{ subject.0.subject_code }}</td>
+                                                        <td>{{ subject.0.year }}</td>
+                                                    </tr>
+                                                {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <!--end of first column -->
+
+                        <!--second column (timetable column) -->
+                        <div class="col-lg-6" style="overflow-x: scroll">
+                            <div class="card shadow mb-4">
+                                <!--card header -->
+                                <div class="card-header py-3">
+                                    <h5 class="m-0 font-weight-bold text-primary">View timetable</h5>
+                                </div>
+
+                                <!--card body -->
+                                <div class="card-body">
+
+                                    <!--loading gif -->
+                                    <div class="text-center" id="no_subject_selected">
+                                        <span class="font-italic">No lecture is selected</span>
+                                    </div>
+                                    <!--no lecture selected message -->
+                                    <div class="text-center" id="loader" hidden>
+                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="Loader">
+                                    </div>
+                                    <!--no lecture selected message -->
+                                    <div class="text-center" id="no_timetable_content" hidden>
+                                        <span class="font-italic">Not included in the timetable</span>
+                                    </div>
+                                    <!--displaying the timetable -->
+                                    <table class="table table-striped" id="timetable" hidden>
+                                        {#                                    <caption id="timetable_caption"></caption>#}
+                                        <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Hall No.</th>
+                                            <th>start time</th>
+                                            <th>end time</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="timetable_body">
+
+                                        </tbody>
+                                    </table>
+
+
+                                </div>
+                            </div>
+                        </div>
+                        <!--end of second column -->
+
+                    </div>
+                    <!--end of 1st row -->
+
+                    <!--2nd row -->
+                    <div class="row p-2">
+
+                        <!--1st column -->
+                        <div class="col-lg-6">
+                            <!--card content -->
+                            <div class="card shadow mb-4">
+                                <!--card header -->
+                                <div class="card-header py-3">
+                                    <h5 class="m-0 font-weight-bold text-primary">Pose Estimation</h5>
+                                </div>
+
+                                <!--card body -->
+                                <div class="card-body">
+
+                                    <!--nav tabs-->
+                                    <ul class="nav nav-tabs nav-fill" id="nav_bar" role="tablist">
+                                        <li class="nav-item">
+                                            <a class="nav-link active" id="frame-tab" data-toggle="tab" href="#frame"
+                                               role="tab" aria-controls="frame" aria-selected="true">Frame</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" id="graph-tab" data-toggle="tab" href="#graph"
+                                               role="tab" aria-controls="graph" aria-selected="false">Graphs</a>
+                                        </li>
+                                    </ul>
+
+                                    <!--tab content -->
+                                    <div class="tab-content" id="tabContentDetails">
+                                        <!--frame tab -->
+                                        <div class="tab-pane fade show active" id="frame" role="tabpanel"
+                                             aria-labelledby="home-tab">
+                                            <!--this area will display the frame -->
+                                            <div class="text-center" id="frame_area" style="height: 600px">
+                                                <!--temporary text -->
+                                                <span class="font-italic" id="temporary_text">Frame will be displayed here</span>
+
+                                                <!--loading buffer area-->
+                                                <div class="text-center" id="frame_loader" hidden>
+                                                    <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
+                                                         alt="Loader">
+                                                </div>
+
+                                                <!--frames -->.
+                                                <div class="text-center p-4" id="video_frames">
+                                                    <!-- slide container -->
+                                                    <div id="slidecontainer" hidden>
+                                                        <div class="row m-3"></div>
+                                                        <!-- play/pause icon -->
+                                                        <div class="row">
+                                                            <span><i class="fas fa-play"
+                                                                     id="play_pause_icon_activity"></i></span>
+                                                        </div>
+                                                        <input type="range" min="1" max="100" value="0" class="slider"
+                                                               id="myActivityRange">
+                                                        <p>No of frames: <span id="demo"></span></p>
+                                                    </div>
+                                                </div>
+                                                <!--end of video frames -->
+                                                <button type="button" class="btn btn-danger float-right"
+                                                        id="process_btn" hidden>Process
+                                                </button>
+                                            </div>
+
+
+                                        </div>
+                                        <!--end of tab content (frames) -->
+
+                                        <!--graph tab -->
+                                        <div class="tab-pane fade" id="graph" role="tabpanel"
+                                             aria-labelledby="profile-tab">
+                                            <!--card content -->
+                                            <div class="card shadow mb-4 p-3">
+                                                <!-- Card Header - Dropdown -->
+                                                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                                    <h6 class="m-0 font-weight-bold text-primary">Student
+                                                        Activities</h6>
+                                                    <div class="dropdown no-arrow">
+                                                        <a class="dropdown-toggle" href="#" role="button"
+                                                           id="dropdownMenuLink" data-toggle="dropdown"
+                                                           aria-haspopup="true" aria-expanded="false">
+                                                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                                        </a>
+                                                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                                                             aria-labelledby="dropdownMenuLink">
+                                                            <div class="dropdown-header">Dropdown Header:</div>
+                                                            <a class="dropdown-item" href="#">Action</a>
+                                                            <a class="dropdown-item" href="#">Another action</a>
+                                                            <div class="dropdown-divider"></div>
+                                                            <a class="dropdown-item" href="#">Something else here</a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- Card Body -->
+                                                <div class="card-body">
+                                                    <div class="chart-pie pt-4 pb-2">
+                                                        <canvas id="myPieChart"></canvas>
+                                                    </div>
+                                                    <div class="mt-4 text-center small">
+                    <span class="mr-2">
+                      <i class="fas fa-circle text-primary"></i> Direct
+                    </span>
+                                                        <span class="mr-2">
+                      <i class="fas fa-circle text-success"></i> Social
+                    </span>
+                                                        <span class="mr-2">
+                      <i class="fas fa-circle text-info"></i> Referral
+                    </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!--2nd column -->
+                        <div class="col-lg-6">
+                            <!--card content -->
+                            <div class="card shadow mb-4">
+                                <!--card header -->
+                                <div class="card-header py-3">
+                                    <h5 class="m-0 font-weight-bold text-primary">Frame Detections</h5>
+                                </div>
+
+                                <!--card body -->
+                                <div class="text-center p-4" id="detection_frames">
+
+                                    <!--no content message-->
+                                    <div class="text-center p-2" id="no_detection_message_content">
+                                        <span class="font-italic">No frame is selected</span>
+                                    </div>
+
+                                    <div class="text-left m-3" id="detection_number_area" hidden>
+                                        <p>No of detections: <span id="no_of_detections"></span></p>
+                                    </div>
+                                    <!--the detection loader -->
+                                    <div class="text-center p-2" id="detection_loader" hidden>
+                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
+                                             alt="Loader">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!--detection person card -->
+                            <div class="card shadow mb-4">
+                                <!--card header -->
+                                <div class="card-header py-3">
+                                    <h5 class="m-0 font-weight-bold text-primary">Detected Students</h5>
+                                </div>
+
+                                <!--card body -->
+                                <div class="text-center p-4" id="detection_students">
+                                    <!--no content message-->
+                                    <div class="text-center p-2" id="no_detection_student_content">
+                                        <span class="font-italic">No activity type is selected</span>
+                                    </div>
+
+                                    <!--the detection student loader -->
+                                    <div class="text-center p-2" id="detection_student_loader" hidden>
+                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
+                                             alt="Loader">
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+
+                    </div>
+                    <!-- end of 2nd row -->
+
+
+                    <!--3rd row -->
+                    <div class="row p-2">
+
+                        <!--this column will display individual student frames -->
+                        <!--1st column -->
+                        <div class="col-lg-6">
+                            <!--card -->
+                            <div class="card shadow mb-4">
+                                <!--card header -->
+                                <div class="card-header">
+                                    <h5 class="m-0 font-weight-bold text-primary">Individual Student Frames</h5>
+                                </div>
+
+                                <!--card body -->
+                                <div class="card-body" id="individual_student_frames">
+
+                                    <!--no content message-->
+                                    <div class="text-center p-2" id="no_individual_student_frames">
+                                        <span class="font-italic">Press 'Process' button to display Individual Student Frames</span>
+                                    </div>
+
+                                    <!--the detection student loader -->
+                                    <div class="text-center p-2" id="individual_student_frames_loader" hidden>
+                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
+                                             alt="Loader">
+                                    </div>
+                                </div>
+
+                            </div>
+
+
+                        </div>
+
+                    </div>
+                    <!--end of 3rd row -->
+
+
+                </div>
+            {% endblock %}
+            <!-- End of container-fluid -->
+
+        </div>
+        <!-- End of Main Content -->
+
+    </div>
+    <!-- End of Content Wrapper -->
+
+</div>
+
+{% block 'modal' %}
+    <div class="modal fade" id="video_modal" role="dialog" aria-labelledby="gif-body">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Video details</h2>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="font-weight-bold">Video Name</td>
+                            <td id="video_name"></td>
+                        </tr>
+                        <tr>
+                            <td class="font-weight-bold">Duration</td>
+                            <td id="video_duration"></td>
+                        </tr>
+                        <tr>
+                            <td class="font-weight-bold">Date of Creation</td>
+                            <td id="video_date"></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- modal footer -->
+                <div class="modal-footer">
+                    <button type="button" data-dismiss="modal" class="btn btn-danger text-white">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Logout Modal-->
+    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                    <a class="btn btn-primary" href="/logout">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+</body>
+</html>

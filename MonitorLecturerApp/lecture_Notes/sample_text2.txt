@@ -1,0 +1,45 @@
+Good morning everyone, I hope you went through the previous lecture slides, which is an overview on the OOP module.
+
+Today our lecture is based an introduction to Object Oriented Programming Concepts.
+OBJECT ORIENTED PROGRAMMING is a programming concept that works on the principles.
+The main principles are abstraction, encapsulation, inheritance, and polymorphism.
+OOP allows users to create the objects that they want and then, create methods to handle those objects.
+The basic concept of OOPs is to create objects, re-use them throughout the program, and manipulate these objects to get results.
+Object Oriented Programming popularly known as OOP, is used in a modern programming language like Java.
+
+er Now Let’s what are Core OOPS concepts.
+First one is class.
+The class is a group of similar entities.
+It is only an logical component which means it is not a physical entity.
+hmm Now let’s go for example, if you had a class called “Expensive Cars” the object could be like Mercedes, BMW, Toyota, etc.
+and the properties an be price or speed of these cars.
+While the methods may be performed with these cars are driving, reverse, braking.
+Next core concept is object.
+An object can be defined as an instance of a class, and there can be multiple instances of a class in a program.
+An Object contains both the data and the function, which operates on the data. uh For example - chair, bike, marker, pen, table.
+Next, we have Inheritance. What is inheritance.
+Inheritance is an OOPS concept in which one object acquires the properties and behaviours of the parent object.
+It’s creating a parent-child relationship between two classes.
+It offers robust and natural mechanism for organizing and structure of any software.
+
+An abstraction is an act of representing essential features without including background details.
+It is a technique of creating a new data type that is suited for a specific application.
+Now let’s see an example er, while driving a car, you do not have to be concerned with its internal working.
+Here you just need to concern about parts like steering wheel, Gears, accelerator.
+Ok so do you know what is Encapsulation? It is an OOP method wrapping the data and code.
+In this OOPS idea, the factors of a class are constantly hidden different classes.
+It must be gotten to utilizing the techniques for their present class.
+For instance - in school, an understudy can't exist without a class.
+Rest of the oop core concepts will be discussed in our next lecture.
+Hmm Before we end the lecture I will tell you some advantages of oop.
+OOP offers easy to understand and a clear modular structure for programs.
+Objects created for Object-Oriented Programs can be reused in other programs.
+Thus it saves significant development cost.
+Large programs are difficult to write, but if the development and designing team follow OOPS concept then they can better design with minimum flaws.
+It also enhances program modularity because every object exists independently.
+
+So, that is it for today's lecture on this module.
+I hope you'll get a brief idea on the OOP basic concept's,  which we discussed on the lecture.
+If you have any questions regarding this lesson, please ask.
+Here is my contact information.
+See you guys on next week.

@@ -1,0 +1,949 @@
+{% extends 'FirstApp/template.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<body id="page-top">
+<!-- Page Wrapper -->
+
+{% block javascript %}
+    {% load static %}
+
+    <!-- Bootstrap core JavaScript-->
+    <script src="{% static 'FirstApp/vendor/jquery/jquery.min.js' %}"></script>
+    <script src="{% static 'FirstApp/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+
+    <!-- Page level plugins -->
+    <script src="{% static 'FirstApp/vendor/datatables/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'FirstApp/vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+
+    <!-- Page level custom scripts -->
+    <script src="{% static 'FirstApp/js/demo/datatables-demo.js' %}"></script>
+
+    <!-- Core plugin JavaScript-->
+    <script src="{% static 'FirstApp/vendor/jquery-easing/jquery.easing.min.js' %}"></script>
+
+
+    <script type="text/javascript">
+
+        var global_subject = '';
+        var global_lecturer = '';
+        var global_lecture_video_id = '';
+        var global_video_name = '';
+        var global_lecturer_subject_index = 0;
+
+        //jquery
+        $(document).ready(function () {
+
+            //select a particular subject
+            $('input[type=radio]').click(function () {
+                let subject_id = $(this).attr('id');
+                global_subject = subject_id;
+                let lecturer = $(this).attr('data-lecturer');
+                global_lecturer = lecturer;
+                let subject_name = $(this).attr('data-name');
+
+                $('#timetable').attr('hidden', true);
+                $('#no_timetable_content').attr('hidden', true);
+                $('.student-detection-rows').remove();
+
+                $('#timetable_body').children().map(function () {
+                    $(this).remove();
+                });
+
+
+                $('#no_subject_selected').attr('hidden', true);
+
+                $('#timetable_caption').text('subject: ' + subject_name);
+                $('#loader').attr('hidden', false);
+
+                //fetching the timetable from the db
+                fetch('http://127.0.0.1:8000/timetables')
+                    .then((res) => res.json())
+                    .then((out) => createTimeTable(out, subject_id, lecturer))
+                    .catch((error) => alert('this is the error: ' + error))
+
+            });
+
+
+            $(document).on('click', '.btn-info', function (e) {
+
+                let clicked_class = e.target.className;
+                let object = e;
+                let real_class = clicked_class.split(' ')[1];
+                real_class = '.' + real_class;
+
+                let date = e.target.parentNode.parentNode.firstChild.innerHTML;
+
+                fetch('http://127.0.0.1:8000/get-lecture-video/?lecturer=' + global_lecturer + '&date=' + date + '&index=' + global_lecturer_subject_index)
+                    .then((res) => res.json())
+                    .then((out) => displayLectureVideoDetails(out, object))
+                    .catch((error) => alert('an error occurred: ' + error));
+            });
+
+
+            function createTimeTable(timetable, subject, lecturer) {
+                $('#loader').attr('hidden', true);
+                $('#timetable').attr('hidden', false);
+                let isTimetableSubject = false;
+
+                timetable.map((item, i) => {
+                    item.timetable.map((table, index) => {
+
+                        let lecturer_subject_index_arr = [];
+
+
+                        //to get the number of subjects taught by the lecturer in a day
+                        table.time_slots.forEach((slot1, ind) => {
+                            let isLecturer = slot1.lecturer.id === Number(lecturer);
+
+                            if (isLecturer) {
+                                lecturer_subject_index_arr.push(ind);
+                            }
+                        });
+
+
+                        //iterating each slot (for a given day)
+                        table.time_slots.forEach((slot, in1) => {
+                            let isLecturer = slot.lecturer.id === Number(lecturer);
+                            let isLecSubject = slot.subject.subject_code === subject;
+                            if (isLecturer && isLecSubject) {
+                                let html = '';
+                                global_lecturer_subject_index = lecturer_subject_index_arr.findIndex((inner) => inner === in1);
+                                isTimetableSubject = true;
+                                html += "<tr class='lecture-details'><td class='slot_date'>" + table.date + "</td>"
+                                    + "<td>" + slot.location + "</td>"
+                                    + "<td>" + slot.start_time + "</td>"
+                                    + "<td>" + slot.end_time + "</td>"
+                                    + "<td><button type='button' class='btn btn-info'>Video</button></td>"
+                                    + "<td></td>"
+                                    + "</tr>";
+
+                                $('#timetable_body').append(html);
+
+                            }
+                        });
+                    });
+
+                    if (!isTimetableSubject) {
+                        $('#timetable').attr('hidden', true);
+                        $('#no_timetable_content').attr('hidden', false);
+                    }
+
+
+                });
+            }
+
+            //function to display lecture video details
+            function displayLectureVideoDetails(lectureVideo, e) {
+
+                let video = lectureVideo.response;
+
+                $('#video_name').text(video.video_name);
+                $('#video_duration').text(video.video_length);
+                $('#video_date').text(video.date);
+                global_lecture_video_id = video.lecture_video_id;
+                global_video_name = video.video_name;
+
+
+                if (lectureVideo.isActivityFound) {
+                    e.target.parentNode.parentNode.lastChild.innerHTML = '<button type="button" class="btn btn-primary">Results</button>';
+                } else {
+                    e.target.parentNode.parentNode.lastChild.innerHTML = '<button type="button" class="btn btn-success">Process</button>';
+                }
+
+                $('#video_modal').modal();
+            }
+
+            //binding a click event for 'btn-primary' buttons
+            $(document).on('click', '.btn-primary', function (e) {
+
+                //removing the previous frames (if there is any)
+                $('#main_frames').remove();
+
+                //displaying the loader (for the frames)
+                $('#frame_loader').attr('hidden', false);
+                //hiding the temporary text
+                $('#temporary_text').attr('hidden', true);
+
+                fetch('http://127.0.0.1:8000/get-lecture-activity/?lecture_video_id=' + global_lecture_video_id + '&lecture_video_name=' + global_video_name)
+                    .then((res) => res.json())
+                    .then((out) => {
+                        let frames = createFrames(out);
+                        return frames
+                    })
+                    .then((obj) => {
+                        $('#video_frames').prepend(obj);
+                        $('#frame_loader').attr('hidden', true);
+                        $('#slidecontainer').attr('hidden', false);
+                    })
+                    .catch((error) => alert('this is the error: ' + error));
+            });
+
+            //displaying the activity percentages in the progress bars
+            function displayActivity(activity) {
+
+                //hiding the loader (for the frames)
+                $('#frame_loader').attr('hidden', true);
+
+                let src = "{% static '' %}FirstApp/videos/" + global_video_name;
+
+                //setting the video (set of frames)
+                $('video').attr({'hidden': false, 'src': src});
+
+
+                activity.response.map((act, index) => {
+                    //setting the percentage values
+                    $('#phone_perct').text(act.phone_perct + '%');
+                    $('#talking_perct').text(act.talking_perct + '%');
+                    $('#listening_perct').text(act.listening_perct + '%');
+                    $('#writing_perct').text(act.writing_perct + '%');
+
+                    //setting the width in the progress bars
+                    $('#phone_width').width(act.phone_perct + '%');
+                    $('#talking_width').width(act.talking_perct + '%');
+                    $('#listening_width').width(act.listening_perct + '%');
+                    $('#writing_width').width(act.writing_perct + '%');
+                });
+
+                //display the progress bar area
+                $('.progress_area').attr('hidden', false);
+            }
+
+            //to handle the 'btn-success' (process) button
+            $(document).on('click', '.btn-success', function (e) {
+
+                //sending the POST request to process the lecture activities
+                fetch('http://127.0.0.1:8000/process-lecture-activity/?lecture_video_name=' + global_video_name + '&lecture_video_id=' + global_lecture_video_id)
+                    .then((res) => res.json())
+                    .then((out) => handleResponse(out.response, e))
+                    .catch((error) => alert('error: ' + error));
+            });
+
+            //this is to change the button from 'process' to 'results'
+            function handleResponse(response, e) {
+                //change the button, if the response is positive
+                if (response) {
+                    e.target.parentNode.parentNode.lastChild.innerHTML = '<button type="button" class="btn btn-primary">Results</button>';
+                }
+            }
+
+
+            //this section is responsible for displaying the frames as  video
+            //creating the frame content
+            function createFrames(res) {
+                let main_frame_content = "<div class='row' id='main_frames'>";
+                main_frame_content += "<ul class='list-group list-group-horizontal'>";
+                let count = 0;
+                //loop through the frames
+                res.extracted.map((image) => {
+                    let img_src = "";
+                    let len = image.detections.length;
+
+
+                    if (count === 0) {
+                        main_frame_content += "<li class='list-group-item text-center' id='image_0'>";
+                        img_src = "<img src='{% static '' %}FirstApp/activity/" + global_video_name + "/" + res.extracted[0].frame + "/" + res.extracted[0].detections[0] + "' width='400' height='400'>";
+                    } else {
+                        main_frame_content += "<li class='list-group-item other-frames' id='image_" + count + "' hidden>";
+                        img_src = "<img src='{% static '' %}FirstApp/activity/" + global_video_name + "/" + image.frame + "/" + image.detections[len - 1] + "' class='img-link' width='400' height='400'>";
+                    }
+
+
+                    main_frame_content += img_src;
+                    main_frame_content += "</li>";
+                    count++;
+                });
+
+                main_frame_content += "</ul>";
+                main_frame_content += "</div>";
+
+
+                //setting the min, max values of the slider
+                $('#myActivityRange').attr({'min': 0, 'max': count});
+
+                //display the progress bars
+                displayActivity(res);
+
+                return main_frame_content;
+            }
+
+
+            //declaring the variable for setInterval function
+            let timeVar = null;
+
+            //handling the play button
+            $('#play_pause_icon_activity').click(function () {
+                //defining the two possible classes
+                let play_class = "fas fa-play";
+                let pause_class = "fas fa-pause";
+
+
+                //retrieving the current icon class
+                let current_class = $(this).attr('class');
+
+                //assigning the correct class based on the icon clicked
+                let new_class = (current_class === play_class) ? pause_class : play_class;
+
+                //setting the new class
+                $(this).attr('class', new_class);
+
+                //handling the slider
+                let slider = document.getElementById("myActivityRange");
+                let output = document.getElementById("demo");
+
+                //when the button is playing
+                if (current_class === play_class) {
+                    timeVar = setInterval(() => {
+                        let value = slider.value;
+                        let new_slider_value = Number(value) + 1;
+                        slider.value = new_slider_value;
+                        output.innerHTML = new_slider_value.toString();
+
+
+                        let selectedImage = '#image_' + Number(value);
+
+                        //displaying the relevant image
+                        $('#image_0').html($(selectedImage).html());
+
+                    }, 100);
+                }
+                //when the button is paused
+                else if (current_class === pause_class) {
+                    clearInterval(timeVar);
+                }
+
+
+            });
+
+
+            //handling the slider
+            let slider = document.getElementById("myActivityRange");
+            let output = document.getElementById("demo");
+            output.innerHTML = slider.value;
+
+            slider.oninput = function () {
+                output.innerHTML = this.value;
+                let selectedImage = '#image_' + Number(this.value);
+
+                //hide
+                {#$('#image_0').attr('hidden', true);#}
+                $('#image_0').html($(selectedImage).html());
+
+                //setting the selected image
+                {#$(selectedImage).attr('hidden', false);#}
+
+
+            };
+
+            $(document).on('click', '.img-link', function (e) {
+
+                //removing previously displayed detections
+                $('.detections').remove();
+
+                //removing the no-content message
+                $('#no_detection_message_content').hide();
+
+                //appearing the loader
+                $('#detection_loader').attr('hidden', false);
+
+                let img_src_arr = e.target.src.split('/');
+                let len = img_src_arr.length;
+                let src = img_src_arr[len - 1];
+                let frame_name_arr = src.split('.');
+                let frame_name = frame_name_arr[0];
+
+                //fetching the detection for the selected frame
+                fetch('http://127.0.0.1:8000/get-lecture-activity-frame-detection/?video_name=' + global_video_name + "&frame_name=" + frame_name)
+                    .then((res) => res.json())
+                    .then((out) => displayDetections(out.detections, frame_name))
+                    .catch((error) => alert('this is an error'));
+
+            });
+
+            //the function to display detections
+            function displayDetections(detections, frame_name) {
+                let img_string = '';
+                let no_of_detections = detections.length;
+
+                //disabling the loader
+                $('#detection_loader').attr('hidden', true);
+
+                //appearing the no of detections number area
+                $('#detection_number_area').attr('hidden', false);
+                $('#no_of_detections').text(no_of_detections);
+
+                detections.map((detection) => {
+                    img_string += "<img src='{% static '' %}FirstApp/activity/" + global_video_name + "/" + frame_name + "/" + detection + "' class='detections m-2' width='100' height='100' >"
+                });
+
+                $('#detection_frames').prepend(img_string);
+
+            }
+
+
+            //listening for click events in labels
+            $('.labels').click(function () {
+
+                let label = Number($(this).attr('data-number'));
+
+                //removing the previous student detection lists
+                $('.student_detection_lists').remove();
+
+                //appearing the loader
+                $('#detection_student_loader').attr('hidden', false);
+                //disappearing the no content message
+                $('#no_detection_student_content').attr('hidden', true);
+
+                //fetching from the api
+                fetch('http://127.0.0.1:8000/get-lecture-activity-detection-for-label/?video_name=' + global_video_name + '&label=' + label)
+                    .then((res) => res.json())
+                    .then((out) => createDetectedStudentFrames(out))
+                    .catch((error) => alert('this is the error: ' + error))
+            });
+
+
+            //creating the detected students frames
+            function createDetectedStudentFrames(detections) {
+
+                let htmlString = "";
+                //iterating through the student
+                detections.people.map((student) => {
+
+                    let title = student.split('.')[0];
+                    let images = "";
+                    htmlString += "<div class='row p-3 student-detection-rows'>";
+
+                    let student_count = 0;
+
+                    //iterating through the frames
+                    detections.response.map((frame) => {
+                        let frame_detections = frame.detections;
+
+                        if (frame_detections.includes(student)) {
+
+
+                            if (student_count === 0) {
+                                images += "<li class='list-group-item frame-0' id='image_0_" +title+ "'>";
+                            }
+                            else {
+                                images += "<li class='list-group-item other-student-frames' id='image_" +student_count+ "_" +title+ "' hidden>";
+                            }
+
+                            images += "<img src='{% static '' %}FirstApp/Activity/" + global_video_name + "/" + frame.frame + "/" + student + "' width='200' height='200'>";
+                            images += "</li>";
+
+                            //increment the student count
+                            student_count++;
+                        }
+                    });
+
+                    htmlString += "<h6 class='font-italic'>" + title + "</h6>";
+                    htmlString += "<ul class='list-group list-group-horizontal student_detection_lists' style='overflow-x: scroll'>";
+                    htmlString += images;
+                    htmlString += "</ul>";
+                    htmlString += "<div class='slidecontainer'>";
+                    htmlString += "<div class='row m-3'></div>";
+                    htmlString += "<div class='row'>";
+                    htmlString += "<span><i class='fas fa-play play-pause-icon-student-frames' id='icon_" +title+ "'></i></span>";
+                    htmlString += "</div>";
+                    htmlString += "<input type='range' min='1' max='100' value='0' class='slider' id='slider_" +title+ "'>";
+                    htmlString += "<p>No of frames: <span id='demo_" +title+ "'></span></p>";
+                    htmlString += "</div>";
+                    htmlString += "</div>";
+                });
+
+                //disappearing the loader
+                $('#detection_student_loader').attr('hidden', true);
+
+                //append to the relevant html card content
+                $('#detection_students').append(htmlString);
+
+            }
+
+
+            let studentTimeVar = null;
+
+            //playing the frames for each student detection
+            $(document).on('click', '.play-pause-icon-student-frames', function (e) {
+
+                //defining the two possible classes
+                let play_class = "fas fa-play play-pause-icon-student-frames";
+                let pause_class = "fas fa-pause play-pause-icon-student-frames";
+
+
+                //retrieving the current icon class
+                let current_class = $(this).attr('class');
+
+
+                //assigning the correct class based on the icon clicked
+                let new_class = (current_class === play_class) ? pause_class : play_class;
+
+
+                //setting the new class
+                $(this).attr('class', new_class);
+
+                //extracting the title pf the clicked icon
+                let title_part = $(this).attr('id');
+                let title = title_part.split("_")[1];
+
+
+                //handling the slider
+                let slider = document.getElementById("slider_" + title);
+                let output = document.getElementById("demo_" + title);
+
+
+                //when the button is playing
+                if (current_class === play_class) {
+                    studentTimeVar = setInterval(() => {
+                        let value = slider.value;
+                        let new_slider_value = Number(value) + 1;
+                        slider.value = new_slider_value;
+                        output.innerHTML = new_slider_value.toString();
+
+
+                        let selectedImage = '#image_' +Number(value)+ '_' + title;
+
+                        //displaying the relevant image
+                        $('#image_0_' + title).html($(selectedImage).html());
+
+                    }, 100);
+                }
+
+                //when the button is paused
+                else if (current_class === pause_class) {
+                    clearInterval(studentTimeVar);
+                }
+
+            })
+
+
+        });
+
+    </script>
+
+
+{% endblock %}
+
+<div id="wrapper">
+    <!-- Sidebar -->
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+
+        <!-- Main Content -->
+        <div id="content">
+
+            <!-- Begin Page Content -->
+            {% block 'container-fluid' %}
+                <div class="container-fluid">
+                    {% load static %}
+
+                    <!-- Page Heading -->
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <h1 class="h3 mb-0 text-gray-800">Student Gaze Estimation</h1>
+                    </div>
+
+                    <!--first row -->
+                    <div class="row p-2">
+
+                        <!--first column -->
+                        <div class="col-lg-6" style="overflow-x: scroll">
+                            <div class="card shadow mb-4">
+                                <!--card header -->
+                                <div class="card-header py-3">
+                                    <h5 class="m-0 font-weight-bold text-primary">Lecturer Subjects</h5>
+                                </div>
+
+                                <!--card body -->
+                                <div class="card-body">
+                                    {% if lecturer_subjects.count == 0 %}
+                                        <div class="text-center">
+                                            <span class="font-italic">No subjects</span>
+                                        </div>
+                                    {% else %}
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered" id="datatable">
+                                                <thead>
+                                                <tr>
+                                                    <th></th>
+                                                    <th>Subject Name</th>
+                                                    <th>Code</th>
+                                                    <th>Year</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                {% for subject in subjects %}
+                                                    <tr class="subjects not_clicked" id="{{ subject.0.subject_code }}">
+                                                        <td>
+                                                            <div class="radio">
+                                                                <label><input type="radio"
+                                                                              id="{{ subject.0.subject_code }}"
+                                                                              name="subject_radio"
+                                                                              data-name="{{ subject.0.name }}"
+                                                                              data-lecturer="{{ lecturer }}"></label>
+                                                            </div>
+                                                        </td>
+                                                        <td>{{ subject.0.name }}</td>
+                                                        <td>{{ subject.0.subject_code }}</td>
+                                                        <td>{{ subject.0.year }}</td>
+                                                    </tr>
+                                                {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <!--end of first column -->
+
+                        <!--second column (timetable column) -->
+                        <div class="col-lg-6" style="overflow-x: scroll">
+                            <div class="card shadow mb-4">
+                                <!--card header -->
+                                <div class="card-header py-3">
+                                    <h5 class="m-0 font-weight-bold text-primary">View timetable</h5>
+                                </div>
+
+                                <!--card body -->
+                                <div class="card-body">
+
+                                    <!--loading gif -->
+                                    <div class="text-center" id="no_subject_selected">
+                                        <span class="font-italic">No lecture is selected</span>
+                                    </div>
+                                    <!--no lecture selected message -->
+                                    <div class="text-center" id="loader" hidden>
+                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="Loader">
+                                    </div>
+                                    <!--no lecture selected message -->
+                                    <div class="text-center" id="no_timetable_content" hidden>
+                                        <span class="font-italic">Not included in the timetable</span>
+                                    </div>
+                                    <!--displaying the timetable -->
+                                    <table class="table table-striped" id="timetable" hidden>
+                                        {#                                    <caption id="timetable_caption"></caption>#}
+                                        <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Hall No.</th>
+                                            <th>start time</th>
+                                            <th>end time</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="timetable_body">
+
+                                        </tbody>
+                                    </table>
+
+
+                                </div>
+                            </div>
+                        </div>
+                        <!--end of second column -->
+
+                    </div>
+                    <!--end of 1st row -->
+
+                    <!--2nd row -->
+                    <div class="row p-2">
+
+                        <!--1st column -->
+                        <div class="col-lg-6">
+                            <!--card content -->
+                            <div class="card shadow mb-4">
+                                <!--card header -->
+                                <div class="card-header py-3">
+                                    <h5 class="m-0 font-weight-bold text-primary">Gaze Estimation</h5>
+                                </div>
+
+                                <!--card body -->
+                                <div class="card-body">
+
+                                    <!--nav tabs-->
+                                    <ul class="nav nav-tabs nav-fill" id="nav_bar" role="tablist">
+                                        <li class="nav-item">
+                                            <a class="nav-link active" id="frame-tab" data-toggle="tab" href="#frame"
+                                               role="tab" aria-controls="frame" aria-selected="true">Frame</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" id="graph-tab" data-toggle="tab" href="#graph"
+                                               role="tab" aria-controls="graph" aria-selected="false">Graphs</a>
+                                        </li>
+                                    </ul>
+
+                                    <!--tab content -->
+                                    <div class="tab-content" id="tabContentDetails">
+                                        <!--frame tab -->
+                                        <div class="tab-pane fade show active" id="frame" role="tabpanel"
+                                             aria-labelledby="home-tab">
+                                            <!--this area will display the frame -->
+                                            <div class="text-center" id="frame_area" style="height: 600px">
+                                                <!--temporary text -->
+                                                <span class="font-italic" id="temporary_text">Frame will be displayed here</span>
+
+                                                <!--loading buffer area-->
+                                                <div class="text-center" id="frame_loader" hidden>
+                                                    <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
+                                                         alt="Loader">
+                                                </div>
+
+                                                <!--frames -->.
+                                                <div class="text-center p-4" id="video_frames">
+                                                    <!-- slide container -->
+                                                    <div id="slidecontainer" hidden>
+                                                        <div class="row m-3"></div>
+                                                        <!-- play/pause icon -->
+                                                        <div class="row">
+                                                            <span><i class="fas fa-play"
+                                                                     id="play_pause_icon_activity"></i></span>
+                                                        </div>
+                                                        <input type="range" min="1" max="100" value="0" class="slider"
+                                                               id="myActivityRange">
+                                                        <p>No of frames: <span id="demo"></span></p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!--this area will display the progress bars -->
+                                            <div class="progress_area" hidden>
+                                                <!--talking with friends -->
+                                                <a href="#" class="btn btn-link labels" data-number="1">
+                                                    <h4 class="small font-weight-bold">Talking with friends</h4>
+                                                </a>
+                                                <span class="float-right" id="talking_perct">40%</span>
+                                                <div class="progress mb-4">
+                                                    <div class="progress-bar bg-danger" role="progressbar"
+                                                         id="talking_width"
+                                                         style="width: 20%"
+                                                         aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+
+                                                <!--phone checking -->
+                                                <a href="#" class="btn btn-link labels" data-number="0">
+                                                    <h4 class="small font-weight-bold">Phone checking</h4>
+                                                </a>
+                                                <span class="float-right" id="phone_perct">45%</span>
+                                                <div class="progress mb-4">
+                                                    <div class="progress-bar bg-warning" role="progressbar"
+                                                         id="phone_width"
+                                                         style="width: 40%"
+                                                         aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+
+                                                <!--note taking -->
+                                                <a href="#" class="btn btn-link labels" data-number="2">
+                                                    <h4 class="small font-weight-bold">Writing</h4>
+                                                </a>
+                                                <span class="float-right" id="writing_perct">50%</span>
+                                                <div class="progress mb-4">
+                                                    <div class="progress-bar" role="progressbar" id="writing_width"
+                                                         style="width: 60%"
+                                                         aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+
+                                                <!--listening-->
+                                                <a href="#" class="btn btn-link labels">
+                                                    <h4 class="small font-weight-bold">Listening</h4>
+                                                </a>
+                                                <span class="float-right" id="listening_perct">60%</span>
+                                                <div class="progress mb-4">
+                                                    <div class="progress-bar bg-info" role="progressbar"
+                                                         id="listening_width" style="width: 80%"
+                                                         aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                        <!--graph tab -->
+                                        <div class="tab-pane fade" id="graph" role="tabpanel"
+                                             aria-labelledby="profile-tab">
+                                            <!--card content -->
+                                            <div class="card shadow mb-4 p-3">
+                                                <!-- Card Header - Dropdown -->
+                                                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                                    <h6 class="m-0 font-weight-bold text-primary">Student
+                                                        Activities</h6>
+                                                    <div class="dropdown no-arrow">
+                                                        <a class="dropdown-toggle" href="#" role="button"
+                                                           id="dropdownMenuLink" data-toggle="dropdown"
+                                                           aria-haspopup="true" aria-expanded="false">
+                                                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                                        </a>
+                                                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                                                             aria-labelledby="dropdownMenuLink">
+                                                            <div class="dropdown-header">Dropdown Header:</div>
+                                                            <a class="dropdown-item" href="#">Action</a>
+                                                            <a class="dropdown-item" href="#">Another action</a>
+                                                            <div class="dropdown-divider"></div>
+                                                            <a class="dropdown-item" href="#">Something else here</a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- Card Body -->
+                                                <div class="card-body">
+                                                    <div class="chart-pie pt-4 pb-2">
+                                                        <canvas id="myPieChart"></canvas>
+                                                    </div>
+                                                    <div class="mt-4 text-center small">
+                    <span class="mr-2">
+                      <i class="fas fa-circle text-primary"></i> Direct
+                    </span>
+                                                        <span class="mr-2">
+                      <i class="fas fa-circle text-success"></i> Social
+                    </span>
+                                                        <span class="mr-2">
+                      <i class="fas fa-circle text-info"></i> Referral
+                    </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!--2nd column -->
+                        <div class="col-lg-6">
+                            <!--card content -->
+                            <div class="card shadow mb-4">
+                                <!--card header -->
+                                <div class="card-header py-3">
+                                    <h5 class="m-0 font-weight-bold text-primary">Frame Detections</h5>
+                                </div>
+
+                                <!--card body -->
+                                <div class="text-center p-4" id="detection_frames">
+
+                                    <!--no content message-->
+                                    <div class="text-center p-2" id="no_detection_message_content">
+                                        <span class="font-italic">No frame is selected</span>
+                                    </div>
+
+                                    <div class="text-left m-3" id="detection_number_area" hidden>
+                                        <p>No of detections: <span id="no_of_detections"></span></p>
+                                    </div>
+                                    <!--the detection loader -->
+                                    <div class="text-center p-2" id="detection_loader" hidden>
+                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
+                                             alt="Loader">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!--detection person card -->
+                            <div class="card shadow mb-4">
+                                <!--card header -->
+                                <div class="card-header py-3">
+                                    <h5 class="m-0 font-weight-bold text-primary">Detected Students</h5>
+                                </div>
+
+                                <!--card body -->
+                                <div class="text-center p-4" id="detection_students">
+                                    <!--no content message-->
+                                    <div class="text-center p-2" id="no_detection_student_content">
+                                        <span class="font-italic">No activity type is selected</span>
+                                    </div>
+
+                                    <!--the detection student loader -->
+                                    <div class="text-center p-2" id="detection_student_loader" hidden>
+                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
+                                             alt="Loader">
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+
+                    </div>
+                    <!-- end of 2nd row -->
+
+                    <!--3rd row -->
+                    <div class="row p-2">
+
+
+                    </div>
+                    <!--end of 3rd row -->
+
+
+                </div>
+            {% endblock %}
+            <!-- End of container-fluid -->
+
+        </div>
+        <!-- End of Main Content -->
+
+    </div>
+    <!-- End of Content Wrapper -->
+
+</div>
+
+{% block 'modal' %}
+    <div class="modal fade" id="video_modal" role="dialog" aria-labelledby="gif-body">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Video details</h2>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="font-weight-bold">Video Name</td>
+                            <td id="video_name"></td>
+                        </tr>
+                        <tr>
+                            <td class="font-weight-bold">Duration</td>
+                            <td id="video_duration"></td>
+                        </tr>
+                        <tr>
+                            <td class="font-weight-bold">Date of Creation</td>
+                            <td id="video_date"></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- modal footer -->
+                <div class="modal-footer">
+                    <button type="button" data-dismiss="modal" class="btn btn-danger text-white">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Logout Modal-->
+    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                    <a class="btn btn-primary" href="/logout">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+</body>
+</html>
