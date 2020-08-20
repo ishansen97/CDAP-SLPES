@@ -1,6 +1,7 @@
-# Integrated_SLPES
+#SLPES Mobile Application
 
-ntroduction
+
+Introduction
 This project will be created under the guidelines provided by the Research Project module offered in 4th Year by the Faculty of Computing. The title of the project is "Student and Lecturer Performance Enhancement System". This Research Project comes under the domain of Artifical Intelligence and Machine Learning along with the support of Computer Vision.
 
 Main Objective
