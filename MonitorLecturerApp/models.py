@@ -2,6 +2,9 @@ from django.db import models
 from djongo import models
 
 # Create your models here.
+from FirstApp.MongoModels import Subject, Lecturer
+from LectureSummarizingApp.models import LectureAudioSummary
+
 
 class RegisterTeacher(models.Model):
     fName = models.CharField(max_length = 15)
@@ -14,7 +17,7 @@ class RegisterTeacher(models.Model):
         return self.fName
 
 
-class tVideo(models.Model):
+class LecturerVideo(models.Model):
     name = models.CharField(max_length=100)
     path = models.CharField(max_length=100)
     duration = models.CharField(max_length=100)
@@ -26,7 +29,7 @@ class tVideo(models.Model):
         return self.name
 
 
-class tVideoMetaData(models.Model):
+class LecturerVideoMetaData(models.Model):
     fps = models.IntegerField()
     frame_count = models.IntegerField()
     seated_count = models.IntegerField()
@@ -51,18 +54,32 @@ class tVideoMetaData(models.Model):
         self.calWalkPercent()
 
 
-class lectureAudio (models.Model):
-    lecture_audio_id = models.CharField(max_length=10)
-    lecturer_date = models.DateField()
-    lecture_audio_name = models.CharField(max_length=50)
-    lecture_audio_length = models.DurationField()
-    # lecturer = models.ForeignKey(Lecturer, on_delete=models.CASCADE, default=0)
-    # subject = models.ForeignKey(Subject, on_delete=models.CASCADE, default=0)
+class LecturerAudioText (models.Model):
+    lecturer_audio_text_id = models.CharField(max_length=10)
+    lecturer_audio_text_wordcount = models.IntegerField()
+    lecturer_audio_text_lexical_wordcount = models.IntegerField()
+    lecturer_audio_text_non_lexical_wordcount = models.IntegerField()
+    lecturer_audio_text_status = models.CharField(
+        max_length=15,
+        choices=(
+            ("Below", "Below"),
+            ("Average", "Average"),
+            ("Excellent", "Excellent")
+        ),
+        default="Average"
+    )
+    lecturer_audio_original_text = models.ForeignKey(LectureAudioSummary, on_delete=models.CASCADE, default=0)
 
-class lectureRecordedVideo (models.Model):
+    def __str__(self):
+        return self.lecturer_audio_text_id
+
+class LectureRecordedVideo (models.Model):
     lecture_video_id = models.CharField(max_length=10)
     lecturer_date = models.DateField()
     lecture_video_name = models.CharField(max_length=50)
     lecture_video_length = models.DurationField()
-    # lecturer = models.ForeignKey(Lecturer, on_delete=models.CASCADE, default=0)
-    # subject = models.ForeignKey(Subject, on_delete=models.CASCADE, default=0)
+    lecturer = models.ForeignKey(Lecturer, on_delete=models.CASCADE, default=0)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, default=0)
+
+    def __str__(self):
+        return self.lecture_video_id

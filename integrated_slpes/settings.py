@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'FirstApp.apps.FirstappConfig',
     'AttendanceApp.apps.AttendanceappConfig',
     'MonitorLecturerApp.apps.MonitorlecturerappConfig',
+    'LectureSummarizingApp.apps.LectureSummarizingAppConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
