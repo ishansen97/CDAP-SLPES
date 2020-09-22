@@ -4,13 +4,17 @@ from django.conf.urls import url
 from rest_framework import routers
 from rest_framework.views import APIView
 from rest_framework.response import Response
+
+from LectureSummarizingApp.models import LectureAudio
+from LectureSummarizingApp.serializer import LectureAudioSerializer
 from . import views
-from . models import RegisterTeacher, tVideo
+from .models import RegisterTeacher, LecturerVideo
 from . serializers import RegisterTeacherSerializer
 
 import cv2
 import os
 import datetime
+from datetime import datetime as dt
 
 
 
@@ -45,8 +49,29 @@ def hello(request):
     videos = []
     durations = []
 
+    # retrieve audio details from db
+    lecture_audio = LectureAudio.objects.all()
+    lec_audio_serializer = LectureAudioSerializer(lecture_audio, many=True)
+    lec_audio_data = lec_audio_serializer.data
+
+    lec_list = []
+
+    for audio in lec_audio_data:
+        lec_audio_object = {}
+        lec_audio_object["id"] = audio["id"]
+        lec_audio_object["date"] = audio["lecturer_date"]
+        lec_audio_object["subject"] = audio["subject"]["name"]
+        lec_audio_object["lecturer"] = audio["lecturer"]["fname"] + " " + audio["lecturer"]["lname"]
+        lec_audio_object["lecturer_id"] = audio["lecturer"]["id"]
+
+        # append to the list
+        lec_list.append(lec_audio_object)
+
+    # the list needs to be sorted by the date
+    lec_list.sort(key=lambda date: dt.strptime(str(date['date']), "%Y-%m-%d"), reverse=True)
+
     for videoPath in videoPaths:
-        video = tVideo()
+        video = LecturerVideo()
         cap = cv2.VideoCapture(videoPath)
         fps = cap.get(cv2.CAP_PROP_FPS)  # OpenCV2 version 2 used "CV_CAP_PROP_FPS"
         frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -60,7 +85,7 @@ def hello(request):
         video.duration = str(durationObj)
         videos.append(video)
         print('Video Name: ', video.name)
-    context = {'object': obj, 'Videos': videos, 'durations': durations, 'template_name': 'MonitorLecturerApp/template.html'}
+    context = {'object': obj, 'Videos': videos, 'durations': durations, 'template_name': 'MonitorLecturerApp/template.html', 'lec_list': lec_list}
     return render(request, 'MonitorLecturerApp/index.html', context)
 
 
@@ -108,7 +133,7 @@ def lecVideo(request):
     durations = []
 
     for videoPath in videoPaths:
-        video = tVideo()
+        video = LecturerVideo()
         cap = cv2.VideoCapture(videoPath)
         fps = cap.get(cv2.CAP_PROP_FPS)  # OpenCV2 version 2 used "CV_CAP_PROP_FPS"
         frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))

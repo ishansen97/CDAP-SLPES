@@ -28,7 +28,16 @@ urlpatterns = [
     url(r'^activities/$', api.ActivityRecognitionAPI.as_view()),
 
     # API to retrieve audio analysis
-    url(r'^get-audio-analysis', api.GetLectureAudioAnalysis.as_view()),
+    url(r'^get-audio-analysis/$', api.GetLectureAudioAnalysis.as_view()),
+
+    # API to retrieve lecture audio text
+    url(r'^get-lecture-audio-text', api.LectureAudioTextAPI.as_view()),
+
+    # API to retrieve lecture audio text
+    url(r'^get-lecturer-audio-summary-for-period', api.LecturerAudioSummaryPeriodAPI.as_view()),
+
+    # test API
+    url(r'^test-api', api.TestAPI.as_view()),
 
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
 
