@@ -26,7 +26,15 @@ urlpatterns = [
     # # path('Video', views.hello)
 
     # API to retrieve activity recognition
-    url(r'^get-lecture-audio/$', api.LectureAudioAPI.as_view()),
+    url(r'^lecture-audio/$', api.LectureAudioAPI.as_view()),
+
+    url(r'^lecture-audio-noise-removed/$', api.audioNoiseRemovedList.as_view()),
+
+    url(r'^lecture-audio-to-text/$', api.audioToTextList.as_view()),
+
+    url(r'^lecture-summary/$', api.lectureSummaryList.as_view()),
+
+    url(r'^lecture-notices/$', api.lectureNoticeList.as_view()),
 
     # # API to retrieve audio analysis
     # url(r'^get-audio-analysis', api.GetLectureAudioAnalysis.as_view()),
