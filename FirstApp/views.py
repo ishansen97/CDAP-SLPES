@@ -127,6 +127,7 @@ def hello(request):
         duration = int(frame_count / fps)
         durations.append(duration)
         videoName = os.path.basename(videoPath)
+        videoName = os.path.basename(videoPath)
         # videoName = videos.append(os.path.basename(videoPath))
         durationObj = datetime.timedelta(seconds=duration)
         video.path = videoPath
