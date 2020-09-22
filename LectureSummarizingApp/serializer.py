@@ -14,8 +14,24 @@ class LectureAudioSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class LectureAudioSummarySerializer(serializers.ModelSerializer):
+class LectureAudioNoiseRemovedSerializer(serializers.ModelSerializer):
     lecture_audio_id = LectureAudioSerializer()
+
+    class Meta:
+        model = LectureAudioNoiseRemoved
+        fields = '__all__'
+
+
+class LectureSpeechToTextSerializer(serializers.ModelSerializer):
+    lecture_speech_to_text_id = LectureAudioNoiseRemovedSerializer()
+
+    class Meta:
+        model = LectureSpeechToText
+        fields = '__all__'
+
+
+class LectureAudioSummarySerializer(serializers.ModelSerializer):
+    lecture_audio_noise_removed_id = LectureSpeechToTextSerializer()
 
     class Meta:
         model = LectureAudioSummary
