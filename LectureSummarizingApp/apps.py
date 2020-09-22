@@ -1,5 +1,5 @@
 from django.apps import AppConfig
 
 
-class LecturesummarizingappConfig(AppConfig):
+class LectureSummarizingAppConfig(AppConfig):
     name = 'LectureSummarizingApp'

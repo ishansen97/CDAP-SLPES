@@ -128,7 +128,7 @@ class LectureActivity(models.Model):
 # Lecture emotion report
 class LectureEmotionReport(models.Model):
     lecture_emotion_id = models.CharField(max_length=10)
-    lecture_video_id = models.ForeignKey(LectureVideo, on_delete=models.CASCADE)
+    lecture_video_id = models.ForeignKey(LectureVideo, on_delete=models.CASCADE, default=0)
     happy_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
     sad_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
     angry_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
