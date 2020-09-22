@@ -8,6 +8,7 @@ router = routers.DefaultRouter()
 # router.register(r'^register', views.register)
 
 urlpatterns = [
+    path('lecture', views.summarization),
     # path('', views.hello),
     # path('login', views.login),
     # path('register', views.register),
