@@ -36,3 +36,11 @@ class LectureAudioSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = LectureAudioSummary
         fields = '__all__'
+
+
+class LectureNoticesSerializer(serializers.ModelSerializer):
+    lecture_audio_noise_removed_id = LectureSpeechToTextSerializer()
+
+    class Meta:
+        model = LectureAudioSummary
+        fields = '__all__'
