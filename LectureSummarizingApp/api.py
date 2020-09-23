@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from LectureSummarizingApp.models import LectureAudio, LectureAudioNoiseRemoved, LectureSpeechToText, \
     LectureAudioSummary, LectureNotices
 from LectureSummarizingApp.serializer import LectureAudioSerializer, LectureAudioNoiseRemovedSerializer, \
-    LectureSpeechToTextSerializer, LectureAudioSummarySerializer
+    LectureSpeechToTextSerializer, LectureAudioSummarySerializer, LectureNoticesSerializer
 
 
 # this API will retrieve lecture audio details
@@ -66,17 +66,20 @@ class lectureSummaryList(APIView):
         ).save()
         return Response({"response": request.data})
 
-    class lectureNoticeList(APIView):
 
-        def get(self, request):
-            lecture_notice_id = LectureNotices.objects.all()
-            serializer = LectureSpeechToTextSerializer(lecture_notice_id, many=True)
-            return Response(serializer.data)
 
-        def post(self, request):
-            LectureSpeechToText(
-                lecture_notice_id=request.data["lecture_notice_id"],
-                lecture_audio_id=request.data["lecture_audio_id"],
-                notice_text=request.data["notice_text"]
-            ).save()
-            return Response({"response": request.data})
+class lectureNoticeList(APIView):
+
+    def get(self, request):
+        lecture_notice_id = LectureNotices.objects.all()
+        serializer = LectureNoticesSerializer(lecture_notice_id, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        LectureNotices(
+            lecture_notice_id=request.data["lecture_notice_id"],
+            lecture_audio_id=request.data["lecture_audio_id"],
+            notice_text=request.data["notice_text"]
+        ).save()
+        return Response({"response": request.data})
+

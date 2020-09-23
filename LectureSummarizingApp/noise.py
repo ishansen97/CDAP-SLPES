@@ -19,16 +19,16 @@ def read_file(file_name):
     return y, sr
 
 
-'''CENTROID'''
-
-def reduce_noise_centroid_s(y, sr):
-
-    cent = librosa.feature.spectral_centroid(y=y, sr=sr)
-    threshold_h = np.max(cent)
-    threshold_l = np.min(cent)
-    less_noise = AudioEffectsChain().lowshelf(gain=-12.0, frequency=threshold_l, slope=0.5).highshelf(gain=-12.0, frequency=threshold_h, slope=0.5).limiter(gain=6.0)
-    y_cleaned = less_noise(y)
-    return y_cleaned
+# '''CENTROID'''
+#
+# def reduce_noise_centroid_s(y, sr):
+#
+#     cent = librosa.feature.spectral_centroid(y=y, sr=sr)
+#     threshold_h = np.max(cent)
+#     threshold_l = np.min(cent)
+#     less_noise = AudioEffectsChain().lowshelf(gain=-12.0, frequency=threshold_l, slope=0.5).highshelf(gain=-12.0, frequency=threshold_h, slope=0.5).limiter(gain=6.0)
+#     y_cleaned = less_noise(y)
+#     return y_cleaned
 
 
 
@@ -111,19 +111,19 @@ for s in lectures:
     y, sr = read_file(filename)
 
 
-    y_reduced_centroid_s = reduce_noise_centroid_s(y, sr)
+    # y_reduced_centroid_s = reduce_noise_centroid_s(y, sr)
     y_reduced_mfcc_lowshelf = mfcc_lowshelf(y, sr)
     y_reduced_mfcc_highshelf = mffc_highshelf(y, sr)
 
 
     # trimming silences
-    y_reduced_centroid_s, time_trimmed = trim_silence(y_reduced_centroid_s)
+    # y_reduced_centroid_s, time_trimmed = trim_silence(y_reduced_centroid_s)
     y_reduced_mfcc_up, time_trimmed = trim_silence(mfcc_lowshelf)
     y_reduced_mfcc_down, time_trimmed = trim_silence(mffc_highshelf)
 
 
 
-    output_file('lectures_trimmed_noise_reduced/' ,filename, y_reduced_centroid_s, sr, '_ctr_s')
+    # output_file('lectures_trimmed_noise_reduced/' ,filename, y_reduced_centroid_s, sr, '_ctr_s')
     output_file('lectures_trimmed_noise_reduced/' ,filename, y_reduced_mfcc_up, sr, '_mfcc_up')
-    output_file('lectures_trimmed_noise_reduced/' ,filename, y_reduced_mfcc_down, sr, '_mfcc_down')
-    output_file('lectures_trimmed_noise_reduced/' ,filename, y, sr, '_org')
+    # output_file('lectures_trimmed_noise_reduced/' ,filename, y_reduced_mfcc_down, sr, '_mfcc_down')
+    # output_file('lectures_trimmed_noise_reduced/' ,filename, y, sr, '_org')

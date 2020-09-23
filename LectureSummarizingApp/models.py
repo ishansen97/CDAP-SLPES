@@ -19,7 +19,7 @@ class LectureAudio (models.Model):
 
 class LectureAudioNoiseRemoved (models.Model):
     lecture_audio_noise_removed_id = models.CharField(max_length=10)
-    lecture_audio_id = models.ForeignKey(LectureAudio, on_delete=models.CASCADE)
+    lecture_audio_id = models.ForeignKey(LectureAudio, on_delete=models.CASCADE, default=0)
     lecturer_date = models.DateField()
     lecture_audio_name = models.CharField(max_length=50)
     lecture_audio_length = models.DurationField()
@@ -45,6 +45,7 @@ class LectureAudioSummary (models.Model):
 
     def __str__(self):
         return self.lecture_audio_summary_id
+
 
 class LectureNotices (models.Model):
     lecture_notice_id = models.CharField(max_length=10)
