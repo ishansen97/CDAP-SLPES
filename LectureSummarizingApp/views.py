@@ -6,13 +6,35 @@ from rest_framework.response import Response
 from rest_framework import viewsets
 from .models import LectureAudio, LectureAudioNoiseRemoved, LectureSpeechToText, LectureAudioSummary, LectureNotices
 from .serializer import LectureAudioSerializer, LectureAudioNoiseRemovedSerializer, LectureAudioSummarySerializer, \
-    LectureSpeechToTextSerializer
+    LectureSpeechToTextSerializer, LectureNoticesSerializer
 
 
 # Create your views here.
 
 def summarization(request):
-    return render(request, "LectureSummarizingApp/summarization.html")
+
+    lec_audio = LectureAudio.objects.all()
+    lec_audio_serializer = LectureAudioSerializer(lec_audio, many=True)
+    data = lec_audio_serializer.data
+
+    lec_noiseless_audio = LectureAudioNoiseRemoved.objects.all()
+    lec_noiseless_audio_ser = LectureAudioNoiseRemovedSerializer(lec_noiseless_audio, many=True)
+    noiseless_data = lec_noiseless_audio_ser.data
+
+    lec_text = LectureSpeechToText.objects.all()
+    lec_text_ser = LectureSpeechToTextSerializer(lec_text, many=True)
+    lecture_text_data = lec_text_ser.data
+
+    lec_summary = LectureAudioSummary.objects.all()
+    lec_summary_ser = LectureAudioSummarySerializer(lec_summary, many=True)
+    lec_summary_data = lec_summary_ser.data
+
+    lec_notice = LectureNotices.objects.all()
+    lec_notice_ser = LectureNoticesSerializer(lec_notice, many=True)
+    lec_notice_data = lec_notice_ser.data
+
+
+    return render(request, "LectureSummarizingApp/summarization.html", {"lec_audio_data": data, "noiseless_data": noiseless_data,"lecture_text_data": lecture_text_data, "lec_summary_data" : lec_summary_data, "lec_notice_data":lec_notice_data})
 
 
 class audioList(APIView):
@@ -79,11 +101,11 @@ class lectureSummaryList(APIView):
 
         def get(self, request):
             lecture_notice_id = LectureNotices.objects.all()
-            serializer = LectureSpeechToTextSerializer(lecture_notice_id, many=True)
+            serializer = LectureNoticesSerializer(lecture_notice_id, many=True)
             return Response(serializer.data)
 
         def post(self, request):
-            LectureSpeechToText(
+            LectureNotices(
                 lecture_notice_id=request.data["lecture_notice_id"],
                 lecture_audio_id=request.data["lecture_audio_id"],
                 notice_text=request.data["notice_text"]
