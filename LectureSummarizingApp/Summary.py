@@ -14,7 +14,7 @@ doc = nlp(text)
 corpus = [sent.text.lower() for sent in doc.sents ]
 cv = CountVectorizer(stop_words=list(STOP_WORDS))
 cv_fit=cv.fit_transform(corpus)
-word_list = cv.get_feature_names();
+word_list = cv.get_feature_names()
 count_list = cv_fit.toarray().sum(axis=0)
 word_frequency = dict(zip(word_list,count_list))
 
@@ -37,6 +37,8 @@ for sent in doc.sents:
 top_sentences=(sorted(sentence_rank.values())[::-1])
 top_sent=top_sentences[:3]
 
+
+
 summary=[]
 for sent,strength in sentence_rank.items():
     if strength in top_sent:
@@ -44,4 +46,6 @@ for sent,strength in sentence_rank.items():
     else:
         continue
 for i in summary:
-    print(i,end=" ")
+    file = open('Summary01.txt', 'w')
+    file.write(str(i))
+    file.close()

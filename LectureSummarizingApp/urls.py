@@ -30,7 +30,7 @@ urlpatterns = [
 
     url(r'^lecture-audio-noise-removed/$', api.audioNoiseRemovedList.as_view()),
 
-    url(r'^lecture-audio-to-text/$', api.audioToTextList.as_view()),
+    url(r'^lecture-audio-to-text/', api.audioToTextList.as_view()),
 
     url(r'^lecture-summary/$', api.lectureSummaryList.as_view()),
 

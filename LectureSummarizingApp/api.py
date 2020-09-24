@@ -6,6 +6,8 @@ from LectureSummarizingApp.models import LectureAudio, LectureAudioNoiseRemoved,
 from LectureSummarizingApp.serializer import LectureAudioSerializer, LectureAudioNoiseRemovedSerializer, \
     LectureSpeechToTextSerializer, LectureAudioSummarySerializer, LectureNoticesSerializer
 
+from . import speech_to_text as stt
+
 
 # this API will retrieve lecture audio details
 class LectureAudioAPI(APIView):
@@ -39,9 +41,26 @@ class audioToTextList(APIView):
     def get(self, request):
         lecture_speech_to_text_id = LectureSpeechToText.objects.all()
         serializer = LectureSpeechToTextSerializer(lecture_speech_to_text_id, many=True)
-        return Response(serializer.data)
+        # return Response(serializer.data)
+
+        video_name = request.query_params.get("video_name")
+
+        print('video name: ', video_name)
+
+        stt.speech_to_text(video_name)
+
+        return Response({
+            "response": "successful"
+        })
 
     def post(self, request):
+
+        # video_name = request.data["video_name"]
+        #
+        # print('video name: ', video_name)
+        #
+        # stt.speech_to_text(video_name)
+
         LectureSpeechToText(
             lecture_speech_to_text_id=request.data["lecture_speech_to_text_id"],
             lecture_audio_id=request.data["lecture_audio_id"],
@@ -58,6 +77,9 @@ class lectureSummaryList(APIView):
         return Response(serializer.data)
 
     def post(self, request):
+
+
+
         LectureAudioSummary(
             lecture_speech_to_text_id=request.data["lecture_speech_to_text_id"],
             lecture_audio_id=request.data["lecture_audio_id"],
