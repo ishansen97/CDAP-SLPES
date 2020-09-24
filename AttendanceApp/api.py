@@ -9,6 +9,8 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 
+from . import record
+
 from rest_framework.views import *
 
 class StudentAPIView(APIView):
@@ -160,3 +162,12 @@ class FileView(APIView):
       return Response(file_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# this API will initiate the lecture
+class InitiateLecture(APIView):
+
+    def get(self, request):
+        record.initiate()
+
+        return Response({
+            "response": "success"
+        })
