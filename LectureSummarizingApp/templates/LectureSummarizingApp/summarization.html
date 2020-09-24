@@ -29,8 +29,56 @@
 <!-- Load Posenet -->
 <script src="https://unpkg.com/@tensorflow-models/posenet">
 </script>
-{% endblock %}
 
+<script type="text/javascript">
+
+    $(document).ready(function() {
+
+
+<!--        speech to text-->
+        $('.audio_to_text_process').click(function() {
+            alert('Processing');
+
+            //call the fetch API
+            fetch('http://127.0.0.1:8000/summary/lecture-audio-to-text/?video_name=Lecture01.wav')
+            .then((res) => res.json())
+            .then((out) => alert(out.response))
+            .catch((err) => alert('error: ' + err))
+
+        });
+
+<!--        background noise-->
+        $('.audio_process').click(function() {
+            alert('Processing');
+
+            //call the fetch API
+            fetch('http://127.0.0.1:8000/summary/lecture-audio-to-text/?video_name=Lecture01.wav')
+            .then((res) => res.json())
+            .then((out) => alert(out.response))
+            .catch((err) => alert('error: ' + err))
+
+        });
+
+
+        <!--        To summary-->
+        $('.to_summary').click(function() {
+            alert('Processing');
+
+            //call the fetch API
+            fetch('http://127.0.0.1:8000/summary/lecture-audio-to-text/?video_name=Lecture01.wav')
+            .then((res) => res.json())
+            .then((out) => alert(out.response))
+            .catch((err) => alert('error: ' + err))
+
+        });
+
+    });
+
+</script>
+
+
+
+{% endblock %}
 
 <div id="wrapper">
     <div id="content-wrapper" class="d-flex flex-column">
@@ -64,7 +112,6 @@
                                     <table class="table table-bordered" id="datatable">
                                         <thead>
                                         <tr>
-                                            <th></th>
                                             <th>Module</th>
                                             <th>Date</th>
                                             <th>Recording Name</th>
@@ -75,15 +122,15 @@
 
                                         {% for lec_audio in lec_audio_data %}
                                         <tr class="recordings not_clicked" id="{{ lec_audio.lecture_audio_id }}">
-                                            <td>
-                                                <div class="radio">
-                                                    <label><input type="radio"
-                                                                  id="{{ lec_audio.lecture_audio_id }}"
-                                                                  name="recording_radio"
-                                                                  data-name="{{ lec_audio.lecture_audio_name }}"
-                                                    ></label>
-                                                </div>
-                                            </td>
+<!--                                            <td>-->
+<!--                                                <div class="radio">-->
+<!--                                                    <label><input type="radio"-->
+<!--                                                                  id="{{ lec_audio.lecture_audio_id }}"-->
+<!--                                                                  name="recording_radio"-->
+<!--                                                                  data-name="{{ lec_audio.lecture_audio_name }}"-->
+<!--                                                    ></label>-->
+<!--                                                </div>-->
+<!--                                            </td>-->
                                             <td>{{ lec_audio.subject.name }}</td>
                                             <td>{{ lec_audio.lecturer_date }}</td>
                                             <td>{{ lec_audio.lecture_audio_name }}</td>
@@ -125,7 +172,7 @@
                                     <table class="table table-bordered" id="datatable">
                                         <thead>
                                         <tr>
-                                            <th></th>
+<!--                                            <th></th>-->
                                             <th>Module</th>
                                             <th>Date</th>
                                             <th>Recording Name</th>
@@ -136,20 +183,21 @@
 
                                         {% for noiseless_audio in noiseless_data %}
                                         <tr class="recordings not_clicked" id="{{ noiseless_audio.lecture_audio_id }}">
-                                            <td>
-                                                <div class="radio">
-                                                    <label><input type="radio"
-                                                                  id="{{ noiseless_audio.lecture_audio_id }}"
-                                                                  name="recording_radio"
-                                                                  data-name="{{ noiseless_audio.lecture_audio_name }}"
-                                                    ></label>
-                                                </div>
-                                            </td>
+<!--                                            <td>-->
+<!--                                                <div class="radio">-->
+<!--                                                    <label><input type="radio"-->
+<!--                                                                  id="{{ noiseless_audio.lecture_audio_id }}"-->
+<!--                                                                  name="recording_radio"-->
+<!--                                                                  data-name="{{ noiseless_audio.lecture_audio_name }}"-->
+<!--                                                    ></label>-->
+<!--                                                </div>-->
+<!--                                            </td>-->
                                             <td>{{ noiseless_audio.lecture_audio_id.subject.name }}</td>
                                             <td>{{ noiseless_audio.lecture_audio_id.lecturer_date }}</td>
                                             <td>{{ noiseless_audio.lecture_audio_name }}</td>
                                             <td>
-                                                <button TYPE="button" class="btn btn-success audio_to_text_process">Convert
+                                                <button type="button"
+                                                        class="btn btn-success audio_to_text_process">Convert
                                                 </button>
                                             </td>
                                         </tr>
@@ -192,7 +240,6 @@
                                     <table class="table table-bordered" id="datatable">
                                         <thead>
                                         <tr>
-                                            <th></th>
                                             <th>Module</th>
                                             <th>Date</th>
                                             <th>Text ID</th>
@@ -204,15 +251,15 @@
 
                                         {% for lec_text in lecture_text_data %}
                                         <tr class="recordings not_clicked" id="{{ lec_text.lecture_audio_id }}">
-                                            <td>
-                                                <div class="radio">
-                                                    <label><input type="radio"
-                                                                  id="{{ lec_text.lecture_audio_id }}"
-                                                                  name="recording_radio"
-                                                                  data-name="{{ lec_text.lecture_audio_name }}"
-                                                    ></label>
-                                                </div>
-                                            </td>
+<!--                                            <td>-->
+<!--                                                <div class="radio">-->
+<!--                                                    <label><input type="radio"-->
+<!--                                                                  id="{{ lec_text.lecture_audio_id }}"-->
+<!--                                                                  name="recording_radio"-->
+<!--                                                                  data-name="{{ lec_text.lecture_audio_name }}"-->
+<!--                                                    ></label>-->
+<!--                                                </div>-->
+<!--                                            </td>-->
                                             <td>{{ lec_text.lecture_audio_id.subject.name }}</td>
                                             <td>{{ lec_text.lecture_audio_id.lecturer_date }}</td>
                                             <td>{{ lec_text.lecture_speech_to_text_id }}</td>
@@ -221,7 +268,7 @@
                                                 </button>
                                             </td>
                                             <td>
-                                                <button TYPE="button" class="btn btn-success get_notices">Notices
+                                                <button TYPE="button" class="btn btn-danger get_notices">Notices
                                                 </button>
                                             </td>
                                         </tr>
@@ -263,7 +310,6 @@
                                     <table class="table table-bordered" id="datatable">
                                         <thead>
                                         <tr>
-                                            <th></th>
                                             <th>Module</th>
                                             <th>Date</th>
                                             <th>Summary</th>
@@ -273,15 +319,15 @@
 
                                         {% for lec_summary in lec_summary_data %}
                                         <tr class="recordings not_clicked" id="{{ lec_summary.lecture_audio_id }}">
-                                            <td>
-                                                <div class="radio">
-                                                    <label><input type="radio"
-                                                                  id="{{ lec_summary.lecture_audio_id }}"
-                                                                  name="recording_radio"
-                                                                  data-name="{{ lec_summary.lecture_audio_name }}"
-                                                    ></label>
-                                                </div>
-                                            </td>
+<!--                                            <td>-->
+<!--                                                <div class="radio">-->
+<!--                                                    <label><input type="radio"-->
+<!--                                                                  id="{{ lec_summary.lecture_audio_id }}"-->
+<!--                                                                  name="recording_radio"-->
+<!--                                                                  data-name="{{ lec_summary.lecture_audio_name }}"-->
+<!--                                                    ></label>-->
+<!--                                                </div>-->
+<!--                                            </td>-->
                                             <td>{{ lec_summary.lecture_audio_id.subject.name }}</td>
                                             <td>{{ lec_summary.lecture_audio_id.lecturer_date }}</td>
                                             <td>{{ lec_summary.lecture_audio_summary_id }}</td>
@@ -317,7 +363,6 @@
                                     <table class="table table-bordered" id="datatable">
                                         <thead>
                                         <tr>
-                                            <th></th>
                                             <th>Module</th>
                                             <th>Date</th>
                                             <th>Notices</th>
@@ -327,15 +372,15 @@
 
                                         {% for lec_notice in lec_notice_data %}
                                         <tr class="recordings not_clicked" id="{{ lec_notice.lecture_audio_id }}">
-                                            <td>
-                                                <div class="radio">
-                                                    <label><input type="radio"
-                                                                  id="{{ lec_notice.lecture_audio_id }}"
-                                                                  name="recording_radio"
-                                                                  data-name="{{ noiseless_audio.lecture_audio_name }}"
-                                                    ></label>
-                                                </div>
-                                            </td>
+<!--                                            <td>-->
+<!--                                                <div class="radio">-->
+<!--                                                    <label><input type="radio"-->
+<!--                                                                  id="{{ lec_notice.lecture_audio_id }}"-->
+<!--                                                                  name="recording_radio"-->
+<!--                                                                  data-name="{{ noiseless_audio.lecture_audio_name }}"-->
+<!--                                                    ></label>-->
+<!--                                                </div>-->
+<!--                                            </td>-->
                                             <td>{{ lec_notice.lecture_audio_id.subject.name }}</td>
                                             <td>{{ lec_notice.lecture_audio_id.lecturer_date }}</td>
                                             <td>{{ lec_notice.lecture_notice_id }}</td>
