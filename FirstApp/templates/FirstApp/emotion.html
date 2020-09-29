@@ -195,7 +195,6 @@
 
                 activity.response.map((act, index) => {
                     //setting the percentage values
-                    alert('happy perct: ' + act);
                     $('#happy_perct').text(act.happy_perct + '%');
                     $('#sad_perct').text(act.sad_perct + '%');
                     $('#anger_perct').text(act.angry_perct + '%');
@@ -1151,10 +1150,10 @@
                                                          aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
                                                 </div>
 
-                                                <!--evaluate button -->
-                                                <button type="button" class="btn btn-danger float-right"
-                                                        id="evaluate_button">Evaluate
-                                                </button>
+{#                                                <!--evaluate button -->#}
+{#                                                <button type="button" class="btn btn-danger float-right"#}
+{#                                                        id="evaluate_button">Evaluate#}
+{#                                                </button>#}
 
                                             </div>
 
@@ -1215,63 +1214,63 @@
 
 
                         <!--2nd column -->
-                        <div class="col-lg-6">
-                            <!--card content -->
-                            <div class="card shadow mb-4">
-                                <!--card header -->
-                                <div class="card-header py-3">
-                                    <h5 class="m-0 font-weight-bold text-primary">Frame Detections</h5>
-                                </div>
-
-                                <!--card body -->
-                                <div class="text-center p-4" id="detection_frames">
-
-                                    <!--no content message-->
-                                    <div class="text-center p-2" id="no_detection_message_content">
-                                        <span class="font-italic">No frame is selected</span>
-                                    </div>
-
-                                    <div class="text-left m-3" id="detection_number_area" hidden>
-                                        <p>No of detections: <span id="no_of_detections"></span></p>
-                                    </div>
-                                    <!--the detection loader -->
-                                    <div class="text-center p-2" id="detection_loader" hidden>
-                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
-                                             alt="Loader">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!--detection person card -->
-                            <div class="card shadow mb-4">
-                                <!--card header -->
-                                <div class="card-header py-3">
-                                    <h5 class="m-0 font-weight-bold text-primary">Detected Students (by emotion
-                                        type)</h5>
-                                </div>
-
-                                <!--card body -->
-                                <div class="text-center p-4" id="detection_students">
-                                    <!--activity type line -->
-                                    <div class="text-center p-2" id="activity_type" hidden>
-                                        <p>Activity Type: <span class="font-weight-bold" id="activity_type_text"></span>
-                                        </p>
-                                    </div>
-
-                                    <!--no content message-->
-                                    <div class="text-center p-2" id="no_detection_student_content">
-                                        <span class="font-italic">No activity type is selected</span>
-                                    </div>
-
-                                    <!--the detection student loader -->
-                                    <div class="text-center p-2" id="detection_student_loader" hidden>
-                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
-                                             alt="Loader">
-                                    </div>
-
-                                </div>
-                            </div>
-                        </div>
+{#                        <div class="col-lg-6">#}
+{#                            <!--card content -->#}
+{#                            <div class="card shadow mb-4">#}
+{#                                <!--card header -->#}
+{#                                <div class="card-header py-3">#}
+{#                                    <h5 class="m-0 font-weight-bold text-primary">Frame Detections</h5>#}
+{#                                </div>#}
+{##}
+{#                                <!--card body -->#}
+{#                                <div class="text-center p-4" id="detection_frames">#}
+{##}
+{#                                    <!--no content message-->#}
+{#                                    <div class="text-center p-2" id="no_detection_message_content">#}
+{#                                        <span class="font-italic">No frame is selected</span>#}
+{#                                    </div>#}
+{##}
+{#                                    <div class="text-left m-3" id="detection_number_area" hidden>#}
+{#                                        <p>No of detections: <span id="no_of_detections"></span></p>#}
+{#                                    </div>#}
+{#                                    <!--the detection loader -->#}
+{#                                    <div class="text-center p-2" id="detection_loader" hidden>#}
+{#                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"#}
+{#                                             alt="Loader">#}
+{#                                    </div>#}
+{#                                </div>#}
+{#                            </div>#}
+{##}
+{#                            <!--detection person card -->#}
+{#                            <div class="card shadow mb-4">#}
+{#                                <!--card header -->#}
+{#                                <div class="card-header py-3">#}
+{#                                    <h5 class="m-0 font-weight-bold text-primary">Detected Students (by emotion#}
+{#                                        type)</h5>#}
+{#                                </div>#}
+{##}
+{#                                <!--card body -->#}
+{#                                <div class="text-center p-4" id="detection_students">#}
+{#                                    <!--activity type line -->#}
+{#                                    <div class="text-center p-2" id="activity_type" hidden>#}
+{#                                        <p>Activity Type: <span class="font-weight-bold" id="activity_type_text"></span>#}
+{#                                        </p>#}
+{#                                    </div>#}
+{##}
+{#                                    <!--no content message-->#}
+{#                                    <div class="text-center p-2" id="no_detection_student_content">#}
+{#                                        <span class="font-italic">No activity type is selected</span>#}
+{#                                    </div>#}
+{##}
+{#                                    <!--the detection student loader -->#}
+{#                                    <div class="text-center p-2" id="detection_student_loader" hidden>#}
+{#                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"#}
+{#                                             alt="Loader">#}
+{#                                    </div>#}
+{##}
+{#                                </div>#}
+{#                            </div>#}
+{#                        </div>#}
 
 
                     </div>
@@ -1281,36 +1280,36 @@
                     <div class="row p-2">
 
                         <!--1st column -->
-                        <div class="col-lg-6">
-                            <!--card -->
-                            <div class="card shadow mb-4">
-                                <!--card header -->
-                                <div class="card-header">
-                                    <h5 class="m-0 font-weight-bold text-primary">Evaluated Students</h5>
-                                </div>
-
-                                <!--card body -->
-                                <div class="card-body" id="evaluation_students">
-
-                                    <!--no content message-->
-                                    <div class="text-center p-2" id="no_evaluated_student_content">
-                                        <span class="font-italic">Press 'Evaluate' button to evaluate students</span>
-                                    </div>
-
-                                    <!--the detection student loader -->
-                                    <div class="text-center p-2" id="evaluate_student_loader" hidden>
-                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
-                                             alt="Loader">
-                                    </div>
-                                    <!--end of student detection loader -->
-
-
-                                </div>
-
-                            </div>
-
-
-                        </div>
+{#                        <div class="col-lg-6">#}
+{#                            <!--card -->#}
+{#                            <div class="card shadow mb-4">#}
+{#                                <!--card header -->#}
+{#                                <div class="card-header">#}
+{#                                    <h5 class="m-0 font-weight-bold text-primary">Evaluated Students</h5>#}
+{#                                </div>#}
+{##}
+{#                                <!--card body -->#}
+{#                                <div class="card-body" id="evaluation_students">#}
+{##}
+{#                                    <!--no content message-->#}
+{#                                    <div class="text-center p-2" id="no_evaluated_student_content">#}
+{#                                        <span class="font-italic">Press 'Evaluate' button to evaluate students</span>#}
+{#                                    </div>#}
+{##}
+{#                                    <!--the detection student loader -->#}
+{#                                    <div class="text-center p-2" id="evaluate_student_loader" hidden>#}
+{#                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"#}
+{#                                             alt="Loader">#}
+{#                                    </div>#}
+{#                                    <!--end of student detection loader -->#}
+{##}
+{##}
+{#                                </div>#}
+{##}
+{#                            </div>#}
+{##}
+{##}
+{#                        </div>#}
                         <!--end of 1st column -->
 
 

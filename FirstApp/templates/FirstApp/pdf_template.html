@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>SLPES</title>
+    <link rel="shortcut icon" href="file:///D:/SLIIT/Year 4/CDAP/project/2020-101/assets/FirstApp/images/favicon.ico" type="image/x-icon"/>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link rel="stylesheet" href="file:///D:/SLIIT/Year 4/CDAP/project/2020-101/assets/FirstApp/css/sb-admin-2.min.css" type="text/css">
+    <link rel="stylesheet" href="file:///D:/SLIIT/Year 4/CDAP/project/2020-101/assets/FirstApp/css/slider.css" type="text/css">
+    <link href="file:///D:/SLIIT/Year 4/CDAP/project/2020-101/assets/FirstApp/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
+          rel="stylesheet">
+    <link rel="stylesheet" href="file:///D:/SLIIT/Year 4/CDAP/project/2020-101/assets/FirstApp/css/all.min.css" type="text/css">
+    <link href="file:///D:/SLIIT/Year 4/CDAP/project/2020-101/assets/FirstApp/vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet" type="text/css">
+</head>
+<body id="page-top">
+<!-- main content -->
+<div id="wrapper">
+
+    <div id="content-wrapper" class="d-flex flex-column">
+        <!-- Main Content -->
+        <div id="content">
+
+            <!-- Topbar -->
+            <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+
+                <!-- Sidebar Toggle (Topbar) -->
+                <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+                    <i class="fa fa-bars"></i>
+                </button>
+
+                <!-- Topbar Search -->
+                <!--form class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
+                    <div class="input-group">
+                        <input type="text" class="form-control bg-light border-0 small" placeholder="Search for..."
+                               aria-label="Search" aria-describedby="basic-addon2">
+                        <div class="input-group-append">
+                            <button class="btn btn-primary" type="button">
+                                <i class="fas fa-search fa-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form-->
+
+                <!-- logo -->
+                <div id="logo" class="text-left">
+                    <img src="file:///D:/SLIIT/Year 4/CDAP/project/2020-101/assets/FirstApp/images/logo.PNG" alt="Logo" width="80" height="60">
+                </div>
+
+                <div class="m-4">
+                    <h5>Student and Lecturer</h5>
+                    <h5>Performance Enhancement System</h5>
+                </div>
+
+                <!-- Topbar Navbar -->
+                <ul class="navbar-nav ml-auto">
+
+
+                    <!-- Nav Item - Search Dropdown (Visible Only XS) -->
+                    <li class="nav-item dropdown no-arrow d-sm-none">
+                        <a class="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button"
+                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-search fa-fw"></i>
+                        </a>
+                        <!-- Dropdown - Messages -->
+                        <div class="dropdown-menu dropdown-menu-right p-3 shadow animated--grow-in"
+                             aria-labelledby="searchDropdown">
+                            <form class="form-inline mr-auto w-100 navbar-search">
+                                <div class="input-group">
+                                    <input type="text" class="form-control bg-light border-0 small"
+                                           placeholder="Search for..." aria-label="Search"
+                                           aria-describedby="basic-addon2">
+                                    <div class="input-group-append">
+                                        {#                                            <button class="btn btn-primary" type="button">#}
+                                        {#                                                <i class="fas fa-search fa-sm"></i>#}
+                                        {#                                            </button>#}
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </li>
+
+                    <!-- Nav Item - Alerts -->
+                    <li class="nav-item dropdown no-arrow mx-1">
+                        <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
+                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            {#                                <i class="fas fa-bell fa-fw"></i>#}
+                            <!-- Counter - Alerts -->
+                            {#                                <span class="badge badge-danger badge-counter">3+</span>#}
+                        </a>
+                        <!-- Dropdown - Alerts -->
+                        <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                             aria-labelledby="alertsDropdown">
+                            <h6 class="dropdown-header">
+                                Alerts Center
+                            </h6>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="mr-3">
+                                    <div class="icon-circle bg-primary">
+                                        <i class="fas fa-file-alt text-white"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="small text-gray-500">December 12, 2019</div>
+                                    <span class="font-weight-bold">A new monthly report is ready to download!</span>
+                                </div>
+                            </a>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="mr-3">
+                                    <div class="icon-circle bg-success">
+                                        <i class="fas fa-donate text-white"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="small text-gray-500">December 7, 2019</div>
+                                    $290.29 has been deposited into your account!
+                                </div>
+                            </a>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="mr-3">
+                                    <div class="icon-circle bg-warning">
+                                        <i class="fas fa-exclamation-triangle text-white"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="small text-gray-500">December 2, 2019</div>
+                                    Spending Alert: We've noticed unusually high spending for your account.
+                                </div>
+                            </a>
+                            <a class="dropdown-item text-center small text-gray-500" href="#">Show All Alerts</a>
+                        </div>
+                    </li>
+
+                    <!-- Nav Item - Messages -->
+                    <li class="nav-item dropdown no-arrow mx-1">
+                        <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button"
+                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            {#                                <i class="fas fa-envelope fa-fw"></i>#}
+                            <!-- Counter - Messages -->
+                            {#                                <span class="badge badge-danger badge-counter">7</span>#}
+                        </a>
+                        <!-- Dropdown - Messages -->
+                        <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                             aria-labelledby="messagesDropdown">
+                            <h6 class="dropdown-header">
+                                Message Center
+                            </h6>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="dropdown-list-image mr-3">
+                                    <img class="rounded-circle" src="https://source.unsplash.com/fn_BT9fwg_E/60x60"
+                                         alt="">
+                                    <div class="status-indicator bg-success"></div>
+                                </div>
+                                <div class="font-weight-bold">
+                                    <div class="text-truncate">Hi there! I am wondering if you can help me with a
+                                        problem I've been having.
+                                    </div>
+                                    <div class="small text-gray-500">Emily Fowler · 58m</div>
+                                </div>
+                            </a>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="dropdown-list-image mr-3">
+                                    <img class="rounded-circle" src="https://source.unsplash.com/AU4VPcFN4LE/60x60"
+                                         alt="">
+                                    <div class="status-indicator"></div>
+                                </div>
+                                <div>
+                                    <div class="text-truncate">I have the photos that you ordered last month, how
+                                        would you like them sent to you?
+                                    </div>
+                                    <div class="small text-gray-500">Jae Chun · 1d</div>
+                                </div>
+                            </a>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="dropdown-list-image mr-3">
+                                    <img class="rounded-circle" src="https://source.unsplash.com/CS2uCrpNzJY/60x60"
+                                         alt="">
+                                    <div class="status-indicator bg-warning"></div>
+                                </div>
+                                <div>
+                                    <div class="text-truncate">Last month's report looks great, I am very happy with
+                                        the progress so far, keep up the good work!
+                                    </div>
+                                    <div class="small text-gray-500">Morgan Alvarez · 2d</div>
+                                </div>
+                            </a>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="dropdown-list-image mr-3">
+                                    <img class="rounded-circle" src="https://source.unsplash.com/Mv9hjnEUHR4/60x60"
+                                         alt="">
+                                    <div class="status-indicator bg-success"></div>
+                                </div>
+                                <div>
+                                    <div class="text-truncate">Am I a good boy? The reason I ask is because someone
+                                        told me that people say this to all dogs, even if they aren't good...
+                                    </div>
+                                    <div class="small text-gray-500">Chicken the Dog · 2w</div>
+                                </div>
+                            </a>
+                            <a class="dropdown-item text-center small text-gray-500" href="#">Read More Messages</a>
+                        </div>
+                    </li>
+
+                    <div class="topbar-divider d-none d-sm-block"></div>
+
+                    <!-- Nav Item - User Information -->
+                    <li class="nav-item dropdown no-arrow">
+                        <img src="file:///D:/SLIIT/Year 4/CDAP/project/2020-101/assets/FirstApp/images/sliit.png" alt="sliit" width="200" height="70">
+                        <!-- Dropdown - User Information -->
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                             aria-labelledby="userDropdown">
+                            <a class="dropdown-item" href="#">
+                                <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+                                Profile
+                            </a>
+                            <a class="dropdown-item" href="#">
+                                <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
+                                Settings
+                            </a>
+                            <a class="dropdown-item" href="#">
+                                <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
+                                Activity Log
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                                <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                                Logout
+                            </a>
+                        </div>
+                    </li>
+
+                </ul>
+
+            </nav>
+            <!-- End of Topbar -->
+
+            <!-- beginning of container-fluid -->
+
+            <div class="container-fluid">
+
+                <!-- Page Heading -->
+                {#                    <div class="d-sm-flex align-items-center justify-content-between mb-4">#}
+                {#                        <h1 class="mb-0 text-gray-800">Activity Recognition</h1>#}
+                {#                    </div>#}
+
+                <div class="text-center">
+                    <h1 class="mb-0">Activity Recognition</h1>
+                </div>
+
+                <hr class="p-2">
+
+                <!--1st row -->
+                <div class="row">
+                    <!-- 1st column -->
+                    <div class="col-lg-6">
+                        <!-- card -->
+                        <div class="card shadow mb-4 bg-white">
+                            <div class="card-header">
+                                <h5 class="m-0 font-weight-bold text-primary">Lecturer Information</h5>
+                            </div>
+
+                            <!-- card body -->
+                            <div class="card-body">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <td class="font-weight-bold h4">Name</td>
+                                        <td>{{ lecturer_name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-weight-bold h4">Subject</td>
+                                        <td>{{ subject }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-weight-bold h4">Date</td>
+                                        <td>{{ date }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- end of 1st column -->
+
+                    <!-- 2nd column -->
+                    <div class="col-lg-6">
+
+                        <!-- card -->
+                        <div class="card shadow mb-4 bg-white">
+                            <div class="card-header">
+                                <h5 class="m-0 font-weight-bold text-primary">Activity Information</h5>
+                            </div>
+
+                            <!-- card body -->
+                            <div class="card-body">
+                                <div class="progress_area">
+                                    <!--talking with friends -->
+
+                                    <h4 class="small font-weight-bold">Talking with friends</h4>
+                                    <span class="float-right" id="talking_perct">40%</span>
+                                    <div class="progress mb-4">
+                                        <div class="progress-bar bg-danger" role="progressbar"
+                                             id="talking_width"
+                                             style="width: 20%"
+                                             aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+
+                                    <!--phone checking -->
+                                    <h4 class="small font-weight-bold">Phone checking</h4>
+                                    <span class="float-right" id="phone_perct">45%</span>
+                                    <div class="progress mb-4">
+                                        <div class="progress-bar bg-warning" role="progressbar"
+                                             id="phone_width"
+                                             style="width: 40%"
+                                             aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+
+                                    <!--note taking -->
+                                    <h4 class="small font-weight-bold">Writing</h4>
+                                    <span class="float-right" id="writing_perct">50%</span>
+                                    <div class="progress mb-4">
+                                        <div class="progress-bar" role="progressbar" id="writing_width"
+                                             style="width: 60%"
+                                             aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+
+                                    <!--listening-->
+                                    <h4 class="small font-weight-bold">Listening</h4>
+                                    <span class="float-right" id="listening_perct">60%</span>
+                                    <div class="progress mb-4">
+                                        <div class="progress-bar bg-info" role="progressbar"
+                                             id="listening_width" style="width: 80%"
+                                             aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    <!-- end of 2nd column -->
+
+                </div>
+                <!-- end of 1st row -->
+
+
+                <!-- 2nd row -->
+
+                <!-- Area Chart -->
+                <div class="col-xl-8 col-lg-7">
+                    <div class="card shadow mb-4">
+                        <!-- Card Header - Dropdown -->
+                        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                            <h6 class="m-0 font-weight-bold text-primary">Activity Overview</h6>
+                            <div class="dropdown no-arrow">
+                                <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+                                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                                     aria-labelledby="dropdownMenuLink">
+                                    <div class="dropdown-header">Dropdown Header:</div>
+                                    <a class="dropdown-item" href="#">Action</a>
+                                    <a class="dropdown-item" href="#">Another action</a>
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item" href="#">Something else here</a>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card Body -->
+                        <div class="card-body">
+                            <div class="chart-area">
+                                <canvas id="myAreaChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- end of 2nd row -->
+
+
+            </div>
+            <!-- end of container-fluid -->
+
+        </div>
+        <!--end of content -->
+    </div>
+    <!--end of content-wrapper -->
+</div>
+<!--end of wrapper -->
+
+
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+            integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+            integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+            crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+            integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+            crossorigin="anonymous"></script>
+
+    <script src="file:///D:/SLIIT/Year 4/CDAP/project/2020-101/assets/FirstApp/vendor/jquery/jquery.js"></script>
+    <script src="file:///D:/SLIIT/Year 4/CDAP/project/2020-101/assets/FirstApp/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Core plugin JavaScript-->
+    <script src="file:///D:/SLIIT/Year 4/CDAP/project/2020-101/assets/FirstApp/vendor/jquery-easing/jquery.easing.min.js"></script>
+
+    <!-- Custom scripts for all pages-->
+    <script src="file:///D:/SLIIT/Year 4/CDAP/project/2020-101/assets/FirstApp/js/sb-admin-2.min.js"></script>
+
+    <!-- Page level plugins -->
+    <script src="file:///D:/SLIIT/Year 4/CDAP/project/2020-101/assets/FirstApp/vendor/chart.js/Chart.min.js"></script>
+
+    <!-- Page level custom scripts -->
+    <script src="file:///D:/SLIIT/Year 4/CDAP/project/2020-101/assets/FirstApp/js/demo/chart-area-demo.js"></script>
+    <script src="file:///D:/SLIIT/Year 4/CDAP/project/2020-101/assets/FirstApp/js/demo/chart-pie-demo.js"></script>
+</body>
+</html>

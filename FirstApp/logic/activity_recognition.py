@@ -51,7 +51,7 @@ def activity_recognition(video_path):
     note_taking_count = 0
     listening_count = 0
 
-    # video activity didrectory
+    # video activity directory
     VIDEO_ACTIVITY_DIR = os.path.join(ACTIVITY_DIR, video_path)
 
     # creating the directory for the video
@@ -75,7 +75,6 @@ def activity_recognition(video_path):
         os.mkdir(FRAME_DIR)
 
         image = cv2.resize(image, size)
-        # image = ImageOps.fit(image, size, Image.ANTIALIAS)
         detections = person_detection(image, net)
 
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -130,10 +129,10 @@ def activity_recognition(video_path):
     p.write("yes")
 
     # calculating the percentages for each label
-    phone_perct = float(phone_checking_count / total_detections) * 100
-    talking_perct = float(talking_count / total_detections) * 100
-    note_perct = float(note_taking_count / total_detections) * 100
-    listening_perct = float(listening_count / total_detections) * 100
+    phone_perct = float(phone_checking_count / total_detections) * 100 if total_detections > 0 else 0
+    talking_perct = float(talking_count / total_detections) * 100 if total_detections > 0 else 0
+    note_perct = float(note_taking_count / total_detections) * 100 if total_detections > 0 else 0
+    listening_perct = float(listening_count / total_detections) * 100 if total_detections > 0 else 0
 
     # assigning the percentages to the dictionary
     percentages["phone_perct"] = phone_perct
@@ -572,3 +571,47 @@ def get_individual_student_evaluation(video_name, student_name):
     percentages['listening_perct'] = listening_perct
 
     return percentages
+
+
+# this method will retrieve student activity summary for given time period
+def get_student_activity_summary_for_period(activities):
+
+    # declare variables to add percentage values
+    phone_checking_perct_combined = 0.0
+    listening_perct_combined = 0.0
+    note_taking_perct_combined = 0.0
+
+    # get the number of activties to calculate average
+    no_of_activities = len(activities)
+
+    individual_lec_activities = []
+
+    activity_labels = ["phone_perct", "listening_perct", "writing_perct"]
+
+    # iterate through the activities
+    for activity in activities:
+
+        individual_activity = {}
+        individual_activity["phone_perct"] = float(activity['phone_perct'])
+        individual_activity["listening_perct"] = float(activity['listening_perct'])
+        individual_activity["writing_perct"] = float(activity['writing_perct'])
+
+        phone_checking_perct_combined += float(activity['phone_perct'])
+        listening_perct_combined += float(activity['listening_perct'])
+        note_taking_perct_combined += float(activity['writing_perct'])
+
+        # append to the list
+        individual_lec_activities.append(individual_activity)
+
+
+    # calculate the average percentages
+    phone_checking_average_perct = round((phone_checking_perct_combined / no_of_activities), 1)
+    listening_average_perct = round((listening_perct_combined / no_of_activities), 1)
+    note_taking_average_perct = round((note_taking_perct_combined / no_of_activities), 1)
+
+    percentages = {}
+    percentages["phone_perct"] = phone_checking_average_perct
+    percentages["listening_perct"] = listening_average_perct
+    percentages["writing_perct"] = note_taking_average_perct
+
+    return percentages, individual_lec_activities, activity_labels

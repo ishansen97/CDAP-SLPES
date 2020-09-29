@@ -66,7 +66,6 @@ def detect_emotion(video):
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = face_classifier.detectMultiScale(gray,1.3,5)
 
-        print('number of faces: ', len(faces))
 
         for (x, y, w, h) in faces:
             cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
@@ -104,13 +103,9 @@ def detect_emotion(video):
 
                 elif (label == 'Sad'):
                     count_sad += 1
-                    # path = os.path.join(BASE_DIR, 'static\\images\\Sad')
-                    # cv2.imwrite(os.path.join(path, 'Sad-{0}.jpg'.format(count)), frame)
 
                 elif (label == 'Surprise'):
                     count_surprise += 1
-                    # path = os.path.join(BASE_DIR, 'static\\images\\Surprise')
-                    # cv2.imwrite(os.path.join(path, 'Surprise-{0}.jpg'.format(count)), frame)
 
                 label_position = (x, y)
                 # cv2.putText(frame, label, label_position, cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 3)
@@ -118,13 +113,9 @@ def detect_emotion(video):
             else:
                 cv2.putText(frame, 'No Face Found', (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 3)
 
-        # cv2.imshow('Emotion Detector',frame)
         count_frames += 1
-        # if cv2.waitKey(1) & 0xFF == ord('q'):
-        #     break
 
     # setting up the counted values
-
     meta_data.frame_count = count_frames
     meta_data.happy_count = count_happy
     meta_data.sad_count = count_sad
@@ -328,11 +319,11 @@ def get_frame_emotion_recognition(video_name):
 
 
         # calculating the percentages for the frame
-        happy_perct = float(happy_count / detection_count) * 100
-        sad_perct = float(sad_count / detection_count) * 100
-        angry_perct = float(angry_count / detection_count) * 100
-        neutral_perct = float(neutral_count / detection_count) * 100
-        surprise_perct = float(surprise_count / detection_count) * 100
+        happy_perct = float(happy_count / detection_count) * 100 if detection_count > 0 else 0
+        sad_perct = float(sad_count / detection_count) * 100 if detection_count > 0 else 0
+        angry_perct = float(angry_count / detection_count) * 100 if detection_count > 0 else 0
+        neutral_perct = float(neutral_count / detection_count) * 100 if detection_count > 0 else 0
+        surprise_perct = float(surprise_count / detection_count) * 100 if detection_count > 0 else 0
 
         # this dictionary will be returned
         frame_details['happy_perct'] = happy_perct
@@ -349,3 +340,62 @@ def get_frame_emotion_recognition(video_name):
 
     # return the detected frame percentages
     return sorted_activity_frame_recognitions
+
+
+# this method will retrieve student activity summary for given time period
+def get_student_emotion_summary_for_period(emotions):
+
+    # declare variables to add percentage values
+    happy_perct_combined = 0.0
+    sad_perct_combined = 0.0
+    angry_perct_combined = 0.0
+    disgust_perct_combined = 0.0
+    surprise_perct_combined = 0.0
+    neutral_perct_combined = 0.0
+
+    # get the number of activties to calculate average
+    no_of_emotions = len(emotions)
+
+    individual_lec_emotions = []
+
+    emotion_labels = ["happy_perct", "sad_perct", "angry_perct", "disgust_perct", "surprise_perct", "neutral_perct"]
+
+    # iterate through the activities
+    for emotion in emotions:
+
+        individual_emotion = {}
+        individual_emotion["happy_perct"] = float(emotion['happy_perct'])
+        individual_emotion["sad_perct"] = float(emotion['sad_perct'])
+        individual_emotion["angry_perct"] = float(emotion['angry_perct'])
+        individual_emotion["disgust_perct"] = float(emotion['disgust_perct'])
+        individual_emotion["surprise_perct"] = float(emotion['surprise_perct'])
+        individual_emotion["neutral_perct"] = float(emotion['neutral_perct'])
+
+        happy_perct_combined += float(emotion['happy_perct'])
+        sad_perct_combined += float(emotion['sad_perct'])
+        angry_perct_combined += float(emotion['angry_perct'])
+        disgust_perct_combined += float(emotion['disgust_perct'])
+        surprise_perct_combined += float(emotion['surprise_perct'])
+        neutral_perct_combined += float(emotion['neutral_perct'])
+
+        # append to the list
+        individual_lec_emotions.append(individual_emotion)
+
+
+    # calculate the average percentages
+    happy_average_perct = round((happy_perct_combined / no_of_emotions), 1)
+    sad_average_perct = round((sad_perct_combined / no_of_emotions), 1)
+    angry_average_perct = round((angry_perct_combined / no_of_emotions), 1)
+    disgust_average_perct = round((disgust_perct_combined / no_of_emotions), 1)
+    surprise_average_perct = round((surprise_perct_combined / no_of_emotions), 1)
+    neutral_average_perct = round((neutral_perct_combined / no_of_emotions), 1)
+
+    percentages = {}
+    percentages["happy_perct"] = happy_average_perct
+    percentages["sad_perct"] = sad_average_perct
+    percentages["angry_perct"] = angry_average_perct
+    percentages["disgust_perct"] = disgust_average_perct
+    percentages["surprise_perct"] = surprise_average_perct
+    percentages["neutral_perct"] = neutral_average_perct
+
+    return percentages, individual_lec_emotions, emotion_labels

@@ -41,6 +41,9 @@ urlpatterns = [
     # tables view
     path('tables', views.tables),
 
+    # test view (delete later)
+    path('test', views.test),
+
     url(r'^register', views.RegisterViewSet),
     # re_path('video/?video_name<str:video_name>', views.video),
     url(r'^teachers/', views.teachersList.as_view()),
@@ -75,7 +78,6 @@ urlpatterns = [
     # timetable API
     url(r'^timetable', api.FacultyTimetableViewSet.as_view()),
 
-
     ##### VIDEO Section #####
 
     # lecture video API
@@ -83,7 +85,6 @@ urlpatterns = [
 
     # lecture video API (to retrieve a lecture)
     url(r'^get-lecture-video/$', api.GetLectureVideoViewSet.as_view()),
-
 
     ##### ACTIVITIES API #####
 
@@ -112,6 +113,9 @@ urlpatterns = [
     url(r'^get-lecture-activity-individual-student-evaluation/$',
         api.GetLectureActivityIndividualStudentEvaluation.as_view()),
 
+    # lecture activity report generation
+    url(r'^lecture-activity-report-generation/$',
+        api.GenerateActivityReport.as_view()),
 
     ###### EMOTION Section #####
     # getting lecture emotion record availability
@@ -133,7 +137,6 @@ urlpatterns = [
     # lecture emotion detection for frames API (to retrieve detections for each frame in lecture video)
     url(r'^get-lecture-emotion-for-frame/$', api.GetLectureEmotionRecognitionsForFrames.as_view()),
 
-
     ###### POSE Section #####
     # lecture video API (for Pose estimation)
     url(r'^get-lecture-video-for-pose/$', api.GetLectureVideoForPose.as_view()),
@@ -146,6 +149,27 @@ urlpatterns = [
 
     # lecture video individual student process pose estimation API (for Pose estimation)
     url(r'^process-lecture-video-individual-pose-estimation', api.ProcessIndividualStudentPoseEstimation.as_view()),
+
+    ##### GAZE Section #####
+    # lecture video Gaze estimation
+    url(r'^get-lecture-video-gaze-estimation-availability/$', api.GetLectureGazeEstimationAvailaibility.as_view()),
+
+    # process a lecture Gaze estimation
+    url(r'^process-lecture-gaze-estimation/$', api.ProcessLectureGazeEstimation.as_view()),
+
+    # retrieve a Lecture Gaze estimation
+    url(r'^get-lecture-gaze-estimation/$', api.GetLectureGazeEstimationViewSet.as_view()),
+
+    # lecture gaze estimation for frames API (to retrieve detections for each frame in lecture video)
+    url(r'^get-lecture-gaze-estimation-for-frame/$', api.GetLectureGazeEstimationForFrames.as_view()),
+
+
+    ##### VIEW STUDENT BEHAVIOR SUMMARY SECTION #####
+
+    # retrieves student behavior summary for specified time period
+    url(r'^get-student-behavior-summary-for-period/$', api.GetStudentBehaviorSummaryForPeriod.as_view()),
+
+
 
     # routers
     # path('', include(router.urls)),

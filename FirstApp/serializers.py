@@ -226,3 +226,12 @@ class VideoMetaSerializer(serializers.ModelSerializer):
     class Meta:
         model = VideoMeta
         fields = '__all__'
+
+# lecture gaze serializer
+class LectureGazeEstimationSerializer(serializers.ModelSerializer):
+
+    lecture_video_id = LectureVideoSerializer()
+
+    class Meta:
+        model = LectureGazeEstimation
+        fields = '__all__'

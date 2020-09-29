@@ -128,7 +128,7 @@ class LectureActivity(models.Model):
 # Lecture emotion report
 class LectureEmotionReport(models.Model):
     lecture_emotion_id = models.CharField(max_length=10)
-    lecture_video_id = models.ForeignKey(LectureVideo, on_delete=models.CASCADE)
+    lecture_video_id = models.ForeignKey(LectureVideo, on_delete=models.CASCADE, default=0)
     happy_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
     sad_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
     angry_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
@@ -143,6 +143,14 @@ class LectureEmotionReport(models.Model):
 
 # POSE section
 # lecture pose estimation
-class LecturePoseEstimation(models.Model):
-    lecture_pose_id = models.CharField(max_length=10)
+class LectureGazeEstimation(models.Model):
+    lecture_gaze_id = models.CharField(max_length=10)
     lecture_video_id = models.ForeignKey(LectureVideo, on_delete=models.CASCADE)
+    looking_up_and_right_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    looking_up_and_left_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    looking_down_and_right_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    looking_down_and_left_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    looking_front_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+
+    def __str__(self):
+        return self.lecture_gaze_id
