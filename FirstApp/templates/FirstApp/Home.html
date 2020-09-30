@@ -509,6 +509,84 @@
                 chart.render();
             }
 
+
+            //this function render the chart for Emotion statistics
+            function renderGazeEstimationStatistics() {
+
+                let individual_gaze_estimations = student_behavior_summary.individual_gaze_estimations;
+                let gaze_estimation_labels = student_behavior_summary.gaze_estimation_labels;
+                let gaze_estimation_length = individual_gaze_estimations.length;
+                let label_length = gaze_estimation_labels.length;
+
+
+                let data = [];
+                let colors = [
+                    "#000000",
+                    "#00FF00",
+                    "#0000FF"
+                ];
+
+                for (let i = 0; i < label_length; i++) {
+
+                    let label = gaze_estimation_labels[i];
+                    let datapoints = [];
+
+                    for (let j = 0; j < gaze_estimation_length; j++) {
+                        let gaze_estimation = individual_gaze_estimations[j];
+                        datapoints.push({label: "lecture " + (j+1), y: gaze_estimation[label]});
+                    }
+
+                    let obj = {
+                        type: "line",
+                        showInLegend: true,
+                        name: label,
+                        markerType: "square",
+                        {#xValueFormatString: "DD MMM, YYYY",#}
+                        xValueFormatString: "Lec " + (i+1),
+                        color: colors[i - 1],
+                        dataPoints: datapoints
+                    };
+
+                    data.push(obj);
+                }
+
+                var chart = new CanvasJS.Chart("gaze_estimation_stats_chart", {
+                    animationEnabled: true,
+                    theme: "light2",
+                    title: {
+                        text: "Gaze Estimation Statistics"
+                    },
+                    axisX: {
+                        title: "Lecture",
+                        {#valueFormatString: "DD MMM",#}
+                        valueFormatString: "lec" ,
+                        crosshair: {
+                            enabled: true,
+                            snapToDataPoint: true
+                        }
+                    },
+                    axisY: {
+                        title: "Percentage",
+                        includeZero: true,
+                        crosshair: {
+                            enabled: true
+                        }
+                    },
+                    toolTip: {
+                        shared: true
+                    },
+                    legend: {
+                        cursor: "pointer",
+                        verticalAlign: "bottom",
+                        horizontalAlign: "center",
+                        {#dockInsidePlotArea: true,#}
+                        itemclick: toogleDataSeries
+                    },
+                    data: data
+                });
+                chart.render();
+            }
+
             //this function will toggle the content
             function toogleDataSeries(e) {
                 if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
@@ -568,6 +646,13 @@
                     $('#surprise_perct_for_period').text(out.emotion_response.surprise_perct);
                     $('#neutral_perct_for_period').text(out.emotion_response.neutral_perct);
 
+                    //assign the gaze estimation values
+                    $('#looking_up_right_perct_for_period').text(out.gaze_estimation_response.looking_up_and_right_perct);
+                    $('#looking_up_left_perct_for_period').text(out.gaze_estimation_response.looking_up_and_left_perct);
+                    $('#looking_down_right_perct_for_period').text(out.gaze_estimation_response.looking_down_and_right_perct);
+                    $('#looking_down_left_perct_for_period').text(out.gaze_estimation_response.looking_down_and_left_perct);
+                    $('#looking_front_perct_for_period').text(out.gaze_estimation_response.looking_front_perct);
+
                 } else {
                     $('#student_summary_not_found_message').attr('hidden', false);
                 }
@@ -597,6 +682,16 @@
 
                 //open the modal
                 $('#emotion_stats_modal').modal();
+            });
+
+
+            //this function will view emotion statistics
+            $('#view_gaze_estimation_stats').click(function () {
+                //render the chart
+                renderGazeEstimationStatistics();
+
+                //open the modal
+                $('#gaze_estimation_stats_modal').modal();
             });
 
 
@@ -916,8 +1011,78 @@
                                         <!-- end of Emotion card -->
 
 
+                                        <!-- Gaze estimation card -->
+                                        <div class="card shadow-lg mb-2">
+                                            <div class="card-body">
+                                                <!-- put the heading -->
+                                                <div class="text-center mt-2">
+                                                    <h4 class="font-weight-bold">Gaze estimation</h4>
+                                                </div>
+
+                                                <!-- percentages -->
+                                                <div class="text-center">
+                                                    <!-- gaze estimation table -->
+                                                    <table class="table table-borderless table-striped">
+                                                        <tbody>
+                                                        <tr>
+                                                            <td>
+                                                                Looking up and right
+                                                                <hr style="height: 5px">
+                                                            </td>
+                                                            <td id="looking_up_right_perct_for_period"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                Looking up and left
+                                                                <hr style="height: 5px">
+                                                            </td>
+                                                            <td id="looking_up_left_perct_for_period"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                Looking down and right
+                                                                <hr style="height: 5px">
+                                                            </td>
+                                                            <td id="looking_down_right_perct_for_period"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                Looking down and left
+                                                                <hr style="height: 5px">
+                                                            </td>
+                                                            <td id="looking_down_left_perct_for_period"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                Looking front
+                                                                <hr style="height: 5px">
+                                                            </td>
+                                                            <td id="looking_front_perct_for_period"></td>
+                                                        </tr>
+                                                        </tbody>
+                                                    </table>
+                                                    <!-- end of gaze estimation table -->
+                                                </div>
+                                                <!-- end of percentages -->
+
+                                                <!-- stats button -->
+                                                <div class="float-right">
+                                                    <button type="button" class="btn btn-primary"
+                                                            id="view_gaze_estimation_stats">
+                                                        <i class="fa fa-line-chart"></i>
+                                                        View stats
+                                                    </button>
+                                                </div>
+                                                <!-- end of stats button -->
+                                            </div>
+
+                                        </div>
+                                        <!-- end of Gaze estimation card -->
+
+
                                     </div>
                                     <!-- end of student behavior summary -->
+
 
                                     <!-- a vertical list displaying the student engagement categories -->
                                     <ul class="list-group" id="progress_areas" hidden>
@@ -1459,6 +1624,29 @@
                 </div>
                 <div class="modal-body text-center">
                     <div id="emotion_stats_chart" style="height: 370px; width: 100%"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end of activity statistics modal -->
+
+
+    <!-- gaze estimation Modal-->
+    <div class="modal fade" id="gaze_estimation_stats_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document" style="max-width: 1400px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Gaze estimation Statistics</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center">
+                    <div id="gaze_estimation_stats_chart" style="height: 370px; width: 100%"></div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>

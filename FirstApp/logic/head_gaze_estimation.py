@@ -555,3 +555,57 @@ def get_lecture_gaze_esrimation_for_frames(video_name):
 
 
     return frame_detections, frame_rate
+
+
+def get_student_gaze_estimation_summary_for_period(gaze_estimation_data):
+    # declare variables to add percentage values
+    phone_checking_perct_combined = 0.0
+    listening_perct_combined = 0.0
+    note_taking_perct_combined = 0.0
+
+    looking_up_right_perct_combined = 0.0
+    looking_up_left_perct_combined = 0.0
+    looking_down_right_perct_combined = 0.0
+    looking_down_left_perct_combined = 0.0
+    looking_front_perct_combined = 0.0
+
+    # get the number of activties to calculate average
+    no_of_gaze_estimations = len(gaze_estimation_data)
+
+    individual_lec_gaze_estimations = []
+
+    gaze_estimation_labels = ["looking_up_and_right_perct", "looking_up_and_left_perct", "looking_down_and_right_perct", "looking_down_and_left_perct", "looking_front_perct"]
+
+    # iterate through the activities
+    for gaze_estimation in gaze_estimation_data:
+        individual_gaze_estimation = {}
+        individual_gaze_estimation["looking_up_and_right_perct"] = float(gaze_estimation['looking_up_and_right_perct'])
+        individual_gaze_estimation["looking_up_and_left_perct"] = float(gaze_estimation['looking_up_and_left_perct'])
+        individual_gaze_estimation["looking_down_and_right_perct"] = float(gaze_estimation['looking_down_and_right_perct'])
+        individual_gaze_estimation["looking_down_and_left_perct"] = float(gaze_estimation['looking_down_and_left_perct'])
+        individual_gaze_estimation["looking_front_perct"] = float(gaze_estimation['looking_front_perct'])
+
+        looking_up_right_perct_combined += float(gaze_estimation['looking_up_and_right_perct'])
+        looking_up_left_perct_combined += float(gaze_estimation['looking_up_and_left_perct'])
+        looking_down_right_perct_combined += float(gaze_estimation['looking_down_and_right_perct'])
+        looking_down_left_perct_combined += float(gaze_estimation['looking_down_and_left_perct'])
+        looking_front_perct_combined += float(gaze_estimation['looking_front_perct'])
+
+        # append to the list
+        individual_lec_gaze_estimations.append(individual_gaze_estimation)
+
+    # calculate the average percentages
+    looking_up_right_average_perct = round((looking_up_right_perct_combined / no_of_gaze_estimations), 1)
+    looking_up_left_perct = round((looking_up_left_perct_combined / no_of_gaze_estimations), 1)
+    looking_down_right_average_perct = round((looking_down_right_perct_combined / no_of_gaze_estimations), 1)
+    looking_down_left_average_perct = round((looking_down_left_perct_combined / no_of_gaze_estimations), 1)
+    looking_front_average_perct = round((looking_front_perct_combined / no_of_gaze_estimations), 1)
+
+    percentages = {}
+    percentages["looking_up_and_right_perct"] = looking_up_right_average_perct
+    percentages["looking_up_and_left_perct"] = looking_up_left_perct_combined
+    percentages["looking_down_and_right_perct"] = looking_down_right_perct_combined
+    percentages["looking_down_and_left_perct"] = looking_down_left_perct_combined
+    percentages["looking_front_perct"] = looking_front_average_perct
+
+    return percentages, individual_lec_gaze_estimations, gaze_estimation_labels

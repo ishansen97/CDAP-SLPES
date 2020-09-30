@@ -668,10 +668,15 @@ class GetStudentBehaviorSummaryForPeriod(APIView):
         isRecordFound = False
         activity_percentages = {}
         emotion_percentages = {}
+        gaze_estimation_percentages = {}
+
         individual_lec_activties = []
         individual_lec_emotions = []
+        individual_lec_gaze_estimations = []
+
         activity_labels = []
         emotion_labels = []
+        gaze_estimation_labels = []
 
 
         current_date = datetime.datetime.now().date()
@@ -705,13 +710,29 @@ class GetStudentBehaviorSummaryForPeriod(APIView):
             emotion_percentages, individual_lec_emotions, emotion_labels = ed.get_student_emotion_summary_for_period(emotion_data)
 
 
+        # retrieving lecture gaze estimations
+        lec_gaze_estimation = LectureGazeEstimation.objects.filter(
+            lecture_video_id__date__gte=previous_date,
+            lecture_video_id__date__lte=current_date,
+            lecture_video_id__lecturer=lecturer
+        )
+
+        # if there are gaze estimation data
+        if len(lec_gaze_estimation) > 0:
+            gaze_estimation_serializer = LectureGazeEstimationSerializer(lec_gaze_estimation, many=True)
+            gaze_estimation_data = gaze_estimation_serializer.data
+            gaze_estimation_percentages, individual_lec_gaze_estimations, gaze_estimation_labels = hge.get_student_gaze_estimation_summary_for_period(gaze_estimation_data)
+
 
         return Response({
             "activity_response": activity_percentages,
             "emotion_response": emotion_percentages,
+            "gaze_estimation_response": gaze_estimation_percentages,
             "individual_activities": individual_lec_activties,
             "individual_emotions": individual_lec_emotions,
+            "individual_gaze_estimations": individual_lec_gaze_estimations,
             "activity_labels": activity_labels,
             "emotion_labels": emotion_labels,
+            "gaze_estimation_labels": gaze_estimation_labels,
             "isRecordFound": isRecordFound
         })
