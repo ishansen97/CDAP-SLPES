@@ -35,6 +35,7 @@
         var global_lecture_video_id = '';
         var global_video_name = '';
         var student_behavior_summary = {};
+        var lecture_video_time_landmarks = [];
 
 
         $(document).ready(function () {
@@ -223,8 +224,23 @@
                     $('#looking_front_width').width(act.looking_front_perct + '%');
                 });
 
+
+                //fetch the video time landmark details
+                fetch('http://127.0.0.1:8000/get-lecture-video-summary-time-landmarks/?video_name=' + global_video_name)
+                .then((res) => res.json())
+                .then((out) => assignTimeLandmarks(out.response))
+                .catch((err) => alert('error: ' + err));
+
+
                 //display the progress bar area
                 $('#progress_areas').attr('hidden', false);
+            }
+
+
+            //this function will assign lecture video time landmarks
+            function assignTimeLandmarks(response) {
+
+                lecture_video_time_landmarks = response;
             }
 
 
@@ -244,6 +260,15 @@
 
             //this function will call the chart function
             function renderChart() {
+
+                let datapoints = [];
+
+                //iterate through the time landmarks
+                for (let i = 0; i < lecture_video_time_landmarks.length; i++) {
+                    let point = {label: lecture_video_time_landmarks[i], y: Number(Math.round(Math.random() * 1000), 0)};
+
+                    datapoints.push(point);
+                }
 
                 var chart = new CanvasJS.Chart("chartContainer", {
                     animationEnabled: true,
@@ -285,67 +310,8 @@
                         {#xValueFormatString: "DD MMM, YYYY",#}
                         xValueFormatString: "hh:mm:ss",
                         color: "#000000",
-                        dataPoints: [
-                            {x: new Date(2017, 0, 3, 0, 2, 0), y: 650},
-                            {x: new Date(2017, 0, 4, 0, 4, 0), y: 700},
-                            {x: new Date(2017, 0, 5, 0, 6, 0), y: 710},
-                            {x: new Date(2017, 0, 6, 0, 8, 0), y: 658},
-                            {x: new Date(2017, 0, 7, 0, 10, 0), y: 734},
-                            {x: new Date(2017, 0, 8, 0, 12, 0), y: 963},
-                            {x: new Date(2017, 0, 9, 0, 14, 0), y: 847},
-                            {x: new Date(2017, 0, 10, 0, 16, 0), y: 853},
-                            {x: new Date(2017, 0, 11, 0, 18, 0), y: 869},
-                            {x: new Date(2017, 0, 12, 0, 20, 0), y: 943},
-                            {x: new Date(2017, 0, 13, 0, 22, 0), y: 970},
-                            {x: new Date(2017, 0, 14, 0, 24, 0), y: 869},
-                            {x: new Date(2017, 0, 15, 0, 26, 0), y: 890},
-                            {x: new Date(2017, 0, 16, 0, 28, 0), y: 930}
-                        ]
-                    },
-                        {
-                            type: "line",
-                            showInLegend: true,
-                            name: "Emotion",
-                            lineDashType: "dash",
-                            dataPoints: [
-                                {x: new Date(2017, 0, 3, 0, 2, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 4, 0, 4, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 5, 0, 6, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 6, 0, 8, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 7, 0, 10, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 8, 0, 12, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 9, 0, 14, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 10, 0, 16, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 11, 0, 18, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 12, 0, 20, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 13, 0, 22, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 14, 0, 24, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 15, 0, 26, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 16, 0, 28, 0), y: Number(Math.round(Math.random() * 1000), 0)}
-                            ]
-                        },
-                        {
-                            type: "line",
-                            showInLegend: true,
-                            name: "Gaze",
-                            lineDashType: "dash",
-                            dataPoints: [
-                                {x: new Date(2017, 0, 3, 0, 2, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 4, 0, 4, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 5, 0, 6, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 6, 0, 8, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 7, 0, 10, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 8, 0, 12, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 9, 0, 14, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 10, 0, 16, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 11, 0, 18, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 12, 0, 20, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 13, 0, 22, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 14, 0, 24, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 15, 0, 26, 0), y: Number(Math.round(Math.random() * 1000), 0)},
-                                {x: new Date(2017, 0, 16, 0, 28, 0), y: Number(Math.round(Math.random() * 1000), 0)}
-                            ]
-                        }]
+                        dataPoints: datapoints
+                    }]
                 });
                 chart.render();
             }

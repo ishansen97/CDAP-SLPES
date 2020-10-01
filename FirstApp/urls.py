@@ -164,12 +164,15 @@ urlpatterns = [
     url(r'^get-lecture-gaze-estimation-for-frame/$', api.GetLectureGazeEstimationForFrames.as_view()),
 
 
+    #####===== DATA VISUALIZATION =====#####
+
     ##### VIEW STUDENT BEHAVIOR SUMMARY SECTION #####
 
     # retrieves student behavior summary for specified time period
     url(r'^get-student-behavior-summary-for-period/$', api.GetStudentBehaviorSummaryForPeriod.as_view()),
 
-
+    # retrieves lecture video summary time landmarks
+    url(r'^get-lecture-video-summary-time-landmarks/$', api.GetLectureVideoSummaryTimeLandmarks.as_view()),
 
     # routers
     # path('', include(router.urls)),

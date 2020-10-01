@@ -12,6 +12,7 @@ from . import emotion_detector as ed
 from .logic import id_generator as ig
 from .logic import pdf_file_generator as pdf
 from .logic import head_gaze_estimation as hge
+from .logic import video_extraction as ve
 from .models import Teachers, Video, VideoMeta, RegisterUser
 from .MongoModels import *
 from .serializers import *
@@ -735,4 +736,16 @@ class GetStudentBehaviorSummaryForPeriod(APIView):
             "emotion_labels": emotion_labels,
             "gaze_estimation_labels": gaze_estimation_labels,
             "isRecordFound": isRecordFound
+        })
+
+
+# this API will retrieve lecture video summary time landmarks
+class GetLectureVideoSummaryTimeLandmarks(APIView):
+
+    def get(self, request):
+        video_name = request.query_params.get('video_name')
+        time_landmarks = ve.getTimeLandmarks(video_name)
+
+        return Response({
+            "response": time_landmarks
         })

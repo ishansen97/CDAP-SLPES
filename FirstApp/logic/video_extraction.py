@@ -1,6 +1,7 @@
 import os
 import cv2
 import shutil
+import datetime
 
 def VideoExtractor(request):
 
@@ -68,3 +69,50 @@ def getExtractedFrames(request):
 
     else:
         return "No extracted frames were found"
+
+
+# this method will retrieve the time landmarks for a lecture video
+def getTimeLandmarks(video_name):
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    VIDEO_PATH = os.path.join(BASE_DIR, "assets\\FirstApp\\videos\\{}".format(video_name))
+
+    # iteration
+    video = cv2.VideoCapture(VIDEO_PATH)
+    no_of_frames = video.get(cv2.CAP_PROP_FRAME_COUNT)
+    fps = int(video.get(cv2.CAP_PROP_FPS))
+    frame_count = 0
+
+    # calculating the duration in seconds
+    duration = int(no_of_frames / fps)
+
+    # define the number of time gaps required
+    THRESHOLD_GAP = 5
+
+    # calculating the real duration
+    real_duration = datetime.timedelta(seconds=(duration+THRESHOLD_GAP))
+
+    # defines the number of seconds included for a frame group
+    THRESHOLD_TIME = 10
+
+
+    # define an unit gap
+    unit_gap = int(duration / THRESHOLD_GAP)
+
+    initial_landmark = 0
+
+    time_landmarks = ['0:00:00']
+    time_landmarks_values = [0]
+
+    # loop through the threshold gap limit to define the time landmarks
+    for i in range(THRESHOLD_GAP):
+        initial_landmark += unit_gap
+        time_landmark = str(datetime.timedelta(seconds=initial_landmark))
+        time_landmark_value = initial_landmark
+        time_landmarks.append(time_landmark)
+        time_landmarks_values.append(time_landmark_value)
+
+    # append the final time
+    time_landmarks.append(str(real_duration))
+    time_landmarks_values.append(duration)
+
+    return time_landmarks
