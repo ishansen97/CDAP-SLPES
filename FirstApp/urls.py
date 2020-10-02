@@ -86,6 +86,9 @@ urlpatterns = [
     # lecture video API (to retrieve a lecture)
     url(r'^get-lecture-video/$', api.GetLectureVideoViewSet.as_view()),
 
+    # lecture video API (to retrieve a lecture)
+    url(r'^get-lecture-video-for-home/$', api.GetLectureVideoViewSetForHome.as_view()),
+
     ##### ACTIVITIES API #####
 
     # lecture activity API (to retrieve lecture activities)
@@ -149,6 +152,7 @@ urlpatterns = [
 
     # lecture video individual student process pose estimation API (for Pose estimation)
     url(r'^process-lecture-video-individual-pose-estimation', api.ProcessIndividualStudentPoseEstimation.as_view()),
+
 
     ##### GAZE Section #####
     # lecture video Gaze estimation

@@ -75,7 +75,7 @@
                 //display the video loading message
                 $('#student_behavior_video_loading').attr('hidden', false);
 
-                fetch('http://127.0.0.1:8000/get-lecture-video/?lecturer=' + global_lecturer + '&date=' + date_format + '&index=' + global_lecturer_subject_index)
+                fetch('http://127.0.0.1:8000/get-lecture-video-for-home/?lecturer=' + global_lecturer + '&date=' + date_format)
                     .then((res) => res.json())
                     .then((out) => retrieveLectureVideoDetails(out))
                     .catch((error) => alert('an error occurred: ' + error));

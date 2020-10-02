@@ -198,7 +198,7 @@ class GetLectureVideoViewSet(APIView):
         lecturer_video = LectureVideo.objects.filter(lecturer_id=lecturer, date=date)
         serializer = LectureVideoSerializer(lecturer_video, many=True)
 
-        lecture_video_id = serializer.data[index]['lecture_video_id']
+        lecture_video_id = serializer.data[0]['lecture_video_id']
         print('lecture video id: ', lecture_video_id)
         activities = LectureActivity.objects.filter(lecture_video_id__lecture_video_id=lecture_video_id)
         isActivityFound = (len(activities) > 0)
@@ -207,6 +207,24 @@ class GetLectureVideoViewSet(APIView):
             "response": serializer.data[index],
             "isActivityFound": isActivityFound
         })
+
+
+# this API will retrieve lecture video details for lecturer Home Page
+class GetLectureVideoViewSetForHome(APIView):
+
+    def get(self, request):
+        lecturer = request.query_params.get('lecturer')
+        date = request.query_params.get('date')
+        lecturer_video = LectureVideo.objects.filter(lecturer_id=lecturer, date=date)
+        serializer = LectureVideoSerializer(lecturer_video, many=True)
+
+        lecture_video_id = serializer.data[0]['lecture_video_id']
+        print('lecture video id: ', lecture_video_id)
+
+        return Response({
+            "response": serializer.data[0]
+        })
+
 
 
 # ACTIVITY
