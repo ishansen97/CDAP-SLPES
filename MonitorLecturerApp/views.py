@@ -8,8 +8,8 @@ from rest_framework.response import Response
 from LectureSummarizingApp.models import LectureAudio
 from LectureSummarizingApp.serializer import LectureAudioSerializer
 from . import views
-from .models import RegisterTeacher, LecturerVideo
-from . serializers import RegisterTeacherSerializer
+from .models import *
+from . serializers import *
 
 import cv2
 import os
@@ -70,8 +70,14 @@ def hello(request):
     # the list needs to be sorted by the date
     lec_list.sort(key=lambda date: dt.strptime(str(date['date']), "%Y-%m-%d"), reverse=True)
 
+    # retrieve exsiting lecture recorded videos
+    lec_recorded_video = LectureRecordedVideo.objects.all()
+    lec_recorded_video_ser = LectureRecordedVideoSerializer(lec_recorded_video, many=True)
+    lec_recorded_video_data = lec_recorded_video_ser.data
+
     for videoPath in videoPaths:
         video = LecturerVideo()
+        video = {}
         cap = cv2.VideoCapture(videoPath)
         fps = cap.get(cv2.CAP_PROP_FPS)  # OpenCV2 version 2 used "CV_CAP_PROP_FPS"
         frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -80,11 +86,21 @@ def hello(request):
         videoName = os.path.basename(videoPath)
         # videoName = videos.append(os.path.basename(videoPath))
         durationObj = datetime.timedelta(seconds=duration)
-        video.path = videoPath
-        video.name = videoName
-        video.duration = str(durationObj)
+        video['path'] = videoPath
+        video['name'] = videoName
+        video['duration'] = str(durationObj)
+        video['video_id'] = None
+
+        # checking whether this video already exists
+        for recorded_lecture in lec_recorded_video_data:
+
+            if videoName == recorded_lecture['lecture_video_name']:
+                video['isAvailable'] = True
+                video['video_id'] = recorded_lecture['id']
+
+
         videos.append(video)
-        print('Video Name: ', video.name)
+        print('Video Name: ', video['name'])
     context = {'object': obj, 'Videos': videos, 'durations': durations, 'template_name': 'MonitorLecturerApp/template.html', 'lec_list': lec_list}
     return render(request, 'MonitorLecturerApp/index.html', context)
 

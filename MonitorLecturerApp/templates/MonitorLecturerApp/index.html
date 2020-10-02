@@ -40,20 +40,44 @@
 
     $(document).ready(function () {
         $('.calc').click(function () {
-            let video_name = $(this).attr('id');
+            let video_name = $(this).attr('data-name');
 
-            $('#loader').attr('hidden', false);
+            $('#no_content_message').attr('hidden', true);
+
+            $('#video_loader').attr('hidden', false);
 
             // alert('hello');
 
-            $('#no_content_message').attr('hidden', true);
+
 
             //fetching data from the API
             fetch('http://127.0.0.1:8000/lecturer/activities/?video_name=' + video_name)
                 .then((res) => res.json())
                 .then((out) => assignPerct(out.response))
-                .catch((error) => alert('error ' + error))
+                .catch((error) => alert('error ' + error));
+
+
+
         });
+
+
+        //this function will handle the lecturer video results button
+        $('.results').click(function () {
+            let video_id = $(this).attr('data-id');
+
+
+            $('#no_content_message').attr('hidden', true);
+
+            $('#video_loader').attr('hidden', false);
+
+            //fetch the results
+            fetch('http://127.0.0.1:8000/lecturer/get-lecturer-video-results/?video_id=' + video_id)
+            .then((res) => res.json())
+            .then((out) => assignPerct(out.response))
+            .catch((err) => alert('error: ' + err))
+
+        });
+
 
 
         //to assign percentage values
@@ -61,6 +85,7 @@
             $('#no_content_message').attr('hidden', true);
             $('#progress_bars').attr('hidden', false);
             $('#loader').attr('hidden', true);
+
 
             {#let sitting = Math.round(percentages.sitting_perct);#}
             let sitting = Math.round(percentages.sitting_perct);
@@ -75,8 +100,9 @@
             $('#standing_span').text(standing + '%');
             $('#walking_span').text(walking + '%');
 
-
+            $('#video_loader').hide();
         }
+
 
 /*
         //this is for the temporay button (delete later)
@@ -443,8 +469,8 @@
                             <!-- Card Header - Dropdown -->
                             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                                 <h6 class="m-0 font-weight-bold text-primary">Video List</h6>
-{#                                <button type="button" class="btn btn-outline-primary" id="video_graph">Statistics#}
-{#                                </button>#}
+                                <button type="button" class="btn btn-outline-primary" id="video_graph">Statistics
+                                </button>
 
                             </div>
                             <!-- Card Body -->
@@ -463,11 +489,21 @@
                                             <tr>
                                                 <td>{{ video.name }}</td>
                                                 <td>{{ video.duration }}</td>
-                                                <td class="btn_class">
+                                                {% if video.isAvailable %}
+                                                    <td class="btn_class">
+                                                        <button type="button" class="btn btn-primary results"
+                                                                data-name='{{ video.name }}'
+                                                                data-id="{{ video.video_id }}">Results
+                                                        </button>
+                                                    </td>
+                                                {% else %}
+                                                    <td class="btn_class">
                                                     <button type="button" class="btn btn-success calc"
-                                                            id='{{ video.name }}'>Calculate
+                                                            data-name='{{ video.name }}'>Calculate
                                                     </button>
                                                 </td>
+                                                {% endif %}
+
                                             </tr>
                                         {% endfor %}
                                         </tbody>
@@ -498,7 +534,6 @@
 
                             <!--loader -->
                             <div class="text-center" id="audio_loader" hidden>
-{#                                <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="">#}
 
                                 <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="">
 
@@ -515,22 +550,15 @@
                                     <!-- table body-->
                                     <tbody>
                                     <tr>
-                                        <td>No of Total words</td>
+                                        <td>No of Total words: </td>
                                         <td id="num_of_words"></td>
                                     </tr>
                                     <tr>
-                                        <td>No fo word to be expected</td>
+                                        <td>No of word expected: </td>
                                         <td> 3600 - 4800</td>
                                     </tr>
 
-                                    {#                                        <tr>#}
-                                    {#                                            <td>No of extraneous words</td>#}
-                                    {#                                            <td id="lexical_count"></td>#}
-                                    {#                                        </tr>#}
-                                    {#                                        <tr>#}
-                                    {#                                            <td>No of Non-lexical words</td>#}
-                                    {#                                            <td id="non_lexical_count"></td>#}
-                                    {#                                        </tr>#}
+
                                     </tbody>
                                 </table>
                                 <!--button -->
@@ -676,11 +704,11 @@
                 <table class="table table-borderless">
                     <tbody>
                     <tr>
-                        <td>No. of extraneous words</td>
+                        <td>No. of extraneous words: </td>
                         <td id="lexical_count"></td>
                     </tr>
                     <tr>
-                        <td>No. of non-lexical words</td>
+                        <td>No. of non-lexical words: </td>
                         <td id="non_lexical_count"></td>
                     </tr>
                     </tbody>

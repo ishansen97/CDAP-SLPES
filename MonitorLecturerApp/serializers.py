@@ -18,6 +18,9 @@ class LecturerVideoSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class LecturerVideoMetaDataSerializer(serializers.ModelSerializer):
+
+    lecturer_video_id = LectureRecordedVideo()
+
     class Meta:
         model = LecturerVideoMetaData
         fields = '__all__'
