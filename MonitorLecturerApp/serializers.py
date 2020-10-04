@@ -17,14 +17,6 @@ class LecturerVideoSerializer(serializers.ModelSerializer):
         model = LecturerVideo
         fields = '__all__'
 
-class LecturerVideoMetaDataSerializer(serializers.ModelSerializer):
-
-    lecturer_video_id = LectureRecordedVideo()
-
-    class Meta:
-        model = LecturerVideoMetaData
-        fields = '__all__'
-
 
 class LecturerAudioTextSerializer(serializers.ModelSerializer):
 
@@ -42,4 +34,13 @@ class LectureRecordedVideoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LectureRecordedVideo
+        fields = '__all__'
+
+
+class LecturerVideoMetaDataSerializer(serializers.ModelSerializer):
+
+    lecturer_video_id = LectureRecordedVideoSerializer()
+
+    class Meta:
+        model = LecturerVideoMetaData
         fields = '__all__'

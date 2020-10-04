@@ -39,7 +39,7 @@
     var lecture_audio_text_summary = {};
 
     $(document).ready(function () {
-        $('.calc').click(function () {
+        $('.calc').click(function (e) {
             let video_name = $(this).attr('data-name');
 
             $('#no_content_message').attr('hidden', true);
@@ -53,7 +53,7 @@
             //fetching data from the API
             fetch('http://127.0.0.1:8000/lecturer/activities/?video_name=' + video_name)
                 .then((res) => res.json())
-                .then((out) => assignPerct(out.response))
+                .then((out) => assignPerct(out.response, e))
                 .catch((error) => alert('error ' + error));
 
 
@@ -62,9 +62,8 @@
 
 
         //this function will handle the lecturer video results button
-        $('.results').click(function () {
+        $('.results').click(function (e) {
             let video_id = $(this).attr('data-id');
-
 
             $('#no_content_message').attr('hidden', true);
 
@@ -73,7 +72,7 @@
             //fetch the results
             fetch('http://127.0.0.1:8000/lecturer/get-lecturer-video-results/?video_id=' + video_id)
             .then((res) => res.json())
-            .then((out) => assignPerct(out.response))
+            .then((out) => assignPerct(out.response, e))
             .catch((err) => alert('error: ' + err))
 
         });
@@ -81,11 +80,16 @@
 
 
         //to assign percentage values
-        function assignPerct(percentages) {
+        function assignPerct(percentages, e) {
             $('#no_content_message').attr('hidden', true);
             $('#progress_bars').attr('hidden', false);
             $('#loader').attr('hidden', true);
 
+            //display the 'results' button
+
+            {#e.target.parentNode.innerHTML = "<span class='font-italic bg-success'>Processed</span>";#}
+
+            {#alert("Result button error");#}
 
             {#let sitting = Math.round(percentages.sitting_perct);#}
             let sitting = Math.round(percentages.sitting_perct);

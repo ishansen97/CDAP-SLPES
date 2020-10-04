@@ -71,9 +71,9 @@ def hello(request):
     lec_list.sort(key=lambda date: dt.strptime(str(date['date']), "%Y-%m-%d"), reverse=True)
 
     # retrieve exsiting lecture recorded videos
-    lec_recorded_video = LectureRecordedVideo.objects.all()
-    lec_recorded_video_ser = LectureRecordedVideoSerializer(lec_recorded_video, many=True)
-    lec_recorded_video_data = lec_recorded_video_ser.data
+    lec_video_meta = LecturerVideoMetaData.objects.all()
+    lec_video_meta_ser = LecturerVideoMetaDataSerializer(lec_video_meta, many=True)
+    lec_video_meta_data = lec_video_meta_ser.data
 
     for videoPath in videoPaths:
         video = LecturerVideo()
@@ -92,11 +92,13 @@ def hello(request):
         video['video_id'] = None
 
         # checking whether this video already exists
-        for recorded_lecture in lec_recorded_video_data:
+        for recorded_lecture in lec_video_meta_data:
 
-            if videoName == recorded_lecture['lecture_video_name']:
+            print('recorded lecture: ', recorded_lecture)
+
+            if videoName == recorded_lecture['lecturer_video_id']['lecture_video_name']:
                 video['isAvailable'] = True
-                video['video_id'] = recorded_lecture['id']
+                video['video_id'] = recorded_lecture['lecturer_video_id']['id']
 
 
         videos.append(video)
