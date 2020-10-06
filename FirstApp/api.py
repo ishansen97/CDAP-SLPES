@@ -215,14 +215,24 @@ class GetLectureVideoViewSetForHome(APIView):
     def get(self, request):
         lecturer = request.query_params.get('lecturer')
         date = request.query_params.get('date')
+        counter = int(request.query_params.get('counter'))
         lecturer_video = LectureVideo.objects.filter(lecturer_id=lecturer, date=date)
         serializer = LectureVideoSerializer(lecturer_video, many=True)
 
-        lecture_video_id = serializer.data[0]['lecture_video_id']
-        print('lecture video id: ', lecture_video_id)
+        response = {}
+
+        # to check whether there is only one lecture video for the query
+
+        if len(serializer.data) > 1:
+            lecture_video_id = serializer.data[counter]['lecture_video_id']
+            response = serializer.data[counter]
+        else:
+            lecture_video_id = serializer.data[0]['lecture_video_id']
+            response = serializer.data[0]
+
 
         return Response({
-            "response": serializer.data[0]
+            "response": response
         })
 
 
