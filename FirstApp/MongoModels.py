@@ -110,7 +110,7 @@ class LectureVideo(models.Model):
     def __str__(self):
         return self.lecture_video_id
 
-
+# ACTIVITY section
 # lecture activity table
 class LectureActivity(models.Model):
     lecture_activity_id = models.CharField(max_length=10)
@@ -122,6 +122,30 @@ class LectureActivity(models.Model):
 
     def __str__(self):
         return self.lecture_activity_id
+
+
+# this abstract class will define the details for an activity frame group
+class LectureActivityFrameGroupDetails(models.Model):
+    frame_group = models.CharField(max_length=10)
+    phone_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    listening_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    writing_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+
+    def __str__(self):
+        return self.frame_group
+
+    class meta:
+        abstract = True
+
+
+# this class will contain the activity frame groupings
+class LectureActivityFrameGroupings(models.Model):
+    name = models.CharField(max_length=15, default="")
+    lecture_activity_id = models.ForeignKey(LectureActivity, on_delete=models.CASCADE)
+    frame_group_details = models.ArrayField(LectureActivityFrameGroupDetails)
+
+    def __str__(self):
+        return self.name
 
 
 # EMOTIONS section

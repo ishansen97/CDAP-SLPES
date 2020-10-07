@@ -615,3 +615,127 @@ def get_student_activity_summary_for_period(activities):
     percentages["writing_perct"] = note_taking_average_perct
 
     return percentages, individual_lec_activities, activity_labels
+
+
+# this method will retrieve activity frame groupings for a lecture
+def activity_frame_groupings(video_name, frame_landmarks, frame_group_dict):
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    EXTRACTED_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\activity\\{}".format(video_name))
+    # CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_03.h5")
+    # CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_02.h5")
+    # CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_04.h5")
+    CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_05.h5")
+
+    np.set_printoptions(suppress=True)
+
+    # load the model
+    model = tensorflow.keras.models.load_model(CLASSIFIER_DIR)
+    model.compile(optimizer='adam',
+                  loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                  metrics=['accuracy'])
+
+    data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32)
+    size = (224, 224)
+
+    # initializing the count variables
+    frame_count = 0
+
+    # class labels
+    class_labels = ['Phone checking', 'Listening', 'Note taking']
+
+    # get the frame differences for each frame group
+    frame_group_diff = {}
+
+    # loop through the frame group dictionary
+    for key in frame_group_dict.keys():
+        split_values = key.split("-")
+        value1 = int(split_values[0])
+        value2 = int(split_values[1])
+        diff = value2 - value1
+
+        # assign the difference
+        frame_group_diff[key] = diff if diff > 0 else 1
+
+    # looping through the frames
+    for frame in os.listdir(EXTRACTED_DIR):
+        # getting the frame folder
+        FRAME_FOLDER = os.path.join(EXTRACTED_DIR, frame)
+
+        # initializing the variables
+        phone_count = 0
+        note_count = 0
+        listen_count = 0
+
+        # looping through the detections in each frame
+        for detections in os.listdir(FRAME_FOLDER):
+
+            # checking whether the image contains only one person
+            if "frame" not in detections:
+                # get the label for this image
+                IMAGE_PATH = os.path.join(FRAME_FOLDER, detections)
+                image = cv2.imread(IMAGE_PATH)
+
+                image = cv2.resize(image, size)
+
+                image_array = np.asarray(image)
+                normalized_image_array = (image_array.astype(np.float32) / 127.0) - 1
+
+
+                # Load the image into the array
+                data[0] = normalized_image_array
+
+                # run the inference
+                prediction = model.predict(data)
+
+                # get the predicted label
+                label = class_labels[prediction.argmax()]
+
+                # increment the count based on the label
+                if label == class_labels[0]:
+                    phone_count += 1
+                elif label == class_labels[1]:
+                    listen_count += 1
+                elif label == class_labels[2]:
+                    note_count += 1
+
+                # finding the time landmark that the current frame is in
+                for i in frame_landmarks:
+                    index = frame_landmarks.index(i)
+                    j = index + 1
+
+                    # checking whether the next index is within the range
+                    if j < len(frame_landmarks):
+                        next_value = frame_landmarks[j]
+
+                        # checking the correct time landmark range
+                        if (frame_count >= i) & (frame_count < next_value):
+                            frame_name = "{}-{}".format(i, next_value)
+
+                            frame_group_dict[frame_name]['phone_count'] += phone_count
+                            frame_group_dict[frame_name]['listen_count'] += listen_count
+                            frame_group_dict[frame_name]['note_count'] += note_count
+
+        # increment the frame count
+        frame_count += 1
+
+    # calculate the percentage values
+    for key in frame_group_dict.keys():
+        frame_group_details = frame_group_dict[key]
+        frame_group_phone_count = frame_group_details['phone_count']
+        frame_group_listen_count = frame_group_details['listen_count']
+        frame_group_note_count = frame_group_details['note_count']
+
+        frame_diff = int(frame_group_diff[key])
+
+        frame_group_phone_perct = float(frame_group_phone_count / frame_diff) * 100
+        frame_group_listen_perct = float(frame_group_listen_count / frame_diff) * 100
+        frame_group_note_perct = float(frame_group_note_count / frame_diff) * 100
+
+        # assign the values to the same dictionary
+        frame_group_dict[key]['phone_perct'] = frame_group_phone_perct
+        frame_group_dict[key]['listen_perct'] = frame_group_listen_perct
+        frame_group_dict[key]['note_perct'] = frame_group_note_perct
+
+
+    # return the dictionary
+    return frame_group_dict

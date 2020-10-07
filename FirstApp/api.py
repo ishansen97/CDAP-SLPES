@@ -777,3 +777,18 @@ class GetLectureVideoSummaryTimeLandmarks(APIView):
         return Response({
             "response": time_landmarks
         })
+
+
+# this API will retrieve lecture activity summary
+class GetLectureActivitySummary(APIView):
+
+    def get(self, request):
+        video_name = request.query_params.get('video_name')
+        frame_landmarks, frame_group_dict = ve.getFrameLandmarks(video_name)
+        frame_group_percentages = ar.activity_frame_groupings(video_name, frame_landmarks, frame_group_dict)
+
+        return Response({
+            "frame_landmarks": frame_landmarks,
+            "frame_group_dict": frame_group_dict,
+            "frame_group_percentages": frame_group_percentages
+        })

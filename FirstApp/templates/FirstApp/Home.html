@@ -249,12 +249,37 @@
 
 
 
-            //this function will handle the 'summary' button
-            $('#summary_btn').click(function () {
+            //this function will handle the activity 'summary' button
+            $('#activity_summary_btn').click(function () {
+
+                //fetch the activity summary details
+                fetch('http://127.0.0.1:8000/get-lecture-activity-summary/?video_name=' + global_video_name)
+                .then((res) => res.json())
+                .then((out) => alert(out.frame_landmarks))
+                .catch((err) => alert('error: ' + err));
+
                 //open the modal
                 $('#summaryModal').modal();
 
-                let test_date = new Date(0, 0, 0, 0, 12, 30, 0);
+
+                //render the chart onto the modal body
+                renderChart();
+            });
+
+            //this function will handle the emotion 'summary' button
+            $('#emotion_summary_btn').click(function () {
+                //open the modal
+                $('#summaryModal').modal();
+
+
+                //render the chart onto the modal body
+                renderChart();
+            });
+
+            //this function will handle the gaze 'summary' button
+            $('#gaze_summary_btn').click(function () {
+                //open the modal
+                $('#summaryModal').modal();
 
 
                 //render the chart onto the modal body
@@ -1109,6 +1134,12 @@
                                             </div>
                                             <!-- end of progress area (activity) -->
                                             <hr>
+
+                                            <!-- button to view activity summary -->
+                                            <button type="button" class="btn btn-primary float-right" id="activity_summary_btn">
+                                                Summary
+                                            </button>
+                                            <!-- end of button to view activity summary -->
                                         </li>
                                         <!-- end of the activity list item -->
 
@@ -1172,6 +1203,12 @@
                                             </div>
                                             <!-- end of emotion progress bars -->
                                             <hr>
+
+                                            <!-- button to view emotion summary -->
+                                            <button type="button" class="btn btn-primary float-right" id="emotion_summary_btn">
+                                                Summary
+                                            </button>
+                                            <!-- end of button to view emotion summary -->
                                         </li>
                                         <!-- end of the emotion list item -->
 
@@ -1240,16 +1277,20 @@
                                             </div>
                                             <!-- end of progress area (gaze) -->
                                             <hr>
+
+
+                                            <!-- button to view gaze summary -->
+                                            <button type="button" class="btn btn-primary float-right" id="gaze_summary_btn">
+                                                Summary
+                                            </button>
+                                            <!-- end of button to view gaze summary -->
+
+
                                         </li>
                                         <!-- end of the gaze list item -->
 
 
-                                        <!-- button to view a summary -->
-                                        <li class="list-group-item">
-                                            <button type="button" class="btn btn-primary float-right" id="summary_btn">
-                                                Summary
-                                            </button>
-                                        </li>
+
                                     </ul>
 
 

@@ -178,6 +178,10 @@ urlpatterns = [
     # retrieves lecture video summary time landmarks
     url(r'^get-lecture-video-summary-time-landmarks/$', api.GetLectureVideoSummaryTimeLandmarks.as_view()),
 
+    # retrieves lecture activity summary
+    url(r'^get-lecture-activity-summary/$', api.GetLectureActivitySummary.as_view()),
+
+
     # routers
     # path('', include(router.urls)),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
