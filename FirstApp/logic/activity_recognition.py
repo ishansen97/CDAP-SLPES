@@ -656,6 +656,7 @@ def activity_frame_groupings(video_name, frame_landmarks, frame_group_dict):
         # assign the difference
         frame_group_diff[key] = diff if diff > 0 else 1
 
+
     # looping through the frames
     for frame in os.listdir(EXTRACTED_DIR):
         # getting the frame folder
@@ -665,6 +666,7 @@ def activity_frame_groupings(video_name, frame_landmarks, frame_group_dict):
         phone_count = 0
         note_count = 0
         listen_count = 0
+        detection_count = 0
 
         # looping through the detections in each frame
         for detections in os.listdir(FRAME_FOLDER):
@@ -698,6 +700,11 @@ def activity_frame_groupings(video_name, frame_landmarks, frame_group_dict):
                 elif label == class_labels[2]:
                     note_count += 1
 
+
+                # increment the detection count
+                detection_count += 1
+
+
                 # finding the time landmark that the current frame is in
                 for i in frame_landmarks:
                     index = frame_landmarks.index(i)
@@ -711,9 +718,13 @@ def activity_frame_groupings(video_name, frame_landmarks, frame_group_dict):
                         if (frame_count >= i) & (frame_count < next_value):
                             frame_name = "{}-{}".format(i, next_value)
 
+
                             frame_group_dict[frame_name]['phone_count'] += phone_count
                             frame_group_dict[frame_name]['listen_count'] += listen_count
                             frame_group_dict[frame_name]['note_count'] += note_count
+                            frame_group_dict[frame_name]['detection_count'] += detection_count
+
+
 
         # increment the frame count
         frame_count += 1
@@ -724,18 +735,36 @@ def activity_frame_groupings(video_name, frame_landmarks, frame_group_dict):
         frame_group_phone_count = frame_group_details['phone_count']
         frame_group_listen_count = frame_group_details['listen_count']
         frame_group_note_count = frame_group_details['note_count']
+        group_detection_count = frame_group_details['detection_count']
+
+        # print('frame group phone count: ', frame_group_phone_count)
+        # print('frame group listen count: ', frame_group_listen_count)
+        # print('frame group note count: ', frame_group_note_count)
+        # print('frame group detection count: ', group_detection_count)
 
         frame_diff = int(frame_group_diff[key])
 
-        frame_group_phone_perct = float(frame_group_phone_count / frame_diff) * 100
-        frame_group_listen_perct = float(frame_group_listen_count / frame_diff) * 100
-        frame_group_note_perct = float(frame_group_note_count / frame_diff) * 100
+        # print('frame difference: ', frame_diff)
+
+        frame_group_phone_perct = float(frame_group_phone_count / group_detection_count) * 100
+        frame_group_listen_perct = float(frame_group_listen_count / group_detection_count) * 100
+        frame_group_note_perct = float(frame_group_note_count / group_detection_count) * 100
 
         # assign the values to the same dictionary
-        frame_group_dict[key]['phone_perct'] = frame_group_phone_perct
-        frame_group_dict[key]['listen_perct'] = frame_group_listen_perct
-        frame_group_dict[key]['note_perct'] = frame_group_note_perct
+        frame_group_dict[key]['phone_perct'] = round(frame_group_phone_perct, 1)
+        frame_group_dict[key]['listen_perct'] = round(frame_group_listen_perct, 1)
+        frame_group_dict[key]['note_perct'] = round(frame_group_note_perct, 1)
 
+        # removing irrelevant items from the dictionary
+        frame_group_dict[key].pop('phone_count')
+        frame_group_dict[key].pop('listen_count')
+        frame_group_dict[key].pop('note_count')
+        frame_group_dict[key].pop('detection_count')
+
+    # print('frame group dict: ', frame_group_dict)
+    activity_labels = ['phone_perct', 'listen_perct', 'note_perct']
+
+    print('frame group percentages: ', frame_group_dict)
 
     # return the dictionary
-    return frame_group_dict
+    return frame_group_dict, activity_labels

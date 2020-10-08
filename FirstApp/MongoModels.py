@@ -124,28 +124,35 @@ class LectureActivity(models.Model):
         return self.lecture_activity_id
 
 
+# this abstract class will define the lecture activity frame group percentages
+class LectureActivityFrameGroupPercentages(models.Model):
+    phone_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    listen_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    note_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+
+    class Meta:
+        abstract = True
+
+
 # this abstract class will define the details for an activity frame group
 class LectureActivityFrameGroupDetails(models.Model):
     frame_group = models.CharField(max_length=10)
-    phone_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
-    listening_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
-    writing_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    frame_group_percentages = models.EmbeddedField(
+       model_container=LectureActivityFrameGroupPercentages
+    )
 
-    def __str__(self):
-        return self.frame_group
-
-    class meta:
+    class Meta:
         abstract = True
 
 
 # this class will contain the activity frame groupings
 class LectureActivityFrameGroupings(models.Model):
-    name = models.CharField(max_length=15, default="")
+    lecture_activity_frame_groupings_id = models.CharField(max_length=15, default="")
     lecture_activity_id = models.ForeignKey(LectureActivity, on_delete=models.CASCADE)
-    frame_group_details = models.ArrayField(LectureActivityFrameGroupDetails)
+    frame_group_details = models.ArrayField(model_container=LectureActivityFrameGroupDetails)
 
     def __str__(self):
-        return self.name
+        return self.lecture_activity_frame_groupings_id
 
 
 # EMOTIONS section

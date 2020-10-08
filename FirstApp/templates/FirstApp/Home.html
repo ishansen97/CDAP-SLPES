@@ -36,6 +36,7 @@
         var global_video_name = '';
         var student_behavior_summary = {};
         var lecture_video_time_landmarks = [];
+        var lecture_activity_frame_group_percentages = {};
 
 
         $(document).ready(function () {
@@ -56,7 +57,7 @@
 
                 let counter = $(this).attr('data-counter');
 
-                alert('counter: ' + counter);
+                {#alert('counter: ' + counter);#}
 
                 let real_date = new Date(global_lecture_date);
                 //extract the day
@@ -250,20 +251,18 @@
 
 
             //this function will handle the activity 'summary' button
-            $('#activity_summary_btn').click(function () {
+            $('#activity_summary_btn').click(function (e) {
+
+                //change the innerHTML of the clicked button
+                e.target.innerHTML = "<span class='font-italic'>Processing</span>";
 
                 //fetch the activity summary details
                 fetch('http://127.0.0.1:8000/get-lecture-activity-summary/?video_name=' + global_video_name)
                 .then((res) => res.json())
-                .then((out) => alert(out.frame_landmarks))
+                .then((out) => activityFrameGroupPercentages(out, e))
                 .catch((err) => alert('error: ' + err));
 
-                //open the modal
-                $('#summaryModal').modal();
 
-
-                //render the chart onto the modal body
-                renderChart();
             });
 
             //this function will handle the emotion 'summary' button
@@ -287,17 +286,80 @@
             });
 
 
-            //this function will call the chart function
-            function renderChart() {
+            //this function will handle the retrieved activity frame group percentages
+            function activityFrameGroupPercentages(response, e) {
 
-                let datapoints = [];
+                lecture_activity_frame_group_percentages = response.frame_group_percentages;
+                let frame_landmarks = response.frame_landmarks;
+                let frame_group_dict = response.frame_group_dict;
+                let activity_labels = response.activity_labels;
+
+
+                //change the button back to original
+                e.target.innerHTML = "Summary";
+
+                //open the modal
+                $('#summaryModal').modal();
+
+
+                //render the chart onto the modal body
+                renderChart(activity_labels);
+            }
+
+
+            //this function will call the chart function
+            function renderChart(activity_labels) {
+
+                //get the activity label length
+                let activity_label_length = activity_labels.length;
+
+                let data = [];
+
+
+                //loop through the activity labels
+                for (let k = 0; k < activity_label_length; k++) {
+                    let label = activity_labels[k];
+                    let datapoints = [];
+
+                    let count = 0;
+
+                    //loop through the activity frame groups
+                    for (let key in lecture_activity_frame_group_percentages) {
+                        let frame_group_details = lecture_activity_frame_group_percentages[key];
+
+                        let activity_perct = frame_group_details[label];
+
+                        let point = {label: lecture_video_time_landmarks[count], y: activity_perct};
+
+                        datapoints.push(point);
+
+                        count++;
+                    }
+
+                    let obj = {
+                        type: "line",
+                        showInLegend: true,
+                        name: label,
+                        markerType: "square",
+                        {#xValueFormatString: "DD MMM, YYYY",#}
+                        xValueFormatString: "hh:mm:ss",
+                        color: getRandomColor(),
+                        dataPoints: datapoints
+                    };
+
+                    data.push(obj);
+
+                }
 
                 //iterate through the time landmarks
+                /*
                 for (let i = 0; i < lecture_video_time_landmarks.length; i++) {
                     let point = {label: lecture_video_time_landmarks[i], y: Number(Math.round(Math.random() * 1000), 0)};
 
                     datapoints.push(point);
                 }
+
+                 */
 
                 var chart = new CanvasJS.Chart("chartContainer", {
                     animationEnabled: true,
@@ -315,7 +377,7 @@
                         }
                     },
                     axisY: {
-                        title: "Number of Students",
+                        title: "Percentage",
                         includeZero: true,
                         crosshair: {
                             enabled: true
@@ -326,21 +388,12 @@
                     },
                     legend: {
                         cursor: "pointer",
-                        verticalAlign: "bottom",
-                        horizontalAlign: "left",
+                        verticalAlign: "top",
+                        horizontalAlign: "right",
                         dockInsidePlotArea: true,
                         itemclick: toogleDataSeries
                     },
-                    data: [{
-                        type: "line",
-                        showInLegend: true,
-                        name: "Activity",
-                        markerType: "square",
-                        {#xValueFormatString: "DD MMM, YYYY",#}
-                        xValueFormatString: "hh:mm:ss",
-                        color: "#000000",
-                        dataPoints: datapoints
-                    }]
+                    data: data
                 });
                 chart.render();
             }
@@ -380,7 +433,7 @@
                         name: label,
                         markerType: "square",
                         {#xValueFormatString: "DD MMM, YYYY",#}
-                        xValueFormatString: "Lec " + (i+1),
+                        xValueFormatString: "lec " + (i+1),
                         color: getRandomColor(),
                         dataPoints: datapoints
                     };

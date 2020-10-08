@@ -100,7 +100,8 @@ def getTimeLandmarks(video_name):
 
     initial_landmark = 0
 
-    time_landmarks = ['0:00:00']
+    # time_landmarks = ['0:00:00']
+    time_landmarks = []
     time_landmarks_values = [0]
 
     # loop through the threshold gap limit to define the time landmarks
@@ -142,6 +143,7 @@ def getFrameLandmarks(video_name):
 
     # define frame landmarks
     frame_landmarks = [0]
+    # frame_landmarks = []
 
     # loop through the threshold gap limit to define the time landmarks
     for i in range(THRESHOLD_GAP):
@@ -175,7 +177,7 @@ def getFrameLandmarks(video_name):
 
     # loop through the group names to create a dictionary
     for name in frame_group_list:
-        frame_group_dict[name] = {'phone_count': 0, 'listen_count': 0, 'note_count': 0}
+        frame_group_dict[name] = {'phone_count': 0, 'listen_count': 0, 'note_count': 0, 'detection_count': 0}
 
 
     return frame_landmarks, frame_group_dict

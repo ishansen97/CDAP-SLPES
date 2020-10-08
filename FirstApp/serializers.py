@@ -210,6 +210,15 @@ class LectureActivitySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class LectureActivityFrameGroupingsSerializer(serializers.ModelSerializer):
+
+    lecture_activity_id = LectureActivitySerializer()
+
+    class Meta:
+        model = LectureActivityFrameGroupings
+        fields = '__all__'
+
+
 # EMOTIONS section
 # lecture emotions serailzier
 class LectureEmotionSerializer(serializers.ModelSerializer):
