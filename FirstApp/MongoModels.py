@@ -202,6 +202,40 @@ class LectureEmotionReport(models.Model):
         return self.lecture_emotion_id
 
 
+# this abstract class will define the lecture emotion frame group percentages
+class LectureEmotionFrameGroupPercentages(models.Model):
+    happy_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    sad_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    angry_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    disgust_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    surprise_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    neutral_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+
+    class Meta:
+        abstract = True
+
+
+# this abstract class will define the details for an emotion frame group
+class LectureEmotionFrameGroupDetails(models.Model):
+    frame_group = models.CharField(max_length=10)
+    frame_group_percentages = models.EmbeddedField(
+       model_container=LectureEmotionFrameGroupPercentages
+    )
+
+    class Meta:
+        abstract = True
+
+
+# this class will contain the emotion frame groupings
+class LectureEmotionFrameGroupings(models.Model):
+    lecture_emotion_frame_groupings_id = models.CharField(max_length=15, default="")
+    lecture_emotion_id = models.ForeignKey(LectureEmotionReport, on_delete=models.CASCADE)
+    frame_group_details = models.ArrayField(model_container=LectureEmotionFrameGroupDetails)
+
+    def __str__(self):
+        return self.lecture_emotion_frame_groupings_id
+
+
 # POSE section
 # lecture pose estimation
 class LectureGazeEstimation(models.Model):
@@ -215,3 +249,36 @@ class LectureGazeEstimation(models.Model):
 
     def __str__(self):
         return self.lecture_gaze_id
+
+
+# this abstract class will define the lecture gaze frame group percentages
+class LectureGazeFrameGroupPercentages(models.Model):
+    looking_up_and_right_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    looking_up_and_left_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    looking_down_and_right_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    looking_down_and_left_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    looking_front_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+
+    class Meta:
+        abstract = True
+
+
+# this abstract class will define the details for a gaze frame group
+class LectureGazeFrameGroupDetails(models.Model):
+    frame_group = models.CharField(max_length=10)
+    frame_group_percentages = models.EmbeddedField(
+       model_container=LectureGazeFrameGroupPercentages
+    )
+
+    class Meta:
+        abstract = True
+
+
+# this class will contain the gaze frame groupings
+class LectureGazeFrameGroupings(models.Model):
+    lecture_gaze_frame_groupings_id = models.CharField(max_length=15, default="")
+    lecture_gaze_id = models.ForeignKey(LectureGazeEstimation, on_delete=models.CASCADE)
+    frame_group_details = models.ArrayField(model_container=LectureGazeFrameGroupDetails)
+
+    def __str__(self):
+        return self.lecture_gaze_frame_groupings_id

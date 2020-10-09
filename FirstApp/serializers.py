@@ -246,7 +246,7 @@ class LectureVideoFrameLandmarksSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-
+# Lecture activity serializer
 class LectureActivitySerializer(serializers.ModelSerializer):
 
     lecture_video_id = LectureVideoSerializer()
@@ -256,6 +256,7 @@ class LectureActivitySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+# Lecture Activity Frame Group Serializer
 class LectureActivityFrameGroupingsSerializer(serializers.ModelSerializer):
 
     lecture_activity_id = LectureActivitySerializer()
@@ -292,6 +293,38 @@ class LectureEmotionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+# Lecture emotion Frame Group Serializer
+class LectureEmotionFrameGroupingsSerializer(serializers.ModelSerializer):
+
+    lecture_emotion_id = LectureEmotionSerializer()
+    frame_group_details = serializers.SerializerMethodField()
+
+    def get_frame_group_details(self, obj):
+        return_data = []
+
+        for frame_group in obj.frame_group_details:
+            group_details = {}
+            group_details["frame_group_percentages"] = {}
+
+            group_details["frame_group"] = frame_group.frame_group
+            group_details["frame_group_percentages"]["happy_perct"] = frame_group.frame_group_percentages.happy_perct
+            group_details["frame_group_percentages"]["sad_perct"] = frame_group.frame_group_percentages.sad_perct
+            group_details["frame_group_percentages"]["angry_perct"] = frame_group.frame_group_percentages.angry_perct
+            group_details["frame_group_percentages"]["disgust_perct"] = frame_group.frame_group_percentages.disgust_perct
+            group_details["frame_group_percentages"]["surprise_perct"] = frame_group.frame_group_percentages.surprise_perct
+            group_details["frame_group_percentages"]["neutral_perct"] = frame_group.frame_group_percentages.neutral_perct
+
+            return_data.append(group_details)
+
+        return return_data
+
+
+    class Meta:
+        model = LectureEmotionFrameGroupings
+        fields = '__all__'
+
+
+
 # lecture video meta serializer
 class VideoMetaSerializer(serializers.ModelSerializer):
 
@@ -306,4 +339,34 @@ class LectureGazeEstimationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LectureGazeEstimation
+        fields = '__all__'
+
+
+# Lecture emotion Frame Group Serializer
+class LectureGazeFrameGroupingsSerializer(serializers.ModelSerializer):
+
+    lecture_gaze_id = LectureGazeEstimationSerializer()
+    frame_group_details = serializers.SerializerMethodField()
+
+    def get_frame_group_details(self, obj):
+        return_data = []
+
+        for frame_group in obj.frame_group_details:
+            group_details = {}
+            group_details["frame_group_percentages"] = {}
+
+            group_details["frame_group"] = frame_group.frame_group
+            group_details["frame_group_percentages"]["looking_up_and_right_perct"] = frame_group.frame_group_percentages.looking_up_and_right_perct
+            group_details["frame_group_percentages"]["looking_up_and_left_perct"] = frame_group.frame_group_percentages.looking_up_and_left_perct
+            group_details["frame_group_percentages"]["looking_down_and_right_perct"] = frame_group.frame_group_percentages.looking_down_and_right_perct
+            group_details["frame_group_percentages"]["looking_down_and_left_perct"] = frame_group.frame_group_percentages.looking_down_and_left_perct
+            group_details["frame_group_percentages"]["looking_front_perct"] = frame_group.frame_group_percentages.looking_front_perct
+
+            return_data.append(group_details)
+
+        return return_data
+
+
+    class Meta:
+        model = LectureGazeFrameGroupings
         fields = '__all__'

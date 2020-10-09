@@ -181,6 +181,12 @@ urlpatterns = [
     # retrieves lecture activity summary
     url(r'^get-lecture-activity-summary/$', api.GetLectureActivitySummary.as_view()),
 
+    # retrieves lecture activity summary
+    url(r'^get-lecture-emotion-summary/$', api.GetLectureEmotionSummary.as_view()),
+
+    # retrieves lecture activity summary
+    url(r'^get-lecture-gaze-summary/$', api.GetLectureGazeSummary.as_view()),
+
 
     # routers
     # path('', include(router.urls)),

@@ -37,6 +37,8 @@
         var student_behavior_summary = {};
         var lecture_video_time_landmarks = [];
         var lecture_activity_frame_group_percentages = {};
+        var lecture_emotion_frame_group_percentages = {};
+        var lecture_gaze_frame_group_percentages = {};
 
 
         $(document).ready(function () {
@@ -266,24 +268,31 @@
             });
 
             //this function will handle the emotion 'summary' button
-            $('#emotion_summary_btn').click(function () {
-                //open the modal
-                $('#summaryModal').modal();
+            $('#emotion_summary_btn').click(function (e) {
 
+                //change the innerHTML of the clicked button
+                e.target.innerHTML = "<span class='font-italic'>Processing</span>";
 
-                //render the chart onto the modal body
-                renderChart();
+                //fetch the activity summary details
+                fetch('http://127.0.0.1:8000/get-lecture-emotion-summary/?video_name=' + global_video_name)
+                .then((res) => res.json())
+                .then((out) => emotionFrameGroupPercentages(out, e))
+                .catch((err) => alert('error: ' + err));
+
             });
 
             //this function will handle the gaze 'summary' button
             $('#gaze_summary_btn').click(function () {
-                //open the modal
-                $('#summaryModal').modal();
+                //change the innerHTML of the clicked button
+                e.target.innerHTML = "<span class='font-italic'>Processing</span>";
 
-
-                //render the chart onto the modal body
-                renderChart();
+                //fetch the activity summary details
+                fetch('http://127.0.0.1:8000/get-lecture-gaze-summary/?video_name=' + global_video_name)
+                .then((res) => res.json())
+                .then((out) => gazeFrameGroupPercentages(out, e))
+                .catch((err) => alert('error: ' + err));
             });
+
 
 
             //this function will handle the retrieved activity frame group percentages
@@ -299,16 +308,58 @@
                 e.target.innerHTML = "Summary";
 
                 //open the modal
-                $('#summaryModal').modal();
+                $('#ActivitySummaryModal').modal();
 
 
                 //render the chart onto the modal body
-                renderChart(activity_labels);
+                renderActivityChart(activity_labels);
             }
 
 
-            //this function will call the chart function
-            function renderChart(activity_labels) {
+            //this function will handle the retrieved emotion frame group percentages
+            function emotionFrameGroupPercentages(response, e) {
+
+                lecture_emotion_frame_group_percentages = response.frame_group_percentages;
+                let frame_landmarks = response.frame_landmarks;
+                let emotion_labels = response.emotion_labels;
+
+
+                //change the button back to original
+                e.target.innerHTML = "Summary";
+
+                //open the modal
+                $('#EmotionSummaryModal').modal();
+
+
+                //render the chart onto the modal body
+                renderEmotionChart(emotion_labels);
+
+            }
+
+            //this function will handle the retrieved gaze frame group percentages
+            function gazeFrameGroupPercentages(response, e) {
+
+                lecture_gaze_frame_group_percentages = response.frame_group_percentages;
+                let frame_landmarks = response.frame_landmarks;
+                let gaze_labels = response.gaze_labels;
+
+
+                //change the button back to original
+                e.target.innerHTML = "Summary";
+
+                //open the modal
+                $('#GazeSummaryModal').modal();
+
+
+                //render the chart onto the modal body
+                renderGazeChart(gaze_labels);
+
+            }
+
+
+
+            //this function will call the activity chart function
+            function renderActivityChart(activity_labels) {
 
                 //get the activity label length
                 let activity_label_length = activity_labels.length;
@@ -351,17 +402,8 @@
 
                 }
 
-                //iterate through the time landmarks
-                /*
-                for (let i = 0; i < lecture_video_time_landmarks.length; i++) {
-                    let point = {label: lecture_video_time_landmarks[i], y: Number(Math.round(Math.random() * 1000), 0)};
 
-                    datapoints.push(point);
-                }
-
-                 */
-
-                var chart = new CanvasJS.Chart("chartContainer", {
+                var chart = new CanvasJS.Chart("ActivityChartContainer", {
                     animationEnabled: true,
                     theme: "light2",
                     title: {
@@ -397,6 +439,175 @@
                 });
                 chart.render();
             }
+
+
+            //this function will call the emotion chart function
+            function renderEmotionChart(emotion_labels) {
+
+                //get the activity label length
+                {#let activity_label_length = activity_labels.length;#}
+
+                let data = [];
+
+                /*
+                //loop through the activity labels
+                for (let k = 0; k < activity_label_length; k++) {
+                    let label = activity_labels[k];
+                    let datapoints = [];
+
+                    let count = 0;
+
+                    //loop through the activity frame groups
+                    for (let key in lecture_activity_frame_group_percentages) {
+                        let frame_group_details = lecture_activity_frame_group_percentages[key];
+
+                        let activity_perct = frame_group_details[label];
+
+                        let point = {label: lecture_video_time_landmarks[count], y: activity_perct};
+
+                        datapoints.push(point);
+
+                        count++;
+                    }
+
+                    let obj = {
+                        type: "line",
+                        showInLegend: true,
+                        name: label,
+                        markerType: "square",
+                        {#xValueFormatString: "DD MMM, YYYY",#}
+                        xValueFormatString: "hh:mm:ss",
+                        color: getRandomColor(),
+                        dataPoints: datapoints
+                    };
+
+                    data.push(obj);
+
+                }
+                */
+
+
+                var chart = new CanvasJS.Chart("EmotionChartContainer", {
+                    animationEnabled: true,
+                    theme: "light2",
+                    title: {
+                        text: "Student Behavior"
+                    },
+                    axisX: {
+                        title: "Duration",
+                        {#valueFormatString: "DD MMM",#}
+                        valueFormatString: "hh:mm:ss",
+                        crosshair: {
+                            enabled: true,
+                            snapToDataPoint: true
+                        }
+                    },
+                    axisY: {
+                        title: "Percentage",
+                        includeZero: true,
+                        crosshair: {
+                            enabled: true
+                        }
+                    },
+                    toolTip: {
+                        shared: true
+                    },
+                    legend: {
+                        cursor: "pointer",
+                        verticalAlign: "top",
+                        horizontalAlign: "right",
+                        dockInsidePlotArea: true,
+                        itemclick: toogleDataSeries
+                    },
+                    data: data
+                });
+                chart.render();
+            }
+
+
+            //this function will call the chart function
+            function renderGazeChart(gaze_labels) {
+
+                //get the activity label length
+                {#let activity_label_length = activity_labels.length;#}
+
+                let data = [];
+
+                /*
+                //loop through the activity labels
+                for (let k = 0; k < activity_label_length; k++) {
+                    let label = activity_labels[k];
+                    let datapoints = [];
+
+                    let count = 0;
+
+                    //loop through the activity frame groups
+                    for (let key in lecture_activity_frame_group_percentages) {
+                        let frame_group_details = lecture_activity_frame_group_percentages[key];
+
+                        let activity_perct = frame_group_details[label];
+
+                        let point = {label: lecture_video_time_landmarks[count], y: activity_perct};
+
+                        datapoints.push(point);
+
+                        count++;
+                    }
+
+                    let obj = {
+                        type: "line",
+                        showInLegend: true,
+                        name: label,
+                        markerType: "square",
+                        {#xValueFormatString: "DD MMM, YYYY",#}
+                        xValueFormatString: "hh:mm:ss",
+                        color: getRandomColor(),
+                        dataPoints: datapoints
+                    };
+
+                    data.push(obj);
+
+                }
+                */
+
+
+                var chart = new CanvasJS.Chart("GazeChartContainer", {
+                    animationEnabled: true,
+                    theme: "light2",
+                    title: {
+                        text: "Student Behavior"
+                    },
+                    axisX: {
+                        title: "Duration",
+                        {#valueFormatString: "DD MMM",#}
+                        valueFormatString: "hh:mm:ss",
+                        crosshair: {
+                            enabled: true,
+                            snapToDataPoint: true
+                        }
+                    },
+                    axisY: {
+                        title: "Percentage",
+                        includeZero: true,
+                        crosshair: {
+                            enabled: true
+                        }
+                    },
+                    toolTip: {
+                        shared: true
+                    },
+                    legend: {
+                        cursor: "pointer",
+                        verticalAlign: "top",
+                        horizontalAlign: "right",
+                        dockInsidePlotArea: true,
+                        itemclick: toogleDataSeries
+                    },
+                    data: data
+                });
+                chart.render();
+            }
+
 
 
             //this function will render the chart for Activity statistics
@@ -1571,8 +1782,8 @@
     </div>
     <!-- end of logout modal -->
 
-    <!-- summary Modal-->
-    <div class="modal fade" id="summaryModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+    <!-- activity summary Modal-->
+    <div class="modal fade" id="ActivitySummaryModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
          aria-hidden="true">
         <div class="modal-dialog" role="document" style="max-width: 1300px">
             <div class="modal-content">
@@ -1583,7 +1794,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div id="chartContainer" style="height: 370px; max-width: 920px; margin: 0px auto;"></div>
+                    <div id="ActivityChartContainer" style="height: 370px; max-width: 920px; margin: 0px auto;"></div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
@@ -1591,7 +1802,51 @@
             </div>
         </div>
     </div>
-    <!-- end of summary modal -->
+    <!-- end of activity summary modal -->
+
+    <!-- emotion summary Modal-->
+    <div class="modal fade" id="EmotionSummaryModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document" style="max-width: 1300px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Summary</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="EmotionChartContainer" style="height: 370px; max-width: 920px; margin: 0px auto;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end of emotion summary modal -->
+
+    <!-- gaze summary Modal-->
+    <div class="modal fade" id="GazeSummaryModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document" style="max-width: 1300px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Summary</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="GazeChartContainer" style="height: 370px; max-width: 920px; margin: 0px auto;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end of gaze summary modal -->
 
 
     <!-- student behavior view summary modal -->

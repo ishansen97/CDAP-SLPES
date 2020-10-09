@@ -953,3 +953,246 @@ class GetLectureActivitySummary(APIView):
         #         "activity_labels": activity_labels
         #     })
 
+
+# this API will retrieve lecture emotion summary
+class GetLectureEmotionSummary(APIView):
+
+    def get(self, request):
+        video_name = request.query_params.get('video_name')
+
+        # checking the existence of lecture activity frame grouping records in the db
+        isExist = LectureEmotionFrameGroupings.objects.filter(lecture_emotion_id__lecture_video_id__video_name=video_name).exists()
+
+        if (isExist):
+            frame_group_percentages = {}
+            frame_landmarks = []
+
+            # retrieve frame landmarks from db
+            lec_video_frame_landmarks = LectureVideoFrameLandmarks.objects.filter(lecture_video_id__video_name=video_name)
+            lec_video_frame_landmarks_ser = LectureVideoFrameLandmarksSerializer(lec_video_frame_landmarks, many=True)
+            lec_video_frame_landmarks_data = lec_video_frame_landmarks_ser.data[0]
+
+            retrieved_frame_landmarks = lec_video_frame_landmarks_data["frame_landmarks"]
+
+            for landmark in retrieved_frame_landmarks:
+                frame_landmarks.append(landmark['landmark'])
+
+
+            lec_emotion_frame_groupings = LectureEmotionFrameGroupings.objects.filter(lecture_emotion_id__lecture_video_id__video_name=video_name)
+            lec_emotion_frame_groupings_ser = LectureEmotionFrameGroupingsSerializer(lec_emotion_frame_groupings, many=True)
+            lec_emotion_frame_groupings_data = lec_emotion_frame_groupings_ser.data[0]
+
+            frame_group_details = lec_emotion_frame_groupings_data["frame_group_details"]
+
+
+            # create the new dictionary
+            for group in frame_group_details:
+                frame_group_percentages[group['frame_group']] = group['frame_group_percentages']
+
+
+            class_labels = ['happy_perct', 'sad_perct', 'angry_perct', 'disgust_perct', 'surprise_perct', 'neutral_perct']
+
+            return Response({
+                "frame_landmarks": frame_landmarks,
+                "frame_group_percentages": frame_group_percentages,
+                "emotion_labels": class_labels
+            })
+
+        else:
+
+            # retrieve the previous lecture video frame landmarks details
+            last_lec_video_frame_landmarks = LectureVideoFrameLandmarks.objects.order_by(
+                'lecture_video_frame_landmarks_id').last()
+            new_lecture_video_frame_landmarks_id = "LVFL00001" if (last_lec_video_frame_landmarks is None) else \
+                ig.generate_new_id(last_lec_video_frame_landmarks.lecture_video_frame_landmarks_id)
+
+
+            frame_landmarks, frame_group_dict = ve.getFrameLandmarks(video_name)
+            frame_group_percentages, activity_labels = ar.activity_frame_groupings(video_name, frame_landmarks, frame_group_dict)
+
+
+            # retrieve lecture video details
+            lec_video = LectureVideo.objects.filter(video_name=video_name)
+            lec_video_ser = LectureVideoSerializer(lec_video, many=True)
+            lec_video_id = lec_video_ser.data[0]['id']
+
+
+            # save the frame landmarks details into db (temp method)
+            db_frame_landmarks = []
+
+            for landmark in frame_landmarks:
+                landmark_obj = Landmarks()
+                landmark_obj.landmark = landmark
+
+                db_frame_landmarks.append(landmark_obj)
+
+
+            new_lec_video_frame_landmarks = LectureVideoFrameLandmarks()
+            new_lec_video_frame_landmarks.lecture_video_frame_landmarks_id = new_lecture_video_frame_landmarks_id
+            new_lec_video_frame_landmarks.lecture_video_id_id = lec_video_id
+            new_lec_video_frame_landmarks.frame_landmarks = db_frame_landmarks
+
+            new_lec_video_frame_landmarks.save()
+
+
+
+            # save the frame group details into db (temp method)
+
+            last_lec_activity_frame_grouping = LectureActivityFrameGroupings.objects.order_by('lecture_activity_frame_groupings_id').last()
+            new_lecture_activity_frame_grouping_id = "LAFG00001" if (last_lec_activity_frame_grouping is None) else \
+                ig.generate_new_id(last_lec_activity_frame_grouping.lecture_activity_frame_groupings_id)
+
+            # retrieve the lecture activity id
+            lec_activity = LectureActivity.objects.filter(lecture_video_id__video_name=video_name)
+            lec_activity_ser = LectureActivitySerializer(lec_activity, many=True)
+            lec_activity_id = lec_activity_ser.data[0]['id']
+
+            # create the frame group details
+            frame_group_details = []
+
+            for key in frame_group_percentages.keys():
+                # create an object of type 'LectureActivityFrameGroupDetails'
+                lec_activity_frame_group_details = LectureActivityFrameGroupDetails()
+                lec_activity_frame_group_details.frame_group = key
+                lec_activity_frame_group_details.frame_group_percentages = frame_group_percentages[key]
+
+                frame_group_details.append(lec_activity_frame_group_details)
+
+
+            new_lec_activity_frame_groupings = LectureActivityFrameGroupings()
+            new_lec_activity_frame_groupings.lecture_activity_frame_groupings_id = new_lecture_activity_frame_grouping_id
+            new_lec_activity_frame_groupings.lecture_activity_id_id = lec_activity_id
+            new_lec_activity_frame_groupings.frame_group_details = frame_group_details
+
+            # save
+            new_lec_activity_frame_groupings.save()
+
+
+            return Response({
+                "frame_landmarks": frame_landmarks,
+                "frame_group_percentages": frame_group_percentages,
+                "activity_labels": activity_labels
+            })
+
+
+# this API will retrieve lecture gaze summary
+class GetLectureGazeSummary(APIView):
+
+    def get(self, request):
+        video_name = request.query_params.get('video_name')
+
+        # checking the existence of lecture activity frame grouping records in the db
+        isExist = LectureActivityFrameGroupings.objects.filter(lecture_activity_id__lecture_video_id__video_name=video_name).exists()
+
+        if (isExist):
+            # frame_landmarks, frame_group_dict = ve.getFrameLandmarks(video_name)
+            frame_group_percentages = {}
+            frame_landmarks = []
+
+            # retrieve frame landmarks from db
+            lec_video_frame_landmarks = LectureVideoFrameLandmarks.objects.filter(lecture_video_id__video_name=video_name)
+            lec_video_frame_landmarks_ser = LectureVideoFrameLandmarksSerializer(lec_video_frame_landmarks, many=True)
+            lec_video_frame_landmarks_data = lec_video_frame_landmarks_ser.data[0]
+
+            retrieved_frame_landmarks = lec_video_frame_landmarks_data["frame_landmarks"]
+
+            for landmark in retrieved_frame_landmarks:
+                frame_landmarks.append(landmark['landmark'])
+
+
+            lec_activity_frame_groupings = LectureActivityFrameGroupings.objects.filter(lecture_activity_id__lecture_video_id__video_name=video_name)
+            lec_activity_frame_groupings_ser = LectureActivityFrameGroupingsSerializer(lec_activity_frame_groupings, many=True)
+            lec_activity_frame_groupings_data = lec_activity_frame_groupings_ser.data[0]
+
+            frame_group_details = lec_activity_frame_groupings_data["frame_group_details"]
+
+
+            # create the new dictionary
+            for group in frame_group_details:
+                frame_group_percentages[group['frame_group']] = group['frame_group_percentages']
+
+
+
+            class_labels = ['phone_perct', 'listen_perct', 'note_perct']
+
+            return Response({
+                "frame_landmarks": frame_landmarks,
+                "frame_group_percentages": frame_group_percentages,
+                "activity_labels": class_labels
+            })
+
+        # else:
+        #
+        #     # retrieve the previous lecture video frame landmarks details
+        #     last_lec_video_frame_landmarks = LectureVideoFrameLandmarks.objects.order_by(
+        #         'lecture_video_frame_landmarks_id').last()
+        #     new_lecture_video_frame_landmarks_id = "LVFL00001" if (last_lec_video_frame_landmarks is None) else \
+        #         ig.generate_new_id(last_lec_video_frame_landmarks.lecture_video_frame_landmarks_id)
+        #
+        #
+        #     frame_landmarks, frame_group_dict = ve.getFrameLandmarks(video_name)
+        #     frame_group_percentages, activity_labels = ar.activity_frame_groupings(video_name, frame_landmarks, frame_group_dict)
+        #
+        #
+        #     # retrieve lecture video details
+        #     lec_video = LectureVideo.objects.filter(video_name=video_name)
+        #     lec_video_ser = LectureVideoSerializer(lec_video, many=True)
+        #     lec_video_id = lec_video_ser.data[0]['id']
+        #
+        #
+        #     # save the frame landmarks details into db (temp method)
+        #     db_frame_landmarks = []
+        #
+        #     for landmark in frame_landmarks:
+        #         landmark_obj = Landmarks()
+        #         landmark_obj.landmark = landmark
+        #
+        #         db_frame_landmarks.append(landmark_obj)
+        #
+        #
+        #     new_lec_video_frame_landmarks = LectureVideoFrameLandmarks()
+        #     new_lec_video_frame_landmarks.lecture_video_frame_landmarks_id = new_lecture_video_frame_landmarks_id
+        #     new_lec_video_frame_landmarks.lecture_video_id_id = lec_video_id
+        #     new_lec_video_frame_landmarks.frame_landmarks = db_frame_landmarks
+        #
+        #     new_lec_video_frame_landmarks.save()
+        #
+        #
+        #
+        #     # save the frame group details into db (temp method)
+        #
+        #     last_lec_activity_frame_grouping = LectureActivityFrameGroupings.objects.order_by('lecture_activity_frame_groupings_id').last()
+        #     new_lecture_activity_frame_grouping_id = "LAFG00001" if (last_lec_activity_frame_grouping is None) else \
+        #         ig.generate_new_id(last_lec_activity_frame_grouping.lecture_activity_frame_groupings_id)
+        #
+        #     # retrieve the lecture activity id
+        #     lec_activity = LectureActivity.objects.filter(lecture_video_id__video_name=video_name)
+        #     lec_activity_ser = LectureActivitySerializer(lec_activity, many=True)
+        #     lec_activity_id = lec_activity_ser.data[0]['id']
+        #
+        #     # create the frame group details
+        #     frame_group_details = []
+        #
+        #     for key in frame_group_percentages.keys():
+        #         # create an object of type 'LectureActivityFrameGroupDetails'
+        #         lec_activity_frame_group_details = LectureActivityFrameGroupDetails()
+        #         lec_activity_frame_group_details.frame_group = key
+        #         lec_activity_frame_group_details.frame_group_percentages = frame_group_percentages[key]
+        #
+        #         frame_group_details.append(lec_activity_frame_group_details)
+        #
+        #
+        #     new_lec_activity_frame_groupings = LectureActivityFrameGroupings()
+        #     new_lec_activity_frame_groupings.lecture_activity_frame_groupings_id = new_lecture_activity_frame_grouping_id
+        #     new_lec_activity_frame_groupings.lecture_activity_id_id = lec_activity_id
+        #     new_lec_activity_frame_groupings.frame_group_details = frame_group_details
+        #
+        #     # save
+        #     new_lec_activity_frame_groupings.save()
+        #
+        #
+        #     return Response({
+        #         "frame_landmarks": frame_landmarks,
+        #         "frame_group_percentages": frame_group_percentages,
+        #         "activity_labels": activity_labels
+        #     })
