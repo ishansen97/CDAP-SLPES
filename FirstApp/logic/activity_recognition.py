@@ -764,7 +764,6 @@ def activity_frame_groupings(video_name, frame_landmarks, frame_group_dict):
     # print('frame group dict: ', frame_group_dict)
     activity_labels = ['phone_perct', 'listen_perct', 'note_perct']
 
-    print('frame group percentages: ', frame_group_dict)
 
     # return the dictionary
     return frame_group_dict, activity_labels

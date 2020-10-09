@@ -110,6 +110,36 @@ class LectureVideo(models.Model):
     def __str__(self):
         return self.lecture_video_id
 
+
+
+class Landmarks(models.Model):
+    landmark = models.CharField(max_length=15)
+
+    class Meta:
+        abstract = True
+
+
+# lecture video time landmarks table
+class LectureVideoTimeLandmarks(models.Model):
+    lecture_video_time_landmarks_id = models.CharField(max_length=15)
+    lecture_video_id = models.ForeignKey(LectureVideo, on_delete=models.CASCADE)
+    time_landmarks = models.ArrayField(Landmarks)
+
+    def __str__(self):
+        return self.lecture_video_time_landmarks_id
+
+
+# lecture video frame landmarks table
+class LectureVideoFrameLandmarks(models.Model):
+    lecture_video_frame_landmarks_id = models.CharField(max_length=15)
+    lecture_video_id = models.ForeignKey(LectureVideo, on_delete=models.CASCADE)
+    frame_landmarks = models.ArrayField(Landmarks)
+
+    def __str__(self):
+        return self.lecture_video_frame_landmarks_id
+
+
+
 # ACTIVITY section
 # lecture activity table
 class LectureActivity(models.Model):

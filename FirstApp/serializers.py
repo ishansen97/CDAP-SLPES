@@ -201,6 +201,52 @@ class LectureVideoSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+# lecture video time landmarks serializer
+class LectureVideoTimeLandmarksSerializer(serializers.ModelSerializer):
+
+    lecture_video_id = LectureVideoSerializer()
+    time_landmarks = serializers.SerializerMethodField()
+
+    def get_time_landmarks(self, obj):
+        return_data = []
+
+        for time_landmark in obj.time_landmarks:
+            landmark_details = {}
+            landmark_details["landmark"] = time_landmark.landmark
+
+            return_data.append(landmark_details)
+
+        return return_data
+
+
+    class Meta:
+        model = LectureVideoTimeLandmarks
+        fields = '__all__'
+
+# lecture video frame landmarks serializer
+class LectureVideoFrameLandmarksSerializer(serializers.ModelSerializer):
+
+    lecture_video_id = LectureVideoSerializer()
+    frame_landmarks = serializers.SerializerMethodField()
+
+    def get_frame_landmarks(self, obj):
+        return_data = []
+
+        for frame_landmark in obj.frame_landmarks:
+            landmark_details = {}
+            landmark_details["landmark"] = frame_landmark.landmark
+
+            return_data.append(landmark_details)
+
+        return return_data
+
+
+    class Meta:
+        model = LectureVideoFrameLandmarks
+        fields = '__all__'
+
+
+
 class LectureActivitySerializer(serializers.ModelSerializer):
 
     lecture_video_id = LectureVideoSerializer()
@@ -213,6 +259,23 @@ class LectureActivitySerializer(serializers.ModelSerializer):
 class LectureActivityFrameGroupingsSerializer(serializers.ModelSerializer):
 
     lecture_activity_id = LectureActivitySerializer()
+    frame_group_details = serializers.SerializerMethodField()
+
+    def get_frame_group_details(self, obj):
+        return_data = []
+
+        for frame_group in obj.frame_group_details:
+            group_details = {}
+            group_details["frame_group_percentages"] = {}
+
+            group_details["frame_group"] = frame_group.frame_group
+            group_details["frame_group_percentages"]["phone_perct"] = frame_group.frame_group_percentages.phone_perct
+            group_details["frame_group_percentages"]["listen_perct"] = frame_group.frame_group_percentages.listen_perct
+            group_details["frame_group_percentages"]["note_perct"] = frame_group.frame_group_percentages.note_perct
+
+            return_data.append(group_details)
+
+        return return_data
 
     class Meta:
         model = LectureActivityFrameGroupings
