@@ -407,7 +407,7 @@
                     animationEnabled: true,
                     theme: "light2",
                     title: {
-                        text: "Student Behavior"
+                        text: "Student Activity Behavior"
                     },
                     axisX: {
                         title: "Duration",
@@ -445,25 +445,25 @@
             function renderEmotionChart(emotion_labels) {
 
                 //get the activity label length
-                {#let activity_label_length = activity_labels.length;#}
+                let emotion_label_length = emotion_labels.length;
 
                 let data = [];
 
-                /*
+
                 //loop through the activity labels
-                for (let k = 0; k < activity_label_length; k++) {
-                    let label = activity_labels[k];
+                for (let k = 0; k < emotion_label_length; k++) {
+                    let label = emotion_labels[k];
                     let datapoints = [];
 
                     let count = 0;
 
                     //loop through the activity frame groups
-                    for (let key in lecture_activity_frame_group_percentages) {
-                        let frame_group_details = lecture_activity_frame_group_percentages[key];
+                    for (let key in lecture_emotion_frame_group_percentages) {
+                        let frame_group_details = lecture_emotion_frame_group_percentages[key];
 
-                        let activity_perct = frame_group_details[label];
+                        let emotion_perct = frame_group_details[label];
 
-                        let point = {label: lecture_video_time_landmarks[count], y: activity_perct};
+                        let point = {label: lecture_video_time_landmarks[count], y: emotion_perct};
 
                         datapoints.push(point);
 
@@ -484,14 +484,14 @@
                     data.push(obj);
 
                 }
-                */
+
 
 
                 var chart = new CanvasJS.Chart("EmotionChartContainer", {
                     animationEnabled: true,
                     theme: "light2",
                     title: {
-                        text: "Student Behavior"
+                        text: "Student Emotion Behavior"
                     },
                     axisX: {
                         title: "Duration",
@@ -529,25 +529,25 @@
             function renderGazeChart(gaze_labels) {
 
                 //get the activity label length
-                {#let activity_label_length = activity_labels.length;#}
+                let gaze_label_length = gaze_labels.length;
 
                 let data = [];
 
-                /*
+
                 //loop through the activity labels
-                for (let k = 0; k < activity_label_length; k++) {
-                    let label = activity_labels[k];
+                for (let k = 0; k < gaze_label_length; k++) {
+                    let label = gaze_labels[k];
                     let datapoints = [];
 
                     let count = 0;
 
                     //loop through the activity frame groups
-                    for (let key in lecture_activity_frame_group_percentages) {
-                        let frame_group_details = lecture_activity_frame_group_percentages[key];
+                    for (let key in lecture_gaze_frame_group_percentages) {
+                        let frame_group_details = lecture_gaze_frame_group_percentages[key];
 
-                        let activity_perct = frame_group_details[label];
+                        let gaze_perct = frame_group_details[label];
 
-                        let point = {label: lecture_video_time_landmarks[count], y: activity_perct};
+                        let point = {label: lecture_video_time_landmarks[count], y: gaze_perct};
 
                         datapoints.push(point);
 
@@ -568,14 +568,14 @@
                     data.push(obj);
 
                 }
-                */
+
 
 
                 var chart = new CanvasJS.Chart("GazeChartContainer", {
                     animationEnabled: true,
                     theme: "light2",
                     title: {
-                        text: "Student Behavior"
+                        text: "Student Gaze estimation Behavior"
                     },
                     axisX: {
                         title: "Duration",

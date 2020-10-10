@@ -120,7 +120,7 @@ def getTimeLandmarks(video_name):
 
 
 # this method will retrieve the time landmarks for a lecture video
-def getFrameLandmarks(video_name):
+def getFrameLandmarks(video_name, category):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     VIDEO_PATH = os.path.join(BASE_DIR, "assets\\FirstApp\\videos\\{}".format(video_name))
 
@@ -130,8 +130,8 @@ def getFrameLandmarks(video_name):
     int_no_of_frames = int(no_of_frames)
     fps = int(video.get(cv2.CAP_PROP_FPS))
 
-    # calculating the duration in seconds
-    duration = int(no_of_frames / fps)
+    # list of categories
+    categories = ["Activity", "Emotion", "Gaze"]
 
     # define the number of time gaps required
     THRESHOLD_GAP = 5
@@ -175,9 +175,21 @@ def getFrameLandmarks(video_name):
     # define a dictionary to hold the frame groups
     frame_group_dict = {}
 
-    # loop through the group names to create a dictionary
-    for name in frame_group_list:
-        frame_group_dict[name] = {'phone_count': 0, 'listen_count': 0, 'note_count': 0, 'detection_count': 0}
+    # checking for the category
+    if category == categories[0]:
+        # loop through the group names to create a dictionary
+        for name in frame_group_list:
+            frame_group_dict[name] = {'phone_count': 0, 'listen_count': 0, 'note_count': 0, 'detection_count': 0}
 
+    elif category == categories[1]:
+        # loop through the group names to create a dictionary
+        for name in frame_group_list:
+            frame_group_dict[name] = {'happy_count': 0, 'sad_count': 0, 'angry_count': 0, 'surprise_count': 0, 'neutral_count': 0, 'detection_count': 0}
+
+    elif category == categories[2]:
+        # loop through the group names to create a dictionary
+        for name in frame_group_list:
+            frame_group_dict[name] = {'upright_count': 0, 'upleft_count': 0, 'downright_count': 0, 'downleft_count': 0,
+                                      'front_count': 0, 'detection_count': 0}
 
     return frame_landmarks, frame_group_dict

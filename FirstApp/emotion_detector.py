@@ -399,3 +399,152 @@ def get_student_emotion_summary_for_period(emotions):
     percentages["neutral_perct"] = neutral_average_perct
 
     return percentages, individual_lec_emotions, emotion_labels
+
+
+# this method will retrieve activity frame groupings for a lecture
+def emotion_frame_groupings(video_name, frame_landmarks, frame_group_dict):
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    EXTRACTED_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\activity\\{}".format(video_name))
+
+    # load the models
+    face_classifier = cv2.CascadeClassifier(
+        os.path.join(BASE_DIR, 'FirstApp\classifiers\haarcascade_frontalface_default.xml'))
+    classifier_path = os.path.join(BASE_DIR, 'FirstApp\classifiers\Emotion_little_vgg.h5')
+    classifier = load_model(classifier_path)
+
+
+
+    # initializing the count variables
+    frame_count = 0
+
+    # class labels
+    class_labels = ['Angry', 'Happy', 'Neutral', 'Sad', 'Surprise']
+
+    # get the frame differences for each frame group
+    frame_group_diff = {}
+
+    # loop through the frame group dictionary
+    for key in frame_group_dict.keys():
+        split_values = key.split("-")
+        value1 = int(split_values[0])
+        value2 = int(split_values[1])
+        diff = value2 - value1
+
+        # assign the difference
+        frame_group_diff[key] = diff if diff > 0 else 1
+
+
+    # looping through the frames
+    for frame in os.listdir(EXTRACTED_DIR):
+        # getting the frame folder
+        FRAME_FOLDER = os.path.join(EXTRACTED_DIR, frame)
+
+        # initializing the variables
+        happy_count = 0
+        sad_count = 0
+        angry_count = 0
+        surprise_count = 0
+        neutral_count = 0
+        detection_count = 0
+
+        # looping through the detections in each frame
+        for detections in os.listdir(FRAME_FOLDER):
+
+            # checking whether the image contains only one person
+            if "frame" not in detections:
+                # get the label for this image
+                IMAGE_PATH = os.path.join(FRAME_FOLDER, detections)
+                image = cv2.imread(IMAGE_PATH)
+
+                # run the model and get the emotion label
+                label = emotion_recognition(classifier, face_classifier, image)
+
+                # increment the count based on the label
+                if label == class_labels[0]:
+                    angry_count += 1
+                if label == class_labels[1]:
+                    happy_count += 1
+                if label == class_labels[2]:
+                    neutral_count += 1
+                if label == class_labels[3]:
+                    sad_count += 1
+                if label == class_labels[4]:
+                    surprise_count += 1
+
+
+                # increment the detection count
+                detection_count += 1
+
+
+                # finding the time landmark that the current frame is in
+                for i in frame_landmarks:
+                    index = frame_landmarks.index(i)
+                    j = index + 1
+
+                    # checking whether the next index is within the range
+                    if j < len(frame_landmarks):
+                        next_value = frame_landmarks[j]
+
+                        # checking the correct time landmark range
+                        if (frame_count >= i) & (frame_count < next_value):
+                            frame_name = "{}-{}".format(i, next_value)
+
+
+                            frame_group_dict[frame_name]['happy_count'] += happy_count
+                            frame_group_dict[frame_name]['sad_count'] += sad_count
+                            frame_group_dict[frame_name]['angry_count'] += angry_count
+                            frame_group_dict[frame_name]['surprise_count'] += surprise_count
+                            frame_group_dict[frame_name]['neutral_count'] += neutral_count
+                            frame_group_dict[frame_name]['detection_count'] += detection_count
+
+
+
+        # increment the frame count
+        frame_count += 1
+
+    # calculate the percentage values
+    for key in frame_group_dict.keys():
+        frame_group_details = frame_group_dict[key]
+        frame_group_happy_count = frame_group_details['happy_count']
+        frame_group_sad_count = frame_group_details['sad_count']
+        frame_group_angry_count = frame_group_details['angry_count']
+        frame_group_surprise_count = frame_group_details['surprise_count']
+        frame_group_neutral_count = frame_group_details['neutral_count']
+        group_detection_count = frame_group_details['detection_count']
+
+        # print('frame group phone count: ', frame_group_phone_count)
+        # print('frame group listen count: ', frame_group_listen_count)
+        # print('frame group note count: ', frame_group_note_count)
+        # print('frame group detection count: ', group_detection_count)
+
+        frame_diff = int(frame_group_diff[key])
+
+        # print('frame difference: ', frame_diff)
+
+        frame_group_happy_perct = float(frame_group_happy_count / group_detection_count) * 100
+        frame_group_sad_perct = float(frame_group_sad_count / group_detection_count) * 100
+        frame_group_angry_perct = float(frame_group_angry_count / group_detection_count) * 100
+        frame_group_surprise_perct = float(frame_group_surprise_count / group_detection_count) * 100
+        frame_group_neutral_perct = float(frame_group_neutral_count / group_detection_count) * 100
+
+        # assign the values to the same dictionary
+        frame_group_dict[key]['happy_perct'] = round(frame_group_happy_perct, 1)
+        frame_group_dict[key]['sad_perct'] = round(frame_group_sad_perct, 1)
+        frame_group_dict[key]['angry_perct'] = round(frame_group_angry_perct, 1)
+        frame_group_dict[key]['surprise_perct'] = round(frame_group_surprise_perct, 1)
+        frame_group_dict[key]['neutral_perct'] = round(frame_group_neutral_perct, 1)
+
+        # removing irrelevant items from the dictionary
+        frame_group_dict[key].pop('happy_count')
+        frame_group_dict[key].pop('sad_count')
+        frame_group_dict[key].pop('angry_count')
+        frame_group_dict[key].pop('surprise_count')
+        frame_group_dict[key].pop('neutral_count')
+        frame_group_dict[key].pop('detection_count')
+
+    # print('frame group dict: ', frame_group_dict)
+    emotion_labels = ['happy_perct', 'sad_perct', 'angry_perct', 'surprise_perct', 'neutral_perct']
+
+
+    # return the dictionary
+    return frame_group_dict, emotion_labels

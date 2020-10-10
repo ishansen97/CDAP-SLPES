@@ -557,6 +557,7 @@ def get_lecture_gaze_esrimation_for_frames(video_name):
     return frame_detections, frame_rate
 
 
+# this method will get the student gaze estimation summary for period
 def get_student_gaze_estimation_summary_for_period(gaze_estimation_data):
     # declare variables to add percentage values
     phone_checking_perct_combined = 0.0
@@ -609,3 +610,230 @@ def get_student_gaze_estimation_summary_for_period(gaze_estimation_data):
     percentages["looking_front_perct"] = looking_front_average_perct
 
     return percentages, individual_lec_gaze_estimations, gaze_estimation_labels
+
+
+# this method will get the lecture gaze estimation frame groupings
+def gaze_estimation_frame_groupings(video_name, frame_landmarks, frame_group_dict):
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    EXTRACTED_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\gaze\\{}".format(video_name))
+    VIDEO_PATH = os.path.join(BASE_DIR, "assets\\FirstApp\\videos\\{}".format(video_name))
+
+
+    # load the face detection model
+    face_model = get_face_detector()
+    # load the facial landamrk model
+    landmark_model = get_landmark_model()
+    cap = cv2.VideoCapture(VIDEO_PATH)
+    ret, img = cap.read()
+    size = img.shape
+    font = cv2.FONT_HERSHEY_SIMPLEX
+
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    # 3D model points.
+    model_points = np.array([
+        (0.0, 0.0, 0.0),  # Nose tip
+        (0.0, -330.0, -65.0),  # Chin
+        (-225.0, 170.0, -135.0),  # Left eye left corner
+        (225.0, 170.0, -135.0),  # Right eye right corne
+        (-150.0, -150.0, -125.0),  # Left Mouth corner
+        (150.0, -150.0, -125.0)  # Right mouth corner
+    ])
+
+    # define a variable to count the frames
+    frame_count = 0
+
+    # set a threshold angle
+    # THRESHOLD = 15
+    THRESHOLD = 22
+    # THRESHOLD = 30
+    # THRESHOLD = 45
+    # THRESHOLD = 48
+
+    # Camera internals
+    focal_length = size[1]
+    center = (size[1] / 2, size[0] / 2)
+    camera_matrix = np.array(
+        [[focal_length, 0, center[0]],
+         [0, focal_length, center[1]],
+         [0, 0, 1]], dtype="double"
+    )
+
+
+    # initializing the count variables
+    frame_count = 0
+
+    # class labels
+    class_labels = ['Phone checking', 'Listening', 'Note taking']
+
+    # get the frame differences for each frame group
+    frame_group_diff = {}
+
+    # loop through the frame group dictionary
+    for key in frame_group_dict.keys():
+        split_values = key.split("-")
+        value1 = int(split_values[0])
+        value2 = int(split_values[1])
+        diff = value2 - value1
+
+        # assign the difference
+        frame_group_diff[key] = diff if diff > 0 else 1
+
+
+    # looping through the frames
+    while True:
+        ret, image = cap.read()
+        if ret == True:
+
+            # initializing the variables
+            # setting up the count variables
+            head_front_count = 0
+            head_up_right_count = 0
+            head_up_left_count = 0
+            head_down_right_count = 0
+            head_down_left_count = 0
+            face_count = 0
+            detection_count = 0
+
+
+            # prediction happens here
+            # find the number of faces
+            faces = find_faces(img, face_model)
+
+            student_count = 0
+
+            # iterate through each detected face
+            for face in faces:
+
+                # declaring boolean variables
+                isLookingUp = False
+                isLookingDown = False
+                isLookingRight = False
+                isLookingLeft = False
+                isLookingFront = False
+
+                # deriving the student name to display in the image
+                student_name = 'student-{}'.format(student_count)
+
+                # retrieving the facial landmarks and face bounding box coordinates
+                marks, facebox = detect_marks(img, landmark_model, face)
+                # mark_detector.draw_marks(img, marks, color=(0, 255, 0))
+                image_points = np.array([
+                    marks[30],  # Nose tip
+                    marks[8],  # Chin
+                    marks[36],  # Left eye left corner
+                    marks[45],  # Right eye right corne
+                    marks[48],  # Left Mouth corner
+                    marks[54]  # Right mouth corner
+                ], dtype="double")
+                dist_coeffs = np.zeros((4, 1))  # Assuming no lens distortion
+                (success, rotation_vector, translation_vector) = cv2.solvePnP(model_points, image_points, camera_matrix,
+                                                                              dist_coeffs, flags=cv2.SOLVEPNP_UPNP)
+
+                # Project a 3D point (0, 0, 1000.0) onto the image plane.
+                # We use this to draw a line sticking out of the nose
+
+                (nose_end_point2D, jacobian) = cv2.projectPoints(np.array([(0.0, 0.0, 1000.0)]), rotation_vector,
+                                                                 translation_vector, camera_matrix, dist_coeffs)
+
+                p1 = (int(image_points[0][0]), int(image_points[0][1]))
+                p2 = (int(nose_end_point2D[0][0][0]), int(nose_end_point2D[0][0][1]))
+                x1, x2 = head_pose_points(img, rotation_vector, translation_vector, camera_matrix)
+
+                # measuring the angles
+                try:
+                    m = (p2[1] - p1[1]) / (p2[0] - p1[0])
+                    ang1 = int(math.degrees(math.atan(m)))
+                except:
+                    ang1 = 90
+
+                try:
+                    m = (x2[1] - x1[1]) / (x2[0] - x1[0])
+                    ang2 = int(math.degrees(math.atan(-1 / m)))
+                except:
+                    ang2 = 90
+
+                # print('angle 1: {}, angle 2: {}'.format(ang1, ang2))
+                # checking for angle 1
+                if ang1 >= THRESHOLD:
+                    isLookingDown = True
+                elif ang1 <= -THRESHOLD:
+                    isLookingUp = True
+                else:
+                    isLookingFront = True
+
+                # checking for angle 2
+                if ang2 >= THRESHOLD:
+                    isLookingRight = True
+                elif ang2 <= -THRESHOLD:
+                    isLookingLeft = True
+
+                # checking for vertical and horizontal directions
+                if isLookingDown & isLookingRight:
+                    head_down_right_count += 1
+                elif isLookingDown & isLookingLeft:
+                    head_down_left_count += 1
+                elif isLookingUp & isLookingRight:
+                    head_up_right_count += 1
+                elif isLookingUp & isLookingLeft:
+                    head_up_left_count += 1
+                elif isLookingFront:
+                    head_front_count += 1
+
+                # increment the face count
+                face_count += 1
+
+                # increment the detection count
+                detection_count += 1
+
+            # finding the time landmark that the current frame is in
+            for i in frame_landmarks:
+                index = frame_landmarks.index(i)
+                j = index + 1
+
+                # checking whether the next index is within the range
+                if j < len(frame_landmarks):
+                    next_value = frame_landmarks[j]
+
+                    # checking the correct time landmark range
+                    if (frame_count >= i) & (frame_count < next_value):
+                        frame_name = "{}-{}".format(i, next_value)
+
+                        frame_group_dict[frame_name]['upright_count'] += head_up_right_count
+                        frame_group_dict[frame_name]['upleft_count'] += head_up_left_count
+                        frame_group_dict[frame_name]['downright_count'] += head_down_right_count
+                        frame_group_dict[frame_name]['downleft_count'] += head_down_left_count
+                        frame_group_dict[frame_name]['front_count'] += head_front_count
+                        frame_group_dict[frame_name]['detection_count'] += detection_count
+
+            # increment the frame count
+            frame_count += 1
+
+        # calculate the percentage values
+        for key in frame_group_dict.keys():
+            frame_group_details = frame_group_dict[key]
+            frame_group_phone_count = frame_group_details['phone_count']
+            frame_group_listen_count = frame_group_details['listen_count']
+            frame_group_note_count = frame_group_details['note_count']
+            group_detection_count = frame_group_details['detection_count']
+
+
+            frame_group_phone_perct = float(frame_group_phone_count / group_detection_count) * 100
+            frame_group_listen_perct = float(frame_group_listen_count / group_detection_count) * 100
+            frame_group_note_perct = float(frame_group_note_count / group_detection_count) * 100
+
+            # assign the values to the same dictionary
+            frame_group_dict[key]['phone_perct'] = round(frame_group_phone_perct, 1)
+            frame_group_dict[key]['listen_perct'] = round(frame_group_listen_perct, 1)
+            frame_group_dict[key]['note_perct'] = round(frame_group_note_perct, 1)
+
+            # removing irrelevant items from the dictionary
+            frame_group_dict[key].pop('phone_count')
+            frame_group_dict[key].pop('listen_count')
+            frame_group_dict[key].pop('note_count')
+            frame_group_dict[key].pop('detection_count')
+
+    # print('frame group dict: ', frame_group_dict)
+
+
+    # return the dictionary
+    return frame_group_dict

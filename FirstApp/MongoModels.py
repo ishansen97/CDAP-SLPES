@@ -253,11 +253,11 @@ class LectureGazeEstimation(models.Model):
 
 # this abstract class will define the lecture gaze frame group percentages
 class LectureGazeFrameGroupPercentages(models.Model):
-    looking_up_and_right_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
-    looking_up_and_left_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
-    looking_down_and_right_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
-    looking_down_and_left_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
-    looking_front_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    upright_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    upleft_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    downright_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    downleft_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    front_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
 
     class Meta:
         abstract = True
