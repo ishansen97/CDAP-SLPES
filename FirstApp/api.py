@@ -1027,7 +1027,7 @@ class GetLectureEmotionSummary(APIView):
         #     new_lecture_emotion_frame_grouping_id = "LEFG00001" if (last_lec_emotion_frame_grouping is None) else \
         #         ig.generate_new_id(last_lec_emotion_frame_grouping.lecture_emotion_frame_groupings_id)
         #
-        #     # retrieve the lecture activity id
+        #     # retrieve the lecture emotion id
         #     lec_emotion = LectureEmotionReport.objects.filter(lecture_video_id__video_name=video_name)
         #     lec_emotion_ser = LectureEmotionSerializer(lec_emotion, many=True)
         #     lec_emotion_id = lec_emotion_ser.data[0]['id']
@@ -1067,7 +1067,7 @@ class GetLectureGazeSummary(APIView):
         video_name = request.query_params.get('video_name')
 
         # checking the existence of lecture activity frame grouping records in the db
-        isExist = LectureGazeFrameGroupings.objects.filter(lecture_activity_id__lecture_video_id__video_name=video_name).exists()
+        isExist = LectureGazeFrameGroupings.objects.filter(lecture_gaze_id__lecture_video_id__video_name=video_name).exists()
 
         if (isExist):
             # frame_landmarks, frame_group_dict = ve.getFrameLandmarks(video_name)
@@ -1084,11 +1084,12 @@ class GetLectureGazeSummary(APIView):
             for landmark in retrieved_frame_landmarks:
                 frame_landmarks.append(landmark['landmark'])
 
-
+            # retrieve the frame groupings
             lec_gaze_frame_groupings = LectureGazeFrameGroupings.objects.filter(lecture_gaze_id__lecture_video_id__video_name=video_name)
             lec_gaze_frame_groupings_ser = LectureGazeFrameGroupingsSerializer(lec_gaze_frame_groupings, many=True)
             lec_gaze_frame_groupings_data = lec_gaze_frame_groupings_ser.data[0]
 
+            # take the frame group details out of it
             frame_group_details = lec_gaze_frame_groupings_data["frame_group_details"]
 
 
@@ -1097,87 +1098,69 @@ class GetLectureGazeSummary(APIView):
                 frame_group_percentages[group['frame_group']] = group['frame_group_percentages']
 
 
-
-            class_labels = ['phone_perct', 'listen_perct', 'note_perct']
+            class_labels = ['upright_perct', 'upleft_perct', 'downright_perct', 'downleft_perct', 'front_perct']
 
             return Response({
                 "frame_landmarks": frame_landmarks,
                 "frame_group_percentages": frame_group_percentages,
-                "activity_labels": class_labels
+                "gaze_labels": class_labels
             })
 
-        # else:
-        #
-        #     # retrieve the previous lecture video frame landmarks details
-        #     last_lec_video_frame_landmarks = LectureVideoFrameLandmarks.objects.order_by(
-        #         'lecture_video_frame_landmarks_id').last()
-        #     new_lecture_video_frame_landmarks_id = "LVFL00001" if (last_lec_video_frame_landmarks is None) else \
-        #         ig.generate_new_id(last_lec_video_frame_landmarks.lecture_video_frame_landmarks_id)
-        #
-        #
-        #     frame_landmarks, frame_group_dict = ve.getFrameLandmarks(video_name)
-        #     frame_group_percentages, activity_labels = ar.activity_frame_groupings(video_name, frame_landmarks, frame_group_dict)
-        #
-        #
-        #     # retrieve lecture video details
-        #     lec_video = LectureVideo.objects.filter(video_name=video_name)
-        #     lec_video_ser = LectureVideoSerializer(lec_video, many=True)
-        #     lec_video_id = lec_video_ser.data[0]['id']
-        #
-        #
-        #     # save the frame landmarks details into db (temp method)
-        #     db_frame_landmarks = []
-        #
-        #     for landmark in frame_landmarks:
-        #         landmark_obj = Landmarks()
-        #         landmark_obj.landmark = landmark
-        #
-        #         db_frame_landmarks.append(landmark_obj)
-        #
-        #
-        #     new_lec_video_frame_landmarks = LectureVideoFrameLandmarks()
-        #     new_lec_video_frame_landmarks.lecture_video_frame_landmarks_id = new_lecture_video_frame_landmarks_id
-        #     new_lec_video_frame_landmarks.lecture_video_id_id = lec_video_id
-        #     new_lec_video_frame_landmarks.frame_landmarks = db_frame_landmarks
-        #
-        #     new_lec_video_frame_landmarks.save()
-        #
-        #
-        #
-        #     # save the frame group details into db (temp method)
-        #
-        #     last_lec_activity_frame_grouping = LectureActivityFrameGroupings.objects.order_by('lecture_activity_frame_groupings_id').last()
-        #     new_lecture_activity_frame_grouping_id = "LAFG00001" if (last_lec_activity_frame_grouping is None) else \
-        #         ig.generate_new_id(last_lec_activity_frame_grouping.lecture_activity_frame_groupings_id)
-        #
-        #     # retrieve the lecture activity id
-        #     lec_activity = LectureActivity.objects.filter(lecture_video_id__video_name=video_name)
-        #     lec_activity_ser = LectureActivitySerializer(lec_activity, many=True)
-        #     lec_activity_id = lec_activity_ser.data[0]['id']
-        #
-        #     # create the frame group details
-        #     frame_group_details = []
-        #
-        #     for key in frame_group_percentages.keys():
-        #         # create an object of type 'LectureActivityFrameGroupDetails'
-        #         lec_activity_frame_group_details = LectureActivityFrameGroupDetails()
-        #         lec_activity_frame_group_details.frame_group = key
-        #         lec_activity_frame_group_details.frame_group_percentages = frame_group_percentages[key]
-        #
-        #         frame_group_details.append(lec_activity_frame_group_details)
-        #
-        #
-        #     new_lec_activity_frame_groupings = LectureActivityFrameGroupings()
-        #     new_lec_activity_frame_groupings.lecture_activity_frame_groupings_id = new_lecture_activity_frame_grouping_id
-        #     new_lec_activity_frame_groupings.lecture_activity_id_id = lec_activity_id
-        #     new_lec_activity_frame_groupings.frame_group_details = frame_group_details
-        #
-        #     # save
-        #     new_lec_activity_frame_groupings.save()
-        #
-        #
-        #     return Response({
-        #         "frame_landmarks": frame_landmarks,
-        #         "frame_group_percentages": frame_group_percentages,
-        #         "activity_labels": activity_labels
-        #     })
+        else:
+
+            frame_landmarks = []
+
+            # retrieve frame landmarks from db
+            lec_video_frame_landmarks = LectureVideoFrameLandmarks.objects.filter(
+                lecture_video_id__video_name=video_name)
+            lec_video_frame_landmarks_ser = LectureVideoFrameLandmarksSerializer(lec_video_frame_landmarks, many=True)
+            lec_video_frame_landmarks_data = lec_video_frame_landmarks_ser.data[0]
+
+            retrieved_frame_landmarks = lec_video_frame_landmarks_data["frame_landmarks"]
+
+            # creating a new list to display in the frontend
+            for landmark in retrieved_frame_landmarks:
+                frame_landmarks.append(int(landmark['landmark']))
+
+
+            l, frame_group_dict = ve.getFrameLandmarks(video_name, "Gaze")
+            print('frame group dict: ', frame_group_dict)
+            frame_group_percentages, gaze_labels = hge.gaze_estimation_frame_groupings(video_name, frame_landmarks, frame_group_dict)
+
+            # save the frame group details into db (temp method)
+
+            last_lec_gaze_frame_grouping = LectureGazeFrameGroupings.objects.order_by('lecture_gaze_frame_groupings_id').last()
+            new_lecture_gaze_frame_grouping_id = "LGFG00001" if (last_lec_gaze_frame_grouping is None) else \
+                ig.generate_new_id(last_lec_gaze_frame_grouping.lecture_gaze_frame_groupings_id)
+
+            # retrieve the lecture activity id
+            lec_gaze = LectureGazeEstimation.objects.filter(lecture_video_id__video_name=video_name)
+            lec_gaze_ser = LectureGazeEstimationSerializer(lec_gaze, many=True)
+            lec_gaze_id = lec_gaze_ser.data[0]['id']
+
+            # create the frame group details
+            frame_group_details = []
+
+            for key in frame_group_percentages.keys():
+                # create an object of type 'LectureActivityFrameGroupDetails'
+                lec_gaze_frame_group_details = LectureGazeFrameGroupDetails()
+                lec_gaze_frame_group_details.frame_group = key
+                lec_gaze_frame_group_details.frame_group_percentages = frame_group_percentages[key]
+
+                frame_group_details.append(lec_gaze_frame_group_details)
+
+
+            new_lec_gaze_frame_groupings = LectureGazeFrameGroupings()
+            new_lec_gaze_frame_groupings.lecture_gaze_frame_groupings_id = new_lecture_gaze_frame_grouping_id
+            new_lec_gaze_frame_groupings.lecture_gaze_id_id = lec_gaze_id
+            new_lec_gaze_frame_groupings.frame_group_details = frame_group_details
+
+            # save
+            new_lec_gaze_frame_groupings.save()
+
+
+            return Response({
+                "frame_landmarks": frame_landmarks,
+                "frame_group_percentages": frame_group_percentages,
+                "gaze_labels": gaze_labels
+            })

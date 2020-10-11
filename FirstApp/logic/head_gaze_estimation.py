@@ -618,6 +618,7 @@ def gaze_estimation_frame_groupings(video_name, frame_landmarks, frame_group_dic
     EXTRACTED_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\gaze\\{}".format(video_name))
     VIDEO_PATH = os.path.join(BASE_DIR, "assets\\FirstApp\\videos\\{}".format(video_name))
 
+    print('video path: ', VIDEO_PATH)
 
     # load the face detection model
     face_model = get_face_detector()
@@ -626,9 +627,7 @@ def gaze_estimation_frame_groupings(video_name, frame_landmarks, frame_group_dic
     cap = cv2.VideoCapture(VIDEO_PATH)
     ret, img = cap.read()
     size = img.shape
-    font = cv2.FONT_HERSHEY_SIMPLEX
 
-    font = cv2.FONT_HERSHEY_SIMPLEX
     # 3D model points.
     model_points = np.array([
         (0.0, 0.0, 0.0),  # Nose tip
@@ -639,8 +638,6 @@ def gaze_estimation_frame_groupings(video_name, frame_landmarks, frame_group_dic
         (150.0, -150.0, -125.0)  # Right mouth corner
     ])
 
-    # define a variable to count the frames
-    frame_count = 0
 
     # set a threshold angle
     # THRESHOLD = 15
@@ -662,8 +659,6 @@ def gaze_estimation_frame_groupings(video_name, frame_landmarks, frame_group_dic
     # initializing the count variables
     frame_count = 0
 
-    # class labels
-    class_labels = ['Phone checking', 'Listening', 'Note taking']
 
     # get the frame differences for each frame group
     frame_group_diff = {}
@@ -699,7 +694,6 @@ def gaze_estimation_frame_groupings(video_name, frame_landmarks, frame_group_dic
             # find the number of faces
             faces = find_faces(img, face_model)
 
-            student_count = 0
 
             # iterate through each detected face
             for face in faces:
@@ -711,8 +705,6 @@ def gaze_estimation_frame_groupings(video_name, frame_landmarks, frame_group_dic
                 isLookingLeft = False
                 isLookingFront = False
 
-                # deriving the student name to display in the image
-                student_name = 'student-{}'.format(student_count)
 
                 # retrieving the facial landmarks and face bounding box coordinates
                 marks, facebox = detect_marks(img, landmark_model, face)
@@ -779,61 +771,78 @@ def gaze_estimation_frame_groupings(video_name, frame_landmarks, frame_group_dic
                 elif isLookingFront:
                     head_front_count += 1
 
-                # increment the face count
-                face_count += 1
 
                 # increment the detection count
                 detection_count += 1
 
-            # finding the time landmark that the current frame is in
-            for i in frame_landmarks:
-                index = frame_landmarks.index(i)
-                j = index + 1
+                # finding the time landmark that the current frame is in
+                for i in frame_landmarks:
+                    index = frame_landmarks.index(i)
+                    j = index + 1
 
-                # checking whether the next index is within the range
-                if j < len(frame_landmarks):
-                    next_value = frame_landmarks[j]
+                    # checking whether the next index is within the range
+                    if j < len(frame_landmarks):
+                        next_value = frame_landmarks[j]
 
-                    # checking the correct time landmark range
-                    if (frame_count >= i) & (frame_count < next_value):
-                        frame_name = "{}-{}".format(i, next_value)
+                        # checking the correct time landmark range
+                        if (frame_count >= i) & (frame_count < next_value):
+                            frame_name = "{}-{}".format(i, next_value)
 
-                        frame_group_dict[frame_name]['upright_count'] += head_up_right_count
-                        frame_group_dict[frame_name]['upleft_count'] += head_up_left_count
-                        frame_group_dict[frame_name]['downright_count'] += head_down_right_count
-                        frame_group_dict[frame_name]['downleft_count'] += head_down_left_count
-                        frame_group_dict[frame_name]['front_count'] += head_front_count
-                        frame_group_dict[frame_name]['detection_count'] += detection_count
+                            print('frame group dict: ', frame_group_dict[frame_name])
+
+                            frame_group_dict[frame_name]['upright_count'] += head_up_right_count
+                            frame_group_dict[frame_name]['upleft_count'] += head_up_left_count
+                            frame_group_dict[frame_name]['downright_count'] += head_down_right_count
+                            frame_group_dict[frame_name]['downleft_count'] += head_down_left_count
+                            frame_group_dict[frame_name]['front_count'] += head_front_count
+                            frame_group_dict[frame_name]['detection_count'] += detection_count
+
 
             # increment the frame count
             frame_count += 1
 
-        # calculate the percentage values
-        for key in frame_group_dict.keys():
-            frame_group_details = frame_group_dict[key]
-            frame_group_phone_count = frame_group_details['phone_count']
-            frame_group_listen_count = frame_group_details['listen_count']
-            frame_group_note_count = frame_group_details['note_count']
-            group_detection_count = frame_group_details['detection_count']
+        else:
+            break
 
 
-            frame_group_phone_perct = float(frame_group_phone_count / group_detection_count) * 100
-            frame_group_listen_perct = float(frame_group_listen_count / group_detection_count) * 100
-            frame_group_note_perct = float(frame_group_note_count / group_detection_count) * 100
+    # calculate the percentage values
+    for key in frame_group_dict.keys():
+        frame_group_details = frame_group_dict[key]
+        frame_group_upright_count = frame_group_details['upright_count']
+        frame_group_upleft_count = frame_group_details['upleft_count']
+        frame_group_downright_count = frame_group_details['downright_count']
+        frame_group_downleft_count = frame_group_details['downleft_count']
+        frame_group_front_count = frame_group_details['front_count']
 
-            # assign the values to the same dictionary
-            frame_group_dict[key]['phone_perct'] = round(frame_group_phone_perct, 1)
-            frame_group_dict[key]['listen_perct'] = round(frame_group_listen_perct, 1)
-            frame_group_dict[key]['note_perct'] = round(frame_group_note_perct, 1)
+        print('detection count: ', frame_group_details['detection_count'])
+        group_detection_count = 1 if frame_group_details['detection_count'] == 0 else frame_group_details['detection_count']
 
-            # removing irrelevant items from the dictionary
-            frame_group_dict[key].pop('phone_count')
-            frame_group_dict[key].pop('listen_count')
-            frame_group_dict[key].pop('note_count')
-            frame_group_dict[key].pop('detection_count')
 
-    # print('frame group dict: ', frame_group_dict)
 
+        frame_group_upright_perct = float(frame_group_upright_count / group_detection_count) * 100
+        frame_group_upleft_perct = float(frame_group_upleft_count / group_detection_count) * 100
+        frame_group_downright_perct = float(frame_group_downright_count / group_detection_count) * 100
+        frame_group_downleft_perct = float(frame_group_downleft_count / group_detection_count) * 100
+        frame_group_front_perct = float(frame_group_front_count / group_detection_count) * 100
+
+        # assign the values to the same dictionary
+        frame_group_dict[key]['upright_perct'] = round(frame_group_upright_perct, 1)
+        frame_group_dict[key]['upleft_perct'] = round(frame_group_upleft_perct, 1)
+        frame_group_dict[key]['downright_perct'] = round(frame_group_downright_perct, 1)
+        frame_group_dict[key]['downleft_perct'] = round(frame_group_downleft_perct, 1)
+        frame_group_dict[key]['front_perct'] = round(frame_group_front_perct, 1)
+
+        # removing irrelevant items from the dictionary
+        frame_group_dict[key].pop('upright_count')
+        frame_group_dict[key].pop('upleft_count')
+        frame_group_dict[key].pop('downright_count')
+        frame_group_dict[key].pop('downleft_count')
+        frame_group_dict[key].pop('front_count')
+        frame_group_dict[key].pop('detection_count')
+
+
+    # define the labels
+    labels = ['upright_perct', 'upleft_perct', 'downright_perct', 'downleft_perct', 'front_perct']
 
     # return the dictionary
-    return frame_group_dict
+    return frame_group_dict, labels

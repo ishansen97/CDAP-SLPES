@@ -356,11 +356,11 @@ class LectureGazeFrameGroupingsSerializer(serializers.ModelSerializer):
             group_details["frame_group_percentages"] = {}
 
             group_details["frame_group"] = frame_group.frame_group
-            group_details["frame_group_percentages"]["looking_up_and_right_perct"] = frame_group.frame_group_percentages.looking_up_and_right_perct
-            group_details["frame_group_percentages"]["looking_up_and_left_perct"] = frame_group.frame_group_percentages.looking_up_and_left_perct
-            group_details["frame_group_percentages"]["looking_down_and_right_perct"] = frame_group.frame_group_percentages.looking_down_and_right_perct
-            group_details["frame_group_percentages"]["looking_down_and_left_perct"] = frame_group.frame_group_percentages.looking_down_and_left_perct
-            group_details["frame_group_percentages"]["looking_front_perct"] = frame_group.frame_group_percentages.looking_front_perct
+            group_details["frame_group_percentages"]["upright_perct"] = frame_group.frame_group_percentages.upright_perct
+            group_details["frame_group_percentages"]["upleft_perct"] = frame_group.frame_group_percentages.upleft_perct
+            group_details["frame_group_percentages"]["downright_perct"] = frame_group.frame_group_percentages.downright_perct
+            group_details["frame_group_percentages"]["downleft_perct"] = frame_group.frame_group_percentages.downleft_perct
+            group_details["frame_group_percentages"]["front_perct"] = frame_group.frame_group_percentages.front_perct
 
             return_data.append(group_details)
 
