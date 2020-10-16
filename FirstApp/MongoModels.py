@@ -185,6 +185,29 @@ class LectureActivityFrameGroupings(models.Model):
         return self.lecture_activity_frame_groupings_id
 
 
+
+# this abstract class will contain lecture activity frame recognition details
+class LectureActivityFrameRecognitionDetails(models.Model):
+    frame_name = models.CharField(max_length=15)
+    phone_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    listen_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    note_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+
+    class Meta:
+        abstract = True
+
+
+# this class will contain lecture activity frame recognitions
+class LectureActivityFrameRecognitions(models.Model):
+    lecture_activity_frame_recognition_id = models.CharField(max_length=15)
+    lecture_activity_id = models.ForeignKey(LectureActivity, on_delete=models.CASCADE)
+    frame_recognition_details = models.ArrayField(LectureActivityFrameRecognitionDetails)
+
+    def __str__(self):
+        return self.lecture_activity_frame_recognition_id
+
+
+
 # EMOTIONS section
 # Lecture emotion report
 class LectureEmotionReport(models.Model):

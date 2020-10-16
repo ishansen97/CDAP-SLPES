@@ -283,6 +283,31 @@ class LectureActivityFrameGroupingsSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+# lecture activity frame recognition serializer
+class LectureActivityFrameRecognitionsSerializer(serializers.ModelSerializer):
+
+    lecture_activity_id = LectureActivitySerializer()
+    frame_recognition_details = serializers.SerializerMethodField()
+
+    def get_frame_recognition_details(self, obj):
+
+        return_data = []
+
+        for frame_recognition in obj.frame_recognition_details:
+            recognition = {}
+
+            recognition["frame_name"] = frame_recognition.frame_name
+            recognition["phone_perct"] = frame_recognition.frame_name
+            recognition["listen_perct"] = frame_recognition.frame_name
+            recognition["note_perct"] = frame_recognition.frame_name
+
+            return_data.append(recognition)
+
+        # return the data
+        return return_data
+
+
+
 # EMOTIONS section
 # lecture emotions serailzier
 class LectureEmotionSerializer(serializers.ModelSerializer):
