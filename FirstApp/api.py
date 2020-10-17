@@ -557,11 +557,69 @@ class GetLectureEmotionRecognitionsForFrames(APIView):
 
     def get(self, request):
         video_name = request.query_params.get('video_name')
-        frame_detections = ed.get_frame_emotion_recognition(video_name)
 
-        return Response({
-            "response": frame_detections
-        })
+        # finding the existence of Lecture emotion frame recognition record
+        isExist = LectureEmotionFrameRecognitions.objects.filter(
+            lecture_emotion_id__lecture_video_id__video_name=video_name).exists()
+
+        if (isExist):
+            lecture_emotion_frame_recognitions = LectureEmotionFrameRecognitions.objects.filter(
+                lecture_emotion_id__lecture_video_id__video_name=video_name)
+            lecture_emotion_frame_recognitions_ser = LectureEmotionFrameRecognitionsSerializer(
+                lecture_emotion_frame_recognitions, many=True)
+            lecture_emotion_frame_recognitions_data = lecture_emotion_frame_recognitions_ser.data[0]
+
+            frame_detections = lecture_emotion_frame_recognitions_data['frame_recognition_details']
+
+            return Response({
+                "response": frame_detections
+            })
+
+        else:
+
+            # retrieve the lecture emotion id
+            lec_emotion = LectureEmotionReport.objects.filter(lecture_video_id__video_name=video_name)
+            lec_emotion_ser = LectureEmotionSerializer(lec_emotion, many=True)
+            lec_emotion_data = lec_emotion_ser.data[0]
+            lec_emotion_id = lec_emotion_data['id']
+
+            # create a new lecture activity frame detections id
+            last_lec_emotion_frame_recognitions = LectureEmotionFrameRecognitions.objects.order_by(
+                'lecture_emotion_frame_recognition_id').last()
+            new_lecture_emotion_frame_recognitions_id = "LEFR00001" if (
+                        last_lec_emotion_frame_recognitions is None) else \
+                ig.generate_new_id(last_lec_emotion_frame_recognitions.lecture_emotion_frame_recognition_id)
+
+            # calculate the frame detections
+            frame_detections = ed.get_frame_emotion_recognition(video_name)
+
+            frame_recognition_details = []
+
+            # save the new lecture activity frame recognitions
+            for detection in frame_detections:
+                lec_emotion_frame_recognition_details = LectureEmotionFrameRecognitionDetails()
+                lec_emotion_frame_recognition_details.frame_name = detection['frame_name']
+                lec_emotion_frame_recognition_details.happy_perct = detection['happy_perct']
+                lec_emotion_frame_recognition_details.sad_perct = detection['sad_perct']
+                lec_emotion_frame_recognition_details.angry_perct = detection['angry_perct']
+                lec_emotion_frame_recognition_details.surprise_perct = detection['surprise_perct']
+                lec_emotion_frame_recognition_details.neutral_perct = detection['neutral_perct']
+
+
+                frame_recognition_details.append(lec_emotion_frame_recognition_details)
+
+
+            lec_emotion_frame_recognitions = LectureEmotionFrameRecognitions()
+            lec_emotion_frame_recognitions.lecture_emotion_frame_recognition_id = new_lecture_emotion_frame_recognitions_id
+            lec_emotion_frame_recognitions.lecture_emotion_id_id = lec_emotion_id
+            lec_emotion_frame_recognitions.frame_recognition_details = frame_recognition_details
+
+            lec_emotion_frame_recognitions.save()
+
+            return Response({
+                "response": frame_detections
+            })
+
 
 
 ##### POSE #####
@@ -706,12 +764,67 @@ class GetLectureGazeEstimationForFrames(APIView):
 
     def get(self, request):
         video_name = request.query_params.get('video_name')
-        frame_detections, frame_rate = hge.get_lecture_gaze_esrimation_for_frames(video_name)
 
-        return Response({
-            "response": frame_detections,
-            "frame_rate": frame_rate
-        })
+        # finding the existence of Lecture activity frame recognition record
+        isExist = LectureGazeFrameRecognitions.objects.filter(
+            lecture_gaze_id__lecture_video_id__video_name=video_name).exists()
+
+        if (isExist):
+            lecture_gaze_frame_recognitions = LectureGazeFrameRecognitions.objects.filter(
+                lecture_gaze_id__lecture_video_id__video_name=video_name)
+            lecture_gaze_frame_recognitions_ser = LectureGazeFrameRecognitionsSerializer(
+                lecture_gaze_frame_recognitions, many=True)
+            lecture_gaze_frame_recognitions_data = lecture_gaze_frame_recognitions_ser.data[0]
+
+            frame_detections = lecture_gaze_frame_recognitions_data['frame_recognition_details']
+
+            return Response({
+                "response": frame_detections
+            })
+
+        else:
+
+            # retrieve the lecture emotion id
+            lec_gaze = LectureGazeEstimation.objects.filter(lecture_video_id__video_name=video_name)
+            lec_gaze_ser = LectureGazeEstimationSerializer(lec_gaze, many=True)
+            lec_gaze_data = lec_gaze_ser.data[0]
+            lec_gaze_id = lec_gaze_data['id']
+
+            # create a new lecture activity frame detections id
+            last_lec_gaze_frame_recognitions = LectureGazeFrameRecognitions.objects.order_by(
+                'lecture_gaze_frame_recognition_id').last()
+            new_lecture_gaze_frame_recognitions_id = "LGFR00001" if (
+                    last_lec_gaze_frame_recognitions is None) else \
+                ig.generate_new_id(last_lec_gaze_frame_recognitions.lecture_gaze_frame_recognition_id)
+
+            # calculate the frame detections
+            frame_detections, frame_rate = hge.get_lecture_gaze_esrimation_for_frames(video_name)
+
+            frame_recognition_details = []
+
+            # save the new lecture activity frame recognitions
+            for detection in frame_detections:
+                lec_gaze_frame_recognition_details = LectureGazeFrameRecognitionDetails()
+                lec_gaze_frame_recognition_details.frame_name = detection['frame_name']
+                lec_gaze_frame_recognition_details.upright_perct = detection['upright_perct']
+                lec_gaze_frame_recognition_details.upleft_perct = detection['upleft_perct']
+                lec_gaze_frame_recognition_details.downright_perct = detection['downright_perct']
+                lec_gaze_frame_recognition_details.downleft_perct = detection['downleft_perct']
+                lec_gaze_frame_recognition_details.front_perct = detection['front_perct']
+
+                frame_recognition_details.append(lec_gaze_frame_recognition_details)
+
+            lec_gaze_frame_recognitions = LectureGazeFrameRecognitions()
+            lec_gaze_frame_recognitions.lecture_gaze_frame_recognition_id = new_lecture_gaze_frame_recognitions_id
+            lec_gaze_frame_recognitions.lecture_gaze_id_id = lec_gaze_id
+            lec_gaze_frame_recognitions.frame_recognition_details = frame_recognition_details
+
+            lec_gaze_frame_recognitions.save()
+
+            return Response({
+                "response": frame_detections
+            })
+
 
 
 ##### VIDEO RESULTS SECTION #####

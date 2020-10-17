@@ -259,6 +259,31 @@ class LectureEmotionFrameGroupings(models.Model):
         return self.lecture_emotion_frame_groupings_id
 
 
+# this abstract class will contain lecture emotion frame recognition details
+class LectureEmotionFrameRecognitionDetails(models.Model):
+    frame_name = models.CharField(max_length=15)
+    happy_perct = models.FloatField()
+    sad_perct = models.FloatField()
+    angry_perct = models.FloatField()
+    surprise_perct = models.FloatField()
+    neutral_perct = models.FloatField()
+
+    class Meta:
+        abstract = True
+
+
+# this class will contain lecture emotion frame recognitions
+class LectureEmotionFrameRecognitions(models.Model):
+    lecture_emotion_frame_recognition_id = models.CharField(max_length=15)
+    lecture_emotion_id = models.ForeignKey(LectureEmotionReport, on_delete=models.CASCADE)
+    frame_recognition_details = models.ArrayField(LectureEmotionFrameRecognitionDetails)
+
+    def __str__(self):
+        return self.lecture_emotion_frame_recognition_id
+
+
+
+
 # POSE section
 # lecture pose estimation
 class LectureGazeEstimation(models.Model):
@@ -305,3 +330,27 @@ class LectureGazeFrameGroupings(models.Model):
 
     def __str__(self):
         return self.lecture_gaze_frame_groupings_id
+
+
+
+# this abstract class will contain lecture gaze frame recognition details
+class LectureGazeFrameRecognitionDetails(models.Model):
+    frame_name = models.CharField(max_length=15)
+    upright_perct = models.FloatField()
+    upleft_perct = models.FloatField()
+    downright_perct = models.FloatField()
+    downleft_perct = models.FloatField()
+    front_perct = models.FloatField()
+
+    class Meta:
+        abstract = True
+
+
+# this class will contain lecture gaze frame recognitions
+class LectureGazeFrameRecognitions(models.Model):
+    lecture_gaze_frame_recognition_id = models.CharField(max_length=15)
+    lecture_gaze_id = models.ForeignKey(LectureGazeEstimation, on_delete=models.CASCADE)
+    frame_recognition_details = models.ArrayField(LectureGazeFrameRecognitionDetails)
+
+    def __str__(self):
+        return self.lecture_gaze_frame_recognition_id

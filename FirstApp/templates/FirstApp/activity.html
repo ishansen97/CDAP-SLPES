@@ -774,7 +774,8 @@
                 response.map((frame) => {
                    let frame_name = frame.frame_name;
                    let phone_perct = Math.round(frame.phone_perct, 0);
-                   let listen_perct = Math.round(frame.listening_perct, 0);
+                   let listen_perct = Math.round(frame.listen_perct, 0);
+                   {#let listen_perct = Math.round(frame.listening_perct, 0);#}
                    let note_perct = Math.round(frame.note_perct, 0);
 
                    //append to the html string

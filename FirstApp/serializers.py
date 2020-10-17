@@ -356,6 +356,39 @@ class LectureEmotionFrameGroupingsSerializer(serializers.ModelSerializer):
 
 
 
+# lecture emotion frame recognition serializer
+class LectureEmotionFrameRecognitionsSerializer(serializers.ModelSerializer):
+
+    lecture_emotion_id = LectureEmotionSerializer()
+    frame_recognition_details = serializers.SerializerMethodField()
+
+    # this method will be used to serialize the 'frame_recogition_details' field
+    def get_frame_recognition_details(self, obj):
+
+        return_data = []
+
+        for frame_recognition in obj.frame_recognition_details:
+            recognition = {}
+
+            recognition["frame_name"] = frame_recognition.frame_name
+            recognition["happy_perct"] = frame_recognition.happy_perct
+            recognition["sad_perct"] = frame_recognition.sad_perct
+            recognition["angry_perct"] = frame_recognition.angry_perct
+            recognition["surprise_perct"] = frame_recognition.surprise_perct
+            recognition["neutral_perct"] = frame_recognition.neutral_perct
+
+            return_data.append(recognition)
+
+        # return the data
+        return return_data
+
+
+    class Meta:
+        model = LectureEmotionFrameRecognitions
+        fields = '__all__'
+
+
+
 # lecture video meta serializer
 class VideoMetaSerializer(serializers.ModelSerializer):
 
@@ -400,4 +433,37 @@ class LectureGazeFrameGroupingsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LectureGazeFrameGroupings
+        fields = '__all__'
+
+
+
+# lecture emotion frame recognition serializer
+class LectureGazeFrameRecognitionsSerializer(serializers.ModelSerializer):
+
+    lecture_gaze_id = LectureGazeEstimationSerializer()
+    frame_recognition_details = serializers.SerializerMethodField()
+
+    # this method will be used to serialize the 'frame_recogition_details' field
+    def get_frame_recognition_details(self, obj):
+
+        return_data = []
+
+        for frame_recognition in obj.frame_recognition_details:
+            recognition = {}
+
+            recognition["frame_name"] = frame_recognition.frame_name
+            recognition["upright_perct"] = frame_recognition.upright_perct
+            recognition["upleft_perct"] = frame_recognition.upleft_perct
+            recognition["downright_perct"] = frame_recognition.downright_perct
+            recognition["downleft_perct"] = frame_recognition.downleft_perct
+            recognition["front_perct"] = frame_recognition.front_perct
+
+            return_data.append(recognition)
+
+        # return the data
+        return return_data
+
+
+    class Meta:
+        model = LectureGazeFrameRecognitions
         fields = '__all__'

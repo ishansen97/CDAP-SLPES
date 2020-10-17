@@ -538,11 +538,11 @@ def get_lecture_gaze_esrimation_for_frames(video_name):
 
             # collect the percentages to a dictionary
             percentages['frame_name'] = "frame-{}".format(frame_count)
-            percentages['head_up_right_perct'] = head_up_right_perct
-            percentages['head_up_left_perct'] = head_up_left_perct
-            percentages['head_down_right_perct'] = head_down_right_perct
-            percentages['head_down_left_perct'] = head_down_left_perct
-            percentages['head_front_perct'] = head_front_perct
+            percentages['upright_perct'] = head_up_right_perct
+            percentages['upleft_perct'] = head_up_left_perct
+            percentages['downright_perct'] = head_down_right_perct
+            percentages['downleft_perct'] = head_down_left_perct
+            percentages['front_perct'] = head_front_perct
 
             # append the calculated percentages to the frame_detections
             frame_detections.append(percentages)

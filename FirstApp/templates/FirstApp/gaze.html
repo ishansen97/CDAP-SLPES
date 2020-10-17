@@ -304,11 +304,11 @@
                 //creating the html string, iteratively
                 response.map((frame) => {
                    let frame_name = frame.frame_name;
-                   let look_up_right = Math.round(frame.head_up_right_perct, 0);
-                   let look_up_left = Math.round(frame.head_up_left_perct, 0);
-                   let look_down_right = Math.round(frame.head_down_right_perct, 0);
-                   let look_down_left = Math.round(frame.head_down_left_perct, 0);
-                   let look_front = Math.round(frame.head_front_perct, 0);
+                   let look_up_right = Math.round(frame.upright_perct, 0);
+                   let look_up_left = Math.round(frame.upleft_perct, 0);
+                   let look_down_right = Math.round(frame.downright_perct, 0);
+                   let look_down_left = Math.round(frame.downleft_perct, 0);
+                   let look_front = Math.round(frame.front_perct, 0);
 
                    //append to the html string
                    //looking up and right
