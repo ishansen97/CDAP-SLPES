@@ -189,9 +189,9 @@ class LectureActivityFrameGroupings(models.Model):
 # this abstract class will contain lecture activity frame recognition details
 class LectureActivityFrameRecognitionDetails(models.Model):
     frame_name = models.CharField(max_length=15)
-    phone_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
-    listen_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
-    note_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    phone_perct = models.FloatField()
+    listen_perct = models.FloatField()
+    note_perct = models.FloatField()
 
     class Meta:
         abstract = True

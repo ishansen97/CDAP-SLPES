@@ -361,11 +361,62 @@ class GetLectureActivityRecognitionsForFrames(APIView):
 
     def get(self, request):
         video_name = request.query_params.get('video_name')
-        frame_detections = ar.get_frame_activity_recognition(video_name)
 
-        return Response({
-            "response": frame_detections
-        })
+        # finding the existence of Lecture activity frame recognition record
+        isExist = LectureActivityFrameRecognitions.objects.filter(lecture_activity_id__lecture_video_id__video_name=video_name).exists()
+
+        if (isExist):
+            lecture_activity_frame_recognitions = LectureActivityFrameRecognitions.objects.filter(lecture_activity_id__lecture_video_id__video_name=video_name)
+            lecture_activity_frame_recognitions_ser = LectureActivityFrameRecognitionsSerializer(lecture_activity_frame_recognitions, many=True)
+            lecture_activity_frame_recognitions_data = lecture_activity_frame_recognitions_ser.data[0]
+
+            frame_detections = lecture_activity_frame_recognitions_data['frame_recognition_details']
+
+            return Response({
+                "response": frame_detections
+            })
+
+        else:
+
+            # retrieve the lecture activity id
+            lec_activity = LectureActivity.objects.filter(lecture_video_id__video_name=video_name)
+            lec_activity_ser = LectureActivitySerializer(lec_activity, many=True)
+            lec_activity_data = lec_activity_ser.data[0]
+            lec_activity_id = lec_activity_data['id']
+
+            # create a new lecture activity frame detections id
+            last_lec_activity_frame_recognitions = LectureActivityFrameRecognitions.objects.order_by('lecture_activity_frame_recognition_id').last()
+            new_lecture_activity_frame_recognitions_id = "LAFR00001" if (last_lec_activity_frame_recognitions is None) else \
+                ig.generate_new_id(last_lec_activity_frame_recognitions.lecture_activity_frame_recognition_id)
+
+
+            # calculate the frame detections
+            frame_detections = ar.get_frame_activity_recognition(video_name)
+
+            frame_recognition_details = []
+
+            # save the new lecture activity frame recognitions
+            for detection in frame_detections:
+                lec_activity_frame_recognition_details = LectureActivityFrameRecognitionDetails()
+                lec_activity_frame_recognition_details.frame_name = detection['frame_name']
+                lec_activity_frame_recognition_details.phone_perct = detection['phone_perct']
+                lec_activity_frame_recognition_details.listen_perct = detection['listening_perct']
+                lec_activity_frame_recognition_details.note_perct = detection['note_perct']
+
+                frame_recognition_details.append(lec_activity_frame_recognition_details)
+
+
+            lec_activity_frame_recognitions = LectureActivityFrameRecognitions()
+            lec_activity_frame_recognitions.lecture_activity_frame_recognition_id = new_lecture_activity_frame_recognitions_id
+            lec_activity_frame_recognitions.lecture_activity_id_id = lec_activity_id
+            lec_activity_frame_recognitions.frame_recognition_details = frame_recognition_details
+
+            lec_activity_frame_recognitions.save()
+
+
+            return Response({
+                "response": frame_detections
+            })
 
 
 # API to create reports for Activity

@@ -289,6 +289,7 @@ class LectureActivityFrameRecognitionsSerializer(serializers.ModelSerializer):
     lecture_activity_id = LectureActivitySerializer()
     frame_recognition_details = serializers.SerializerMethodField()
 
+    # this method will be used to serialize the 'frame_recogition_details' field
     def get_frame_recognition_details(self, obj):
 
         return_data = []
@@ -297,14 +298,19 @@ class LectureActivityFrameRecognitionsSerializer(serializers.ModelSerializer):
             recognition = {}
 
             recognition["frame_name"] = frame_recognition.frame_name
-            recognition["phone_perct"] = frame_recognition.frame_name
-            recognition["listen_perct"] = frame_recognition.frame_name
-            recognition["note_perct"] = frame_recognition.frame_name
+            recognition["phone_perct"] = frame_recognition.phone_perct
+            recognition["listen_perct"] = frame_recognition.listen_perct
+            recognition["note_perct"] = frame_recognition.note_perct
 
             return_data.append(recognition)
 
         # return the data
         return return_data
+
+
+    class Meta:
+        model = LectureActivityFrameRecognitions
+        fields = '__all__'
 
 
 
