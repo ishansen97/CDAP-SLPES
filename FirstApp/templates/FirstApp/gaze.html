@@ -73,7 +73,7 @@
 
                 let date = e.target.parentNode.parentNode.firstChild.innerHTML;
 
-                fetch('http://127.0.0.1:8000/get-lecture-video/?lecturer=' + global_lecturer + '&date=' + date + '&index=' + global_lecturer_subject_index)
+                fetch('http://127.0.0.1:8000/get-lecture-video-gaze-estimation-availability/?lecturer=' + global_lecturer + '&date=' + date + '&index=' + global_lecturer_subject_index)
                     .then((res) => res.json())
                     .then((out) => displayLectureVideoDetails(out, object))
                     .catch((error) => alert('an error occurred: ' + error));
@@ -144,17 +144,19 @@
                 global_video_name = video.video_name;
 
 
-                if (lectureVideo.isActivityFound) {
-                    e.target.parentNode.parentNode.lastChild.innerHTML = '<button type="button" class="btn btn-primary">Results</button>';
+                if (lectureVideo.isGazeEstimationFound) {
+                    e.target.parentNode.parentNode.lastChild.innerHTML = '<button type="button" class="btn btn-primary" id="result_btn">Results</button>';
                 } else {
-                    e.target.parentNode.parentNode.lastChild.innerHTML = '<button type="button" class="btn btn-success">Process</button>';
+                    {#e.target.parentNode.parentNode.lastChild.innerHTML = "<span class='font-italic font-weight-bold text-danger'>Needs to be processed</span>";#}
+                    e.target.parentNode.parentNode.lastChild.innerHTML = '<button type="button" class="btn btn-success" id="process_gaze">Process</button>';
                 }
 
                 $('#video_modal').modal();
             }
 
+
             //binding a click event for 'btn-primary' buttons
-            $(document).on('click', '.btn-primary', function (e) {
+            $(document).on('click', '#result_btn', function (e) {
 
                 //removing the previous frames (if there is any)
                 $('#main_frames').remove();
@@ -164,7 +166,7 @@
                 //hiding the temporary text
                 $('#temporary_text').attr('hidden', true);
 
-                fetch('http://127.0.0.1:8000/get-lecture-activity/?lecture_video_id=' + global_lecture_video_id + '&lecture_video_name=' + global_video_name)
+                fetch('http://127.0.0.1:8000/get-lecture-gaze-estimation/?lecture_video_id=' + global_lecture_video_id + '&lecture_video_name=' + global_video_name)
                     .then((res) => res.json())
                     .then((out) => {
                         let frames = createFrames(out);
@@ -179,7 +181,7 @@
             });
 
             //displaying the activity percentages in the progress bars
-            function displayActivity(activity) {
+            function displayGazeEstimation(gaze) {
 
                 //hiding the loader (for the frames)
                 $('#frame_loader').attr('hidden', true);
@@ -190,29 +192,31 @@
                 $('video').attr({'hidden': false, 'src': src});
 
 
-                activity.response.map((act, index) => {
+                gaze.response.map((act, index) => {
                     //setting the percentage values
-                    $('#phone_perct').text(act.phone_perct + '%');
-                    $('#talking_perct').text(act.talking_perct + '%');
-                    $('#listening_perct').text(act.listening_perct + '%');
-                    $('#writing_perct').text(act.writing_perct + '%');
+                    $('#looking_up_right_perct').text(act.looking_up_and_right_perct + '%');
+                    $('#looking_up_left_perct').text(act.looking_up_and_left_perct + '%');
+                    $('#looking_down_right_perct').text(act.looking_down_and_right_perct + '%');
+                    $('#looking_down_left_perct').text(act.looking_down_and_left_perct + '%');
+                    $('#looking_front_perct').text(act.looking_front_perct + '%');
 
                     //setting the width in the progress bars
-                    $('#phone_width').width(act.phone_perct + '%');
-                    $('#talking_width').width(act.talking_perct + '%');
-                    $('#listening_width').width(act.listening_perct + '%');
-                    $('#writing_width').width(act.writing_perct + '%');
+                    $('#looking_up_right_width').width(act.looking_up_and_right_perct + '%');
+                    $('#looking_up_left_width').width(act.looking_up_and_left_perct + '%');
+                    $('#looking_down_right_width').width(act.looking_down_and_right_perct + '%');
+                    $('#looking_down_left_width').width(act.looking_down_and_left_perct + '%');
+                    $('#looking_front_width').width(act.looking_front_perct + '%');
                 });
 
                 //display the progress bar area
                 $('.progress_area').attr('hidden', false);
             }
 
-            //to handle the 'btn-success' (process) button
-            $(document).on('click', '.btn-success', function (e) {
+            //to handle the process button
+            $(document).on('click', '#process_gaze', function (e) {
 
-                //sending the POST request to process the lecture activities
-                fetch('http://127.0.0.1:8000/process-lecture-activity/?lecture_video_name=' + global_video_name + '&lecture_video_id=' + global_lecture_video_id)
+                //sending the get request to process the lecture gaze estimations
+                fetch('http://127.0.0.1:8000/process-lecture-gaze-estimation/?lecture_video_name=' + global_video_name + '&lecture_video_id=' + global_lecture_video_id)
                     .then((res) => res.json())
                     .then((out) => handleResponse(out.response, e))
                     .catch((error) => alert('error: ' + error));
@@ -222,7 +226,7 @@
             function handleResponse(response, e) {
                 //change the button, if the response is positive
                 if (response) {
-                    e.target.parentNode.parentNode.lastChild.innerHTML = '<button type="button" class="btn btn-primary">Results</button>';
+                    e.target.parentNode.parentNode.lastChild.innerHTML = '<button type="button" class="btn btn-primary" id="result_btn" >Results</button>';
                 }
             }
 
@@ -236,15 +240,14 @@
                 //loop through the frames
                 res.extracted.map((image) => {
                     let img_src = "";
-                    let len = image.detections.length;
 
 
                     if (count === 0) {
                         main_frame_content += "<li class='list-group-item text-center' id='image_0'>";
-                        img_src = "<img src='{% static '' %}FirstApp/activity/" + global_video_name + "/" + res.extracted[0].frame + "/" + res.extracted[0].detections[0] + "' width='400' height='400'>";
+                        img_src = "<img src='{% static '' %}FirstApp/gaze/" + global_video_name + "/" + res.extracted[0] + "' width='400' height='400'>";
                     } else {
                         main_frame_content += "<li class='list-group-item other-frames' id='image_" + count + "' hidden>";
-                        img_src = "<img src='{% static '' %}FirstApp/activity/" + global_video_name + "/" + image.frame + "/" + image.detections[len - 1] + "' class='img-link' width='400' height='400'>";
+                        img_src = "<img src='{% static '' %}FirstApp/gaze/" + global_video_name + "/" + image + "' class='img-link' width='400' height='400'>";
                     }
 
 
@@ -261,10 +264,174 @@
                 $('#myActivityRange').attr({'min': 0, 'max': count});
 
                 //display the progress bars
-                displayActivity(res);
+                displayGazeEstimation(res);
 
                 return main_frame_content;
             }
+
+
+            //to handle the 'integrate' modal
+            $('#integrate_activity').click(function () {
+                //define the student video src
+                let video_src = "{% static '' %}FirstApp/videos/" + global_video_name;
+
+                //assign the video src
+                $('#student_video').attr('src', video_src);
+
+                $('#integrate_modal').modal();
+
+
+                //fetch data from the API
+                fetch('http://127.0.0.1:8000/get-lecture-gaze-estimation-for-frame/?video_name=' + global_video_name)
+                .then((res) => res.json())
+                .then((out) => displayGazeEstimationForFrame(out.response))
+                .catch((err) => alert('error: ' + err));
+
+            });
+
+
+            //this function will load the activity recognition for frames
+            function displayGazeEstimationForFrame(response) {
+
+                //hide the loader
+                $('#student_video_progress_loader').attr('hidden', true);
+                //show the progress bars
+                $('#student_video_progress').attr('hidden', false);
+
+                //creating the html string
+                let htmlString = "";
+
+                //creating the html string, iteratively
+                response.map((frame) => {
+                   let frame_name = frame.frame_name;
+                   let look_up_right = Math.round(frame.upright_perct, 0);
+                   let look_up_left = Math.round(frame.upleft_perct, 0);
+                   let look_down_right = Math.round(frame.downright_perct, 0);
+                   let look_down_left = Math.round(frame.downleft_perct, 0);
+                   let look_front = Math.round(frame.front_perct, 0);
+
+                   //append to the html string
+                   //looking up and right
+                   htmlString += "<div class='progress_area' id='progress_" +frame_name+ "' hidden>";
+                   htmlString += "<h4 class='small font-weight-bold'>Looking up and right</h4>";
+                   htmlString += "<span class='float-right' id='look_up_right_instant_" +frame_name+ "'>" +look_up_right+ "%</span>";
+                   htmlString += "<div class='progress mb-4'>";
+                   htmlString += "<div class='progress-bar bg-warning' role='progressbar' id='look_up_right_instant_value_" +frame_name+ "' style='width: " +look_up_right+ "%' aria-valuenow='40' aria-valuemin='0' aria-valuemax='100'></div>";
+                   htmlString += "</div>";
+
+                   //looking up and left
+                   htmlString += "<h4 class='small font-weight-bold'>Looking up and left</h4>";
+                   htmlString += "<span class='float-right' id='look_up_left_instant_" +frame_name+ "'>" +look_up_left+ "%</span>";
+                   htmlString += "<div class='progress mb-4'>";
+                   htmlString += "<div class='progress-bar' role='progressbar' id='look_up_left_instant_value_" +frame_name+ "' style='width: " +look_up_left+ "%' aria-valuenow='0' aria-valuemin='0' aria-valuemax='100'></div>";
+                   htmlString += "</div>";
+
+                   //looking down and right
+                   htmlString += "<h4 class='small font-weight-bold'>Looking down and right</h4>";
+                   htmlString += "<span class='float-right' id='look_down_right_instant_" +frame_name+ "'>" +look_down_right+ "%</span>";
+                   htmlString += "<div class='progress mb-4'>";
+                   htmlString += "<div class='progress-bar bg-info' role='progressbar' id='look_down_right_instant_value_" +frame_name+ "' style='width: " +look_down_right+ "%' aria-valuenow='80' aria-valuemin='0' aria-valuemax='100'></div>";
+                   htmlString += "</div>";
+
+                   //looking down and left
+                   htmlString += "<h4 class='small font-weight-bold'>Looking down and left</h4>";
+                   htmlString += "<span class='float-right' id='look_down_left_instant_" +frame_name+ "'>" +look_down_left+ "%</span>";
+                   htmlString += "<div class='progress mb-4'>";
+                   htmlString += "<div class='progress-bar bg-info' role='progressbar' id='look_down_left_instant_value_" +frame_name+ "' style='width: " +look_down_left+ "%' aria-valuenow='80' aria-valuemin='0' aria-valuemax='100'></div>";
+                   htmlString += "</div>";
+
+                   //looking front
+                   htmlString += "<h4 class='small font-weight-bold'>Looking front</h4>";
+                   htmlString += "<span class='float-right' id='look_front_instant_" +frame_name+ "'>" +look_front+ "%</span>";
+                   htmlString += "<div class='progress mb-4'>";
+                   htmlString += "<div class='progress-bar bg-info' role='progressbar' id='look_front_instant_value_" +frame_name+ "' style='width: " +look_front+ "%' aria-valuenow='80' aria-valuemin='0' aria-valuemax='100'></div>";
+                   htmlString += "</div>";
+
+
+
+                   //ending the progress area
+                   htmlString += "</div>";
+
+                });
+
+                //append the html
+                $('#student_video_column').append(htmlString);
+
+            }
+
+
+            //to handle the 'integrate' play button
+            $('#play_integrate_button').click(function () {
+                let video = $('video')[0];
+                let test_video = document.getElementsByTagName('video')[0];
+                let play_class = 'btn btn-outline-danger play';
+                let pause_class = 'btn btn-outline-danger pause';
+                let count = 0;
+
+                let classes = $(this).attr('class');
+
+
+                let video_interval = setInterval(() => {
+                    {#let talking_number = Math.round(Math.random() * 100, 0);#}
+                    {#let phone_number = Math.round(Math.random() * 100, 0);#}
+                    {#let note_number = Math.round(Math.random() * 100, 0);#}
+                    {#let listening_number = Math.round(Math.random() * 100, 0);#}
+
+                    //get the relevant progress area
+                    let progress_area = "progress_frame-" + count;
+                    let progress_area_id = "#" + progress_area;
+
+                    //find the corresponding progress area
+                    let progress_area_html = document.getElementById(progress_area);
+
+                    //display the retrieved progress area
+                    $(progress_area_id).attr('hidden', false);
+
+                    //replace the current progress area with the selected one
+                    $('#student_video_progress').html(progress_area_html);
+
+                    //increment the count
+                    count++;
+
+                     //setting the values
+
+                    {#$('#looking_up_right_instant_perct').text(talking_number + '%');#}
+                    {#$('#looking_up_left_instant_perct').text(phone_number + '%');#}
+                    {#$('#looking_down_right_instant_perct').text(note_number + '%');#}
+                    {#$('#looking_down_left_instant_perct').text(listening_number + '%');#}
+                    {#$('#looking_front_instant_perct').text(listening_number + '%');#}
+                    {##}
+                    {#//setting the width#}
+                    {#$('#talking_instant_value').width(talking_number + '%');#}
+                    {#$('#phone_checking_instant_value').width(phone_number + '%');#}
+                    {#$('#note_taking_instant_value').width(note_number + '%');#}
+                    {#$('#listening_instant_value').width(listening_number + '%');#}
+
+
+                }, 33);
+
+                //check for the current class
+                if (classes === play_class) {
+                    $(this).text('Pause');
+                    $(this).attr('class', pause_class);
+                    video.play();
+
+                } else if (classes === pause_class) {
+                    $(this).text('Play');
+                    $(this).attr('class', play_class);
+                    video.pause();
+
+                }
+                //function to do when the video is paused
+
+
+                //function to do when the video is ended
+                video.onended = function (e) {
+                    //stop changing the activity values
+                    clearInterval(video_interval);
+                }
+
+            });
 
 
             //declaring the variable for setInterval function
@@ -422,10 +589,9 @@
 
 
                             if (student_count === 0) {
-                                images += "<li class='list-group-item frame-0' id='image_0_" +title+ "'>";
-                            }
-                            else {
-                                images += "<li class='list-group-item other-student-frames' id='image_" +student_count+ "_" +title+ "' hidden>";
+                                images += "<li class='list-group-item frame-0' id='image_0_" + title + "'>";
+                            } else {
+                                images += "<li class='list-group-item other-student-frames' id='image_" + student_count + "_" + title + "' hidden>";
                             }
 
                             images += "<img src='{% static '' %}FirstApp/Activity/" + global_video_name + "/" + frame.frame + "/" + student + "' width='200' height='200'>";
@@ -443,10 +609,10 @@
                     htmlString += "<div class='slidecontainer'>";
                     htmlString += "<div class='row m-3'></div>";
                     htmlString += "<div class='row'>";
-                    htmlString += "<span><i class='fas fa-play play-pause-icon-student-frames' id='icon_" +title+ "'></i></span>";
+                    htmlString += "<span><i class='fas fa-play play-pause-icon-student-frames' id='icon_" + title + "'></i></span>";
                     htmlString += "</div>";
-                    htmlString += "<input type='range' min='1' max='100' value='0' class='slider' id='slider_" +title+ "'>";
-                    htmlString += "<p>No of frames: <span id='demo_" +title+ "'></span></p>";
+                    htmlString += "<input type='range' min='1' max='100' value='0' class='slider' id='slider_" + title + "'>";
+                    htmlString += "<p>No of frames: <span id='demo_" + title + "'></span></p>";
                     htmlString += "</div>";
                     htmlString += "</div>";
                 });
@@ -500,7 +666,7 @@
                         output.innerHTML = new_slider_value.toString();
 
 
-                        let selectedImage = '#image_' +Number(value)+ '_' + title;
+                        let selectedImage = '#image_' + Number(value) + '_' + title;
 
                         //displaying the relevant image
                         $('#image_0_' + title).html($(selectedImage).html());
@@ -707,53 +873,66 @@
 
                                             <!--this area will display the progress bars -->
                                             <div class="progress_area" hidden>
-                                                <!--talking with friends -->
+                                                <!--Looking up and right -->
                                                 <a href="#" class="btn btn-link labels" data-number="1">
-                                                    <h4 class="small font-weight-bold">Talking with friends</h4>
+                                                    <h4 class="small font-weight-bold">Looking up and right</h4>
                                                 </a>
-                                                <span class="float-right" id="talking_perct">40%</span>
+                                                <span class="float-right" id="looking_up_right_perct">40%</span>
                                                 <div class="progress mb-4">
                                                     <div class="progress-bar bg-danger" role="progressbar"
-                                                         id="talking_width"
+                                                         id="looking_up_right_width"
                                                          style="width: 20%"
                                                          aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
                                                 </div>
 
-                                                <!--phone checking -->
+                                                <!--looking up and left -->
                                                 <a href="#" class="btn btn-link labels" data-number="0">
-                                                    <h4 class="small font-weight-bold">Phone checking</h4>
+                                                    <h4 class="small font-weight-bold">Looking up and left</h4>
                                                 </a>
-                                                <span class="float-right" id="phone_perct">45%</span>
+                                                <span class="float-right" id="looking_up_left_perct">45%</span>
                                                 <div class="progress mb-4">
                                                     <div class="progress-bar bg-warning" role="progressbar"
-                                                         id="phone_width"
+                                                         id="looking_up_left_width"
                                                          style="width: 40%"
                                                          aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
                                                 </div>
 
-                                                <!--note taking -->
+                                                <!--looking down and right -->
                                                 <a href="#" class="btn btn-link labels" data-number="2">
-                                                    <h4 class="small font-weight-bold">Writing</h4>
+                                                    <h4 class="small font-weight-bold">Looking down and right</h4>
                                                 </a>
-                                                <span class="float-right" id="writing_perct">50%</span>
+                                                <span class="float-right" id="looking_down_right_perct">50%</span>
                                                 <div class="progress mb-4">
-                                                    <div class="progress-bar" role="progressbar" id="writing_width"
+                                                    <div class="progress-bar" role="progressbar"
+                                                         id="looking_down_right_width"
                                                          style="width: 60%"
                                                          aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
                                                 </div>
 
-                                                <!--listening-->
+                                                <!--Looking down and left-->
                                                 <a href="#" class="btn btn-link labels">
-                                                    <h4 class="small font-weight-bold">Listening</h4>
+                                                    <h4 class="small font-weight-bold">Looking down and left</h4>
                                                 </a>
-                                                <span class="float-right" id="listening_perct">60%</span>
+                                                <span class="float-right" id="looking_down_left_perct">60%</span>
                                                 <div class="progress mb-4">
                                                     <div class="progress-bar bg-info" role="progressbar"
-                                                         id="listening_width" style="width: 80%"
+                                                         id="looking_down_left_width" style="width: 80%"
+                                                         aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+
+                                                <!--Looking front-->
+                                                <a href="#" class="btn btn-link labels">
+                                                    <h4 class="small font-weight-bold">Looking Front</h4>
+                                                </a>
+                                                <span class="float-right" id="looking_front_perct">60%</span>
+                                                <div class="progress mb-4">
+                                                    <div class="progress-bar bg-info" role="progressbar"
+                                                         id="looking_front_width" style="width: 80%"
                                                          aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
                                                 </div>
 
                                             </div>
+                                            <!-- end of progress area -->
 
                                         </div>
 
@@ -813,55 +992,29 @@
 
                         <!--2nd column -->
                         <div class="col-lg-6">
-                            <!--card content -->
+                            <!--card -->
                             <div class="card shadow mb-4">
                                 <!--card header -->
-                                <div class="card-header py-3">
-                                    <h5 class="m-0 font-weight-bold text-primary">Frame Detections</h5>
+                                <div class="card-header">
+                                    <h5 class="m-0 font-weight-bold text-primary">Integrated Evaluation</h5>
                                 </div>
 
                                 <!--card body -->
-                                <div class="text-center p-4" id="detection_frames">
-
-                                    <!--no content message-->
-                                    <div class="text-center p-2" id="no_detection_message_content">
-                                        <span class="font-italic">No frame is selected</span>
+                                <div class="card-body">
+                                    <div class="text-center" id="integrate_message">
+                                        <span class="font-italic">The integrated version student and lecturer evaluations will display here.</span>
                                     </div>
 
-                                    <div class="text-left m-3" id="detection_number_area" hidden>
-                                        <p>No of detections: <span id="no_of_detections"></span></p>
+                                    <!--button -->
+                                    <div class="text-right m-4">
+                                        <button type="button" class="btn btn-outline-success" id="integrate_activity">
+                                            Process
+                                        </button>
                                     </div>
-                                    <!--the detection loader -->
-                                    <div class="text-center p-2" id="detection_loader" hidden>
-                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
-                                             alt="Loader">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!--detection person card -->
-                            <div class="card shadow mb-4">
-                                <!--card header -->
-                                <div class="card-header py-3">
-                                    <h5 class="m-0 font-weight-bold text-primary">Detected Students</h5>
-                                </div>
-
-                                <!--card body -->
-                                <div class="text-center p-4" id="detection_students">
-                                    <!--no content message-->
-                                    <div class="text-center p-2" id="no_detection_student_content">
-                                        <span class="font-italic">No activity type is selected</span>
-                                    </div>
-
-                                    <!--the detection student loader -->
-                                    <div class="text-center p-2" id="detection_student_loader" hidden>
-                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
-                                             alt="Loader">
-                                    </div>
-
                                 </div>
                             </div>
                         </div>
+                        <!--end of 2nd column -->
 
 
                     </div>
@@ -943,6 +1096,157 @@
             </div>
         </div>
     </div>
+    <!-- end of logout modal -->
+
+    <!--integrate modal -->
+    <div class="modal fade" id="integrate_modal" tabindex="-1" role="dialog" aria-labelledby="integrate_modal">
+        <div class="modal-dialog" style="max-width: 1300px">
+            <div class="modal-content">
+                <!--modal header -->
+                <div class="modal-header">
+                    <h4 class="modal-title">Integrated Version</h4>
+                </div>
+
+                <!--modal body -->
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <!--1st column -->
+                            <div class="col-md-6" id="student_video_column" style="border-right: 1px solid black">
+                                <div class="text-center">
+                                    <span class="h3 font-italic font-weight-bold">Student Behavior</span>
+                                </div>
+
+                                <!--display student video -->
+                                <div class="text-center m-3" id="student_video_section">
+                                    <video width="500" height="300" id="student_video" controls>
+                                        <source src="#"
+                                                type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div>
+                                <!--end of student video section -->
+
+                                <!-- ajax loader section -->
+                                <div class="text-center mt-3" id="student_video_progress_loader">
+                                    <img src="{% static 'FirstApp/images/ajax-loader-1.gif' %}" alt="loader">
+                                </div>
+
+                                <!--progress bar section -->
+                                <div class="progress_area" id="student_video_progress" hidden>
+                                    <!--Looking up and right -->
+                                    <a href="#" class="btn btn-link labels" data-number="1">
+                                        <h4 class="small font-weight-bold">Looking up and right</h4>
+                                    </a>
+                                    <span class="float-right" id="looking_up_right_instant_perct">40%</span>
+                                    <div class="progress mb-4">
+                                        <div class="progress-bar bg-danger" role="progressbar"
+                                             id="looking_up_right_instant_width"
+                                             style="width: 20%"
+                                             aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+
+                                    <!--looking up and left -->
+                                    <a href="#" class="btn btn-link labels" data-number="0">
+                                        <h4 class="small font-weight-bold">Looking up and left</h4>
+                                    </a>
+                                    <span class="float-right" id="looking_up_left_instant_perct">45%</span>
+                                    <div class="progress mb-4">
+                                        <div class="progress-bar bg-warning" role="progressbar"
+                                             id="looking_up_left_instant_width"
+                                             style="width: 40%"
+                                             aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+
+                                    <!--looking down and right -->
+                                    <a href="#" class="btn btn-link labels" data-number="2">
+                                        <h4 class="small font-weight-bold">Looking down and right</h4>
+                                    </a>
+                                    <span class="float-right" id="looking_down_right_instant_perct">50%</span>
+                                    <div class="progress mb-4">
+                                        <div class="progress-bar" role="progressbar" id="looking_down_right_instant_width"
+                                             style="width: 60%"
+                                             aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+
+                                    <!--Looking down and left-->
+                                    <a href="#" class="btn btn-link labels">
+                                        <h4 class="small font-weight-bold">Looking down and left</h4>
+                                    </a>
+                                    <span class="float-right" id="looking_down_left_instant_perct">60%</span>
+                                    <div class="progress mb-4">
+                                        <div class="progress-bar bg-info" role="progressbar"
+                                             id="looking_down_left_instant_width" style="width: 80%"
+                                             aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+
+                                    <!--Looking front-->
+                                    <a href="#" class="btn btn-link labels">
+                                        <h4 class="small font-weight-bold">Looking Front</h4>
+                                    </a>
+                                    <span class="float-right" id="looking_front_instant_perct">60%</span>
+                                    <div class="progress mb-4">
+                                        <div class="progress-bar bg-info" role="progressbar"
+                                             id="looking_front_instant_width" style="width: 80%"
+                                             aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+
+                                </div>
+                                <!--end of progress bar section -->
+                            </div>
+                            <!--end of 1st column -->
+
+                            <!--2nd column -->
+                            <div class="col-md-6">
+                                <div class="text-center">
+                                    <span class="h3 font-italic font-weight-bold">Lecturer Performance</span>
+                                </div>
+
+                                <!--display lecture video -->
+                                <div class="text-center m-3" id="lecturer_video_section">
+                                    <!--temporary text -->
+                                    <div class="text-center" id="temp_lecturer_text">
+                                        <span class="font-italic">No video was found</span>
+                                    </div>
+
+
+{#                                    <video width="500" height="300" id="lecturer_video" controls>#}
+{#                                        <source src="#"#}
+{#                                                type="video/mp4">#}
+{#                                        Your browser does not support the video tag.#}
+{#                                    </video>#}
+
+                                </div>
+                                <!--end of lecture video section -->
+                            </div>
+                            <!--end of 2nd column -->
+                        </div>
+                        <!--end of 1st row -->
+
+                        <!--2nd row -->
+                        <div class="row">
+                            <!--play button -->
+                            <div class="col-md-12">
+
+                                <div class="text-center p-3">
+                                    <button type="button" class="btn btn-outline-danger play"
+                                            id="play_integrate_button">Play
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <!--end of 2nd row -->
+                    </div>
+                </div>
+
+                <!-- modal footer -->
+                <div class="modal-footer">
+                    <button type="button" data-dismiss="modal" class="btn btn-danger text-white">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--end of integrate modal -->
 {% endblock %}
 
 </body>
