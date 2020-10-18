@@ -46,7 +46,7 @@ def run():
             else:
                 d[word] = 1
 
-    # the key words are "extraneous filler words                (ok, well, like, Actually, Basically, that, jest, only, really, very, now, simply, maybe, perhaps, somehow, almost, slightly, seemed ....)"
+    # the key words are "extraneous filler words           (ok, well, like, Actually, Basically, that, jest, only, really, very, now, simply, maybe, perhaps, somehow, almost, slightly, seemed ....)"
 
     for key in list(d.keys()):
         if (key == "like"):

@@ -4,21 +4,65 @@ from rest_framework.response import Response
 from LectureSummarizingApp.models import LectureAudioSummary
 from LectureSummarizingApp.serializer import LectureAudioSummarySerializer
 from . logic import classroom_activity, text_analysis as ta
-from .models import LecturerVideo, LecturerAudioText
-from .serializers import LecturerVideoSerializer, LecturerAudioTextSerializer
+from .models import LecturerVideo, LecturerAudioText, LecturerVideoMetaData, LectureRecordedVideo
+from .serializers import *
 
 import datetime
 
 
+
+##### LECTURER ACTIVITY SECTION #####
 class ActivityRecognitionAPI(APIView):
 
     def get(self, request):
         video_name = request.query_params.get('video_name')
+
+        # retrieve the lecturer video details with the video name
+        lec_video = LectureRecordedVideo.objects.filter(lecture_video_name=video_name)
+        lec_video_ser = LectureRecordedVideoSerializer(lec_video, many=True)
+        lec_video_data = lec_video_ser.data
         percentages = classroom_activity.activity_recognition(video_name)
+
+        # saving to the db
+        LecturerVideoMetaData(
+            lecturer_video_id_id=lec_video_data[0]['id'],
+            seated_count=percentages["sitting_perct"],
+            standing_count=percentages["standing_perct"],
+            walking_count=percentages["walking_perct"]
+        ).save()
+
         return Response({"response": percentages})
 
     def post(self, request):
         pass
+
+
+# this method will retrieve the lecturer video meta data results
+class GetLectureVideoResultsAPI(APIView):
+
+    def get(self, request):
+        video_id = request.query_params.get('video_id')
+        int_video_id = int(video_id)
+
+        # retrieve from the db
+        video_meta_data = LecturerVideoMetaData.objects.filter(lecturer_video_id_id=int_video_id)
+        video_meta_data_ser = LecturerVideoMetaDataSerializer(video_meta_data, many=True)
+        video_meta_data_processed = video_meta_data_ser.data
+        percentages = {}
+
+        for meta_data in video_meta_data_processed:
+            percentages["sitting_perct"] = meta_data["seated_count"]
+            percentages["standing_perct"] = meta_data["standing_count"]
+            percentages["walking_perct"] = meta_data["walking_count"]
+
+
+
+        return Response({
+            "response": percentages
+        })
+
+
+##### END OF LECTURER ACTIVITY SECTION #####
 
 
 # class ActivityRecognitionAPI(APIView):
@@ -39,10 +83,16 @@ class GetLectureAudioAnalysis(APIView):
         lec_audio_id = request.query_params.get("audio_id")
         int_audio_id = int(lec_audio_id)
 
+        print('audio id: ', int_audio_id)
+
+        # all_lec_audio_summary
+
         lec_audio_summary = LectureAudioSummary.objects.filter(lecture_audio_id=int_audio_id)
         lec_audio_summary_serializer = LectureAudioSummarySerializer(lec_audio_summary, many=True)
         audio_summary_data = lec_audio_summary_serializer.data
         lec_audio_summary_id = 0
+
+        print('lec audio summary: ', len(audio_summary_data))
 
         for audio in audio_summary_data:
             lec_audio_summary_id = audio['id']
@@ -52,6 +102,7 @@ class GetLectureAudioAnalysis(APIView):
         lec_audio_text_serializer = LecturerAudioTextSerializer(lec_audio_text, many=True)
         lec_audio_text_data = lec_audio_text_serializer.data
 
+        print('lec audio text data: ', len(lec_audio_text_data))
 
         audio_text = []
 
@@ -157,3 +208,5 @@ class LecturerAudioSummaryPeriodAPI(APIView):
             "labels": labels,
             "isRecordFound": isRecordFound
         })
+
+
