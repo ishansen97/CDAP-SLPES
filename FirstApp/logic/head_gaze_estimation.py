@@ -16,6 +16,10 @@ import os
 import shutil
 import math
 
+from ..MongoModels import *
+from ..serializers import *
+from . import id_generator as ig
+
 
 def get_2d_points(img, rotation_vector, translation_vector, camera_matrix, val):
     """Return the 3D points present as 2D for making annotation box"""
@@ -846,3 +850,84 @@ def gaze_estimation_frame_groupings(video_name, frame_landmarks, frame_group_dic
 
     # return the dictionary
     return frame_group_dict, labels
+
+
+# this section will handle some database operations
+def save_frame_detections(video_name):
+    # retrieve the lecture emotion id
+    lec_gaze = LectureGazeEstimation.objects.filter(lecture_video_id__video_name=video_name)
+    lec_gaze_ser = LectureGazeEstimationSerializer(lec_gaze, many=True)
+    lec_gaze_data = lec_gaze_ser.data[0]
+    lec_gaze_id = lec_gaze_data['id']
+
+    # create a new lecture activity frame detections id
+    last_lec_gaze_frame_recognitions = LectureGazeFrameRecognitions.objects.order_by(
+        'lecture_gaze_frame_recognition_id').last()
+    new_lecture_gaze_frame_recognitions_id = "LGFR00001" if (
+            last_lec_gaze_frame_recognitions is None) else \
+        ig.generate_new_id(last_lec_gaze_frame_recognitions.lecture_gaze_frame_recognition_id)
+
+    # calculate the frame detections
+    frame_detections, frame_rate = get_lecture_gaze_esrimation_for_frames(video_name)
+
+    # to be added to the field 'frame_recognition_details' in the Lecture Gaze Frame Recordings
+    frame_recognition_details = []
+
+    # save the new lecture activity frame recognitions
+    for detection in frame_detections:
+        lec_gaze_frame_recognition_details = LectureGazeFrameRecognitionDetails()
+        lec_gaze_frame_recognition_details.frame_name = detection['frame_name']
+        lec_gaze_frame_recognition_details.upright_perct = detection['upright_perct']
+        lec_gaze_frame_recognition_details.upleft_perct = detection['upleft_perct']
+        lec_gaze_frame_recognition_details.downright_perct = detection['downright_perct']
+        lec_gaze_frame_recognition_details.downleft_perct = detection['downleft_perct']
+        lec_gaze_frame_recognition_details.front_perct = detection['front_perct']
+
+        frame_recognition_details.append(lec_gaze_frame_recognition_details)
+
+    lec_gaze_frame_recognitions = LectureGazeFrameRecognitions()
+    lec_gaze_frame_recognitions.lecture_gaze_frame_recognition_id = new_lecture_gaze_frame_recognitions_id
+    lec_gaze_frame_recognitions.lecture_gaze_id_id = lec_gaze_id
+    lec_gaze_frame_recognitions.frame_recognition_details = frame_recognition_details
+
+    lec_gaze_frame_recognitions.save()
+
+    # now return the frame recognitions
+    return frame_detections
+
+
+# this method will save gaze frame groupings to the database
+def save_frame_groupings(video_name, frame_landmarks, frame_group_dict):
+
+    frame_group_percentages, gaze_labels = gaze_estimation_frame_groupings(video_name, frame_landmarks,
+                                                                               frame_group_dict)
+
+    # save the frame group details into db
+    last_lec_gaze_frame_grouping = LectureGazeFrameGroupings.objects.order_by('lecture_gaze_frame_groupings_id').last()
+    new_lecture_gaze_frame_grouping_id = "LGFG00001" if (last_lec_gaze_frame_grouping is None) else \
+        ig.generate_new_id(last_lec_gaze_frame_grouping.lecture_gaze_frame_groupings_id)
+
+    # retrieve the lecture activity id
+    lec_gaze = LectureGazeEstimation.objects.filter(lecture_video_id__video_name=video_name)
+    lec_gaze_ser = LectureGazeEstimationSerializer(lec_gaze, many=True)
+    lec_gaze_id = lec_gaze_ser.data[0]['id']
+
+    # create the frame group details
+    frame_group_details = []
+
+    for key in frame_group_percentages.keys():
+        # create an object of type 'LectureActivityFrameGroupDetails'
+        lec_gaze_frame_group_details = LectureGazeFrameGroupDetails()
+        lec_gaze_frame_group_details.frame_group = key
+        lec_gaze_frame_group_details.frame_group_percentages = frame_group_percentages[key]
+
+        frame_group_details.append(lec_gaze_frame_group_details)
+
+    new_lec_gaze_frame_groupings = LectureGazeFrameGroupings()
+    new_lec_gaze_frame_groupings.lecture_gaze_frame_groupings_id = new_lecture_gaze_frame_grouping_id
+    new_lec_gaze_frame_groupings.lecture_gaze_id_id = lec_gaze_id
+    new_lec_gaze_frame_groupings.frame_group_details = frame_group_details
+
+    # save
+    new_lec_gaze_frame_groupings.save()
+

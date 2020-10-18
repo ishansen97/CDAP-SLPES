@@ -5,7 +5,10 @@ import numpy as np
 import cv2
 import os
 import shutil
-from . custom_sorter import *
+from .custom_sorter import *
+from ..MongoModels import *
+from ..serializers import *
+from . import id_generator as ig
 
 
 def activity_recognition(video_path):
@@ -55,30 +58,30 @@ def activity_recognition(video_path):
     VIDEO_ACTIVITY_DIR = os.path.join(ACTIVITY_DIR, video_path)
 
     # creating the directory for the video
-    if (os.path.isdir(VIDEO_ACTIVITY_DIR)):
-        shutil.rmtree(VIDEO_ACTIVITY_DIR)
-
-    # create the video directory
-    os.mkdir(VIDEO_ACTIVITY_DIR)
+    # if (os.path.isdir(VIDEO_ACTIVITY_DIR)):
+    #     shutil.rmtree(VIDEO_ACTIVITY_DIR)
+    #
+    # # create the video directory
+    # os.mkdir(VIDEO_ACTIVITY_DIR)
 
     while (frame_count < no_of_frames):
         ret, image = video.read()
         FRAME_DIR = os.path.join(VIDEO_ACTIVITY_DIR, "frame-{}".format(frame_count))
-        frame_name = "frame-{}.png".format(frame_count)
-
-        FRAME_IMG = os.path.join(FRAME_DIR, frame_name)
-
-        if (os.path.isdir(FRAME_DIR)):
-            shutil.rmtree(FRAME_DIR)
+        # frame_name = "frame-{}.png".format(frame_count)
+        #
+        # FRAME_IMG = os.path.join(FRAME_DIR, frame_name)
+        #
+        # if (os.path.isdir(FRAME_DIR)):
+        #     shutil.rmtree(FRAME_DIR)
 
         # create the new frame directory
-        os.mkdir(FRAME_DIR)
+        # os.mkdir(FRAME_DIR)
 
         image = cv2.resize(image, size)
         detections = person_detection(image, net)
 
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        cv2.imwrite(FRAME_IMG, image)
+        # cv2.imwrite(FRAME_IMG, image)
 
         # if there are any person detections
         if (len(detections) > 0):
@@ -111,22 +114,21 @@ def activity_recognition(video_path):
                     note_taking_count += 1
 
                 # saving the detection for the particular frame
-                detection_name = "detection-{}.png".format(detection_count)
-                detection_image_path = os.path.join(FRAME_DIR, detection_name)
-
-                # converting detected image into grey-scale
-                detection = cv2.cvtColor(detection, cv2.COLOR_BGR2GRAY)
-
-                cv2.imwrite(detection_image_path, detection)
+                # detection_name = "detection-{}.png".format(detection_count)
+                # detection_image_path = os.path.join(FRAME_DIR, detection_name)
+                #
+                # # converting detected image into grey-scale
+                # detection = cv2.cvtColor(detection, cv2.COLOR_BGR2GRAY)
+                #
+                # cv2.imwrite(detection_image_path, detection)
 
                 detection_count += 1
-
 
         frame_count += 1
 
     # after extracting the frames, save the changes to static content
-    p = os.popen("python manage.py collectstatic", "w")
-    p.write("yes")
+    # p = os.popen("python manage.py collectstatic", "w")
+    # p.write("yes")
 
     # calculating the percentages for each label
     phone_perct = float(phone_checking_count / total_detections) * 100 if total_detections > 0 else 0
@@ -139,7 +141,6 @@ def activity_recognition(video_path):
     percentages["talking_perct"] = talking_perct
     percentages["writing_perct"] = note_perct
     percentages["listening_perct"] = listening_perct
-
 
     return percentages
 
@@ -161,8 +162,6 @@ def person_detection(image, net):
     COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
     person_count = 0
-
-
 
     # load the input image and construct an input blob for the image
     # by resizing to a fixed 300x300 pixels and then normalizing it
@@ -212,9 +211,7 @@ def person_detection(image, net):
 
 # retrieving the extracted frames and detections for a given video
 def getExtractedFrames(folder_name):
-
     image_list = []
-
 
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     EXTRACTED_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\activity\\{}".format(folder_name))
@@ -240,9 +237,9 @@ def getExtractedFrames(folder_name):
     else:
         return "No extracted frames were found"
 
+
 # get detections for a given frame name
 def get_detections(video_name, frame_name):
-
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     EXTRACTED_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\activity\\{}".format(video_name))
     FRAME_DIR = os.path.join(EXTRACTED_DIR, frame_name)
@@ -257,7 +254,6 @@ def get_detections(video_name, frame_name):
 
 # get detections for a given class name
 def get_detections_for_label(video_name, label_index):
-
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     EXTRACTED_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\activity\\{}".format(video_name))
     CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_02.h5")
@@ -328,7 +324,6 @@ def get_detections_for_label(video_name, label_index):
 
 # to get the student evaluations
 def get_student_activity_evaluation(video_name):
-
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     EXTRACTED_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\activity\\{}".format(video_name))
     # CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_02.h5")
@@ -401,7 +396,6 @@ def get_frame_activity_recognition(video_name):
     # CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_02.h5")
     CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_04.h5")
 
-
     np.set_printoptions(suppress=True)
 
     # load the model
@@ -472,7 +466,6 @@ def get_frame_activity_recognition(video_name):
 
                 # increment the detection count
                 detection_count += 1
-
 
         # calculating the percentages for the frame
         phone_checking_perct = float(phone_checking_count / detection_count) * 100 if detection_count > 0 else 0
@@ -575,7 +568,6 @@ def get_individual_student_evaluation(video_name, student_name):
 
 # this method will retrieve student activity summary for given time period
 def get_student_activity_summary_for_period(activities):
-
     # declare variables to add percentage values
     phone_checking_perct_combined = 0.0
     listening_perct_combined = 0.0
@@ -590,7 +582,6 @@ def get_student_activity_summary_for_period(activities):
 
     # iterate through the activities
     for activity in activities:
-
         individual_activity = {}
         individual_activity["phone_perct"] = float(activity['phone_perct'])
         individual_activity["listening_perct"] = float(activity['listening_perct'])
@@ -602,7 +593,6 @@ def get_student_activity_summary_for_period(activities):
 
         # append to the list
         individual_lec_activities.append(individual_activity)
-
 
     # calculate the average percentages
     phone_checking_average_perct = round((phone_checking_perct_combined / no_of_activities), 1)
@@ -656,7 +646,6 @@ def activity_frame_groupings(video_name, frame_landmarks, frame_group_dict):
         # assign the difference
         frame_group_diff[key] = diff if diff > 0 else 1
 
-
     # looping through the frames
     for frame in os.listdir(EXTRACTED_DIR):
         # getting the frame folder
@@ -682,7 +671,6 @@ def activity_frame_groupings(video_name, frame_landmarks, frame_group_dict):
                 image_array = np.asarray(image)
                 normalized_image_array = (image_array.astype(np.float32) / 127.0) - 1
 
-
                 # Load the image into the array
                 data[0] = normalized_image_array
 
@@ -700,10 +688,8 @@ def activity_frame_groupings(video_name, frame_landmarks, frame_group_dict):
                 elif label == class_labels[2]:
                     note_count += 1
 
-
                 # increment the detection count
                 detection_count += 1
-
 
                 # finding the time landmark that the current frame is in
                 for i in frame_landmarks:
@@ -718,13 +704,10 @@ def activity_frame_groupings(video_name, frame_landmarks, frame_group_dict):
                         if (frame_count >= i) & (frame_count < next_value):
                             frame_name = "{}-{}".format(i, next_value)
 
-
                             frame_group_dict[frame_name]['phone_count'] += phone_count
                             frame_group_dict[frame_name]['listen_count'] += listen_count
                             frame_group_dict[frame_name]['note_count'] += note_count
                             frame_group_dict[frame_name]['detection_count'] += detection_count
-
-
 
         # increment the frame count
         frame_count += 1
@@ -764,6 +747,83 @@ def activity_frame_groupings(video_name, frame_landmarks, frame_group_dict):
     # print('frame group dict: ', frame_group_dict)
     activity_labels = ['phone_perct', 'listen_perct', 'note_perct']
 
-
     # return the dictionary
     return frame_group_dict, activity_labels
+
+
+# this section will handle saving activity entities to the database
+def save_frame_recognition(video_name):
+    # retrieve the lecture activity id
+    lec_activity = LectureActivity.objects.filter(lecture_video_id__video_name=video_name)
+    lec_activity_ser = LectureActivitySerializer(lec_activity, many=True)
+    lec_activity_data = lec_activity_ser.data[0]
+    lec_activity_id = lec_activity_data['id']
+
+    # create a new lecture activity frame detections id
+    last_lec_activity_frame_recognitions = LectureActivityFrameRecognitions.objects.order_by(
+        'lecture_activity_frame_recognition_id').last()
+    new_lecture_activity_frame_recognitions_id = "LAFR00001" if (last_lec_activity_frame_recognitions is None) else \
+        ig.generate_new_id(last_lec_activity_frame_recognitions.lecture_activity_frame_recognition_id)
+
+    # calculate the frame detections
+    frame_detections = get_frame_activity_recognition(video_name)
+
+    frame_recognition_details = []
+
+    # save the new lecture activity frame recognitions
+    for detection in frame_detections:
+        lec_activity_frame_recognition_details = LectureActivityFrameRecognitionDetails()
+        lec_activity_frame_recognition_details.frame_name = detection['frame_name']
+        lec_activity_frame_recognition_details.phone_perct = detection['phone_perct']
+        lec_activity_frame_recognition_details.listen_perct = detection['listening_perct']
+        lec_activity_frame_recognition_details.note_perct = detection['note_perct']
+
+        frame_recognition_details.append(lec_activity_frame_recognition_details)
+
+    lec_activity_frame_recognitions = LectureActivityFrameRecognitions()
+    lec_activity_frame_recognitions.lecture_activity_frame_recognition_id = new_lecture_activity_frame_recognitions_id
+    lec_activity_frame_recognitions.lecture_activity_id_id = lec_activity_id
+    lec_activity_frame_recognitions.frame_recognition_details = frame_recognition_details
+
+    lec_activity_frame_recognitions.save()
+
+    # now return the frame detections
+    return frame_detections
+
+
+# this method will save the activity frame groupings to the database
+def save_frame_groupings(video_name, frame_landmarks, frame_group_dict):
+
+
+    frame_group_percentages, activity_labels = activity_frame_groupings(video_name, frame_landmarks,
+                                                                           frame_group_dict)
+
+    # save the frame group details into db
+    last_lec_activity_frame_grouping = LectureActivityFrameGroupings.objects.order_by(
+        'lecture_activity_frame_groupings_id').last()
+    new_lecture_activity_frame_grouping_id = "LAFG00001" if (last_lec_activity_frame_grouping is None) else \
+        ig.generate_new_id(last_lec_activity_frame_grouping.lecture_activity_frame_groupings_id)
+
+    # retrieve the lecture activity id
+    lec_activity = LectureActivity.objects.filter(lecture_video_id__video_name=video_name)
+    lec_activity_ser = LectureActivitySerializer(lec_activity, many=True)
+    lec_activity_id = lec_activity_ser.data[0]['id']
+
+    # create the frame group details
+    frame_group_details = []
+
+    for key in frame_group_percentages.keys():
+        # create an object of type 'LectureActivityFrameGroupDetails'
+        lec_activity_frame_group_details = LectureActivityFrameGroupDetails()
+        lec_activity_frame_group_details.frame_group = key
+        lec_activity_frame_group_details.frame_group_percentages = frame_group_percentages[key]
+
+        frame_group_details.append(lec_activity_frame_group_details)
+
+    new_lec_activity_frame_groupings = LectureActivityFrameGroupings()
+    new_lec_activity_frame_groupings.lecture_activity_frame_groupings_id = new_lecture_activity_frame_grouping_id
+    new_lec_activity_frame_groupings.lecture_activity_id_id = lec_activity_id
+    new_lec_activity_frame_groupings.frame_group_details = frame_group_details
+
+    # save
+    new_lec_activity_frame_groupings.save()

@@ -5,11 +5,17 @@ from keras.preprocessing import image
 import cv2
 import os
 import numpy as np
+
+from .MongoModels import *
 from . models import VideoMeta
 from . logic import custom_sorter as cs
+from .logic import id_generator as ig
 
 
 # emotion recognition method
+from .serializers import LectureEmotionSerializer
+
+
 def emotion_recognition(classifier, face_classifier, image):
     label = ""
     class_labels = ['Angry', 'Happy', 'Neutral', 'Sad', 'Surprise']
@@ -548,3 +554,82 @@ def emotion_frame_groupings(video_name, frame_landmarks, frame_group_dict):
 
     # return the dictionary
     return frame_group_dict, emotion_labels
+
+
+# this section will handle some database operations
+def save_frame_recognitions(video_name):
+    # retrieve the lecture emotion id
+    lec_emotion = LectureEmotionReport.objects.filter(lecture_video_id__video_name=video_name)
+    lec_emotion_ser = LectureEmotionSerializer(lec_emotion, many=True)
+    lec_emotion_data = lec_emotion_ser.data[0]
+    lec_emotion_id = lec_emotion_data['id']
+
+    # create a new lecture activity frame detections id
+    last_lec_emotion_frame_recognitions = LectureEmotionFrameRecognitions.objects.order_by(
+        'lecture_emotion_frame_recognition_id').last()
+    new_lecture_emotion_frame_recognitions_id = "LEFR00001" if (
+            last_lec_emotion_frame_recognitions is None) else \
+        ig.generate_new_id(last_lec_emotion_frame_recognitions.lecture_emotion_frame_recognition_id)
+
+    # calculate the frame detections
+    frame_detections = get_frame_emotion_recognition(video_name)
+
+    frame_recognition_details = []
+
+    # save the new lecture activity frame recognitions
+    for detection in frame_detections:
+        lec_emotion_frame_recognition_details = LectureEmotionFrameRecognitionDetails()
+        lec_emotion_frame_recognition_details.frame_name = detection['frame_name']
+        lec_emotion_frame_recognition_details.happy_perct = detection['happy_perct']
+        lec_emotion_frame_recognition_details.sad_perct = detection['sad_perct']
+        lec_emotion_frame_recognition_details.angry_perct = detection['angry_perct']
+        lec_emotion_frame_recognition_details.surprise_perct = detection['surprise_perct']
+        lec_emotion_frame_recognition_details.neutral_perct = detection['neutral_perct']
+
+        frame_recognition_details.append(lec_emotion_frame_recognition_details)
+
+    lec_emotion_frame_recognitions = LectureEmotionFrameRecognitions()
+    lec_emotion_frame_recognitions.lecture_emotion_frame_recognition_id = new_lecture_emotion_frame_recognitions_id
+    lec_emotion_frame_recognitions.lecture_emotion_id_id = lec_emotion_id
+    lec_emotion_frame_recognitions.frame_recognition_details = frame_recognition_details
+
+    lec_emotion_frame_recognitions.save()
+
+    # now return the frame recognitions
+    return frame_detections
+
+
+# this method will save the emotion frame groupings to the database
+def save_frame_groupings(video_name, frame_landmarks, frame_group_dict):
+
+    frame_group_percentages, emotion_labels = emotion_frame_groupings(video_name, frame_landmarks, frame_group_dict)
+
+    # save the frame group details into db
+    last_lec_emotion_frame_grouping = LectureEmotionFrameGroupings.objects.order_by('lecture_emotion_frame_groupings_id').last()
+    new_lecture_emotion_frame_grouping_id = "LEFG00001" if (last_lec_emotion_frame_grouping is None) else \
+        ig.generate_new_id(last_lec_emotion_frame_grouping.lecture_emotion_frame_groupings_id)
+
+    # retrieve the lecture emotion id
+    lec_emotion = LectureEmotionReport.objects.filter(lecture_video_id__video_name=video_name)
+    lec_emotion_ser = LectureEmotionSerializer(lec_emotion, many=True)
+    lec_emotion_id = lec_emotion_ser.data[0]['id']
+
+    # create the frame group details
+    frame_group_details = []
+
+    for key in frame_group_percentages.keys():
+        # create an object of type 'LectureActivityFrameGroupDetails'
+        lec_emotion_frame_group_details = LectureEmotionFrameGroupDetails()
+        lec_emotion_frame_group_details.frame_group = key
+        lec_emotion_frame_group_details.frame_group_percentages = frame_group_percentages[key]
+
+        frame_group_details.append(lec_emotion_frame_group_details)
+
+
+    new_lec_emotion_frame_groupings = LectureEmotionFrameGroupings()
+    new_lec_emotion_frame_groupings.lecture_emotion_frame_groupings_id = new_lecture_emotion_frame_grouping_id
+    new_lec_emotion_frame_groupings.lecture_emotion_id_id = lec_emotion_id
+    new_lec_emotion_frame_groupings.frame_group_details = frame_group_details
+
+    # save
+    new_lec_emotion_frame_groupings.save()

@@ -3,6 +3,11 @@ import cv2
 import shutil
 import datetime
 
+from FirstApp.MongoModels import *
+from FirstApp.serializers import *
+from . import id_generator as ig
+
+
 def VideoExtractor(request):
 
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -193,3 +198,99 @@ def getFrameLandmarks(video_name, category):
                                       'front_count': 0, 'detection_count': 0}
 
     return frame_landmarks, frame_group_dict
+
+
+
+# this section will handle some database operations
+def save_time_landmarks(video_name):
+
+    last_lec_video_time_landmarks = LectureVideoTimeLandmarks.objects.order_by('lecture_video_time_landmarks_id').last()
+    new_lecture_video_time_landmarks_id = "LVTL00001" if (last_lec_video_time_landmarks is None) else \
+            ig.generate_new_id(last_lec_video_time_landmarks.lecture_video_time_landmarks_id)
+
+
+    # retrieve lecture video details
+    lec_video = LectureVideo.objects.filter(video_name=video_name)
+    lec_video_ser = LectureVideoSerializer(lec_video, many=True)
+    lec_video_id = lec_video_ser.data[0]['id']
+
+
+    # save the landmark details in the db
+    time_landmarks = getTimeLandmarks(video_name)
+
+    db_time_landmarks = []
+
+    # loop through the time landmarks
+    for landmark in time_landmarks:
+        landmark_obj = Landmarks()
+        landmark_obj.landmark = landmark
+
+        db_time_landmarks.append(landmark_obj)
+
+
+    new_lec_video_time_landmarks = LectureVideoTimeLandmarks()
+    new_lec_video_time_landmarks.lecture_video_time_landmarks_id = new_lecture_video_time_landmarks_id
+    new_lec_video_time_landmarks.lecture_video_id_id = lec_video_id
+    new_lec_video_time_landmarks.time_landmarks = db_time_landmarks
+
+    new_lec_video_time_landmarks.save()
+
+
+# this method will save frame landmarks to the database
+def save_frame_landmarks(video_name):
+
+    # retrieve the previous lecture video frame landmarks details
+    last_lec_video_frame_landmarks = LectureVideoFrameLandmarks.objects.order_by(
+        'lecture_video_frame_landmarks_id').last()
+    new_lecture_video_frame_landmarks_id = "LVFL00001" if (last_lec_video_frame_landmarks is None) else \
+        ig.generate_new_id(last_lec_video_frame_landmarks.lecture_video_frame_landmarks_id)
+
+    frame_landmarks, frame_group_dict = getFrameLandmarks(video_name, "Activity")
+
+
+    # retrieve lecture video details
+    lec_video = LectureVideo.objects.filter(video_name=video_name)
+    lec_video_ser = LectureVideoSerializer(lec_video, many=True)
+    lec_video_id = lec_video_ser.data[0]['id']
+
+
+    # save the frame landmarks details into db
+    db_frame_landmarks = []
+
+    for landmark in frame_landmarks:
+        landmark_obj = Landmarks()
+        landmark_obj.landmark = landmark
+
+        db_frame_landmarks.append(landmark_obj)
+
+
+    new_lec_video_frame_landmarks = LectureVideoFrameLandmarks()
+    new_lec_video_frame_landmarks.lecture_video_frame_landmarks_id = new_lecture_video_frame_landmarks_id
+    new_lec_video_frame_landmarks.lecture_video_id_id = lec_video_id
+    new_lec_video_frame_landmarks.frame_landmarks = db_frame_landmarks
+
+    new_lec_video_frame_landmarks.save()
+
+    # now return the frame landmarks and the frame group dictionary
+    return frame_landmarks, frame_group_dict
+
+
+# this method will retrieve the frame landmarks from the database
+def get_frame_landmarks(video_name):
+
+    frame_landmarks = []
+
+    # retrieve frame landmarks from db
+    lec_video_frame_landmarks = LectureVideoFrameLandmarks.objects.filter(lecture_video_id__video_name=video_name)
+    lec_video_frame_landmarks_ser = LectureVideoFrameLandmarksSerializer(lec_video_frame_landmarks, many=True)
+    lec_video_frame_landmarks_data = lec_video_frame_landmarks_ser.data[0]
+
+    retrieved_frame_landmarks = lec_video_frame_landmarks_data["frame_landmarks"]
+
+    # creating a new list to display in the frontend
+    for landmark in retrieved_frame_landmarks:
+        frame_landmarks.append(landmark['landmark'])
+
+
+    # now return the frame landmarks
+    return frame_landmarks
