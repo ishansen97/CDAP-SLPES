@@ -288,16 +288,18 @@ class LectureActivityProcess(APIView):
         pass
 
     def activity(self, lec_video_id, percentages):
-        lec_video = LectureVideo.objects.filter(lecture_video_id=lec_video_id)
-        last_lec_activity = LectureActivity.objects.order_by('lecture_activity_id').last()
+        # lec_video = LectureVideo.objects.filter(lecture_video_id=lec_video_id)
+        lec_video = LectureVideo.objects.filter(id=lec_video_id)
         lec_video_serializer = LectureVideoSerializer(lec_video, many=True)
         lec_video_data = lec_video_serializer.data[0]
+
+        last_lec_activity = LectureActivity.objects.order_by('lecture_activity_id').last()
         new_lecture_activity_id = ig.generate_new_id(last_lec_activity.lecture_activity_id)
 
         # creating a new lecture activity
         LectureActivity(
             lecture_activity_id=new_lecture_activity_id,
-            lecture_video_id=lec_video,
+            lecture_video_id_id=lec_video_id,
             talking_perct=percentages['talking_perct'],
             phone_perct=percentages['phone_perct'],
             listening_perct=percentages['listening_perct'],
