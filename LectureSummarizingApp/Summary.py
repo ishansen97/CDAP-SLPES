@@ -11,6 +11,7 @@ with open("audioToText01.txt", "r", encoding="utf-8") as f:
 
 doc = nlp(text)
 
+
 corpus = [sent.text.lower() for sent in doc.sents ]
 cv = CountVectorizer(stop_words=list(STOP_WORDS))
 cv_fit=cv.fit_transform(corpus)
