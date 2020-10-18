@@ -201,6 +201,52 @@ class LectureVideoSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+# lecture video time landmarks serializer
+class LectureVideoTimeLandmarksSerializer(serializers.ModelSerializer):
+
+    lecture_video_id = LectureVideoSerializer()
+    time_landmarks = serializers.SerializerMethodField()
+
+    def get_time_landmarks(self, obj):
+        return_data = []
+
+        for time_landmark in obj.time_landmarks:
+            landmark_details = {}
+            landmark_details["landmark"] = time_landmark.landmark
+
+            return_data.append(landmark_details)
+
+        return return_data
+
+
+    class Meta:
+        model = LectureVideoTimeLandmarks
+        fields = '__all__'
+
+# lecture video frame landmarks serializer
+class LectureVideoFrameLandmarksSerializer(serializers.ModelSerializer):
+
+    lecture_video_id = LectureVideoSerializer()
+    frame_landmarks = serializers.SerializerMethodField()
+
+    def get_frame_landmarks(self, obj):
+        return_data = []
+
+        for frame_landmark in obj.frame_landmarks:
+            landmark_details = {}
+            landmark_details["landmark"] = frame_landmark.landmark
+
+            return_data.append(landmark_details)
+
+        return return_data
+
+
+    class Meta:
+        model = LectureVideoFrameLandmarks
+        fields = '__all__'
+
+
+# Lecture activity serializer
 class LectureActivitySerializer(serializers.ModelSerializer):
 
     lecture_video_id = LectureVideoSerializer()
@@ -208,6 +254,64 @@ class LectureActivitySerializer(serializers.ModelSerializer):
     class Meta:
         model = LectureActivity
         fields = '__all__'
+
+
+# Lecture Activity Frame Group Serializer
+class LectureActivityFrameGroupingsSerializer(serializers.ModelSerializer):
+
+    lecture_activity_id = LectureActivitySerializer()
+    frame_group_details = serializers.SerializerMethodField()
+
+    def get_frame_group_details(self, obj):
+        return_data = []
+
+        for frame_group in obj.frame_group_details:
+            group_details = {}
+            group_details["frame_group_percentages"] = {}
+
+            group_details["frame_group"] = frame_group.frame_group
+            group_details["frame_group_percentages"]["phone_perct"] = frame_group.frame_group_percentages.phone_perct
+            group_details["frame_group_percentages"]["listen_perct"] = frame_group.frame_group_percentages.listen_perct
+            group_details["frame_group_percentages"]["note_perct"] = frame_group.frame_group_percentages.note_perct
+
+            return_data.append(group_details)
+
+        return return_data
+
+    class Meta:
+        model = LectureActivityFrameGroupings
+        fields = '__all__'
+
+
+# lecture activity frame recognition serializer
+class LectureActivityFrameRecognitionsSerializer(serializers.ModelSerializer):
+
+    lecture_activity_id = LectureActivitySerializer()
+    frame_recognition_details = serializers.SerializerMethodField()
+
+    # this method will be used to serialize the 'frame_recogition_details' field
+    def get_frame_recognition_details(self, obj):
+
+        return_data = []
+
+        for frame_recognition in obj.frame_recognition_details:
+            recognition = {}
+
+            recognition["frame_name"] = frame_recognition.frame_name
+            recognition["phone_perct"] = frame_recognition.phone_perct
+            recognition["listen_perct"] = frame_recognition.listen_perct
+            recognition["note_perct"] = frame_recognition.note_perct
+
+            return_data.append(recognition)
+
+        # return the data
+        return return_data
+
+
+    class Meta:
+        model = LectureActivityFrameRecognitions
+        fields = '__all__'
+
 
 
 # EMOTIONS section
@@ -220,9 +324,146 @@ class LectureEmotionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+# Lecture emotion Frame Group Serializer
+class LectureEmotionFrameGroupingsSerializer(serializers.ModelSerializer):
+
+    lecture_emotion_id = LectureEmotionSerializer()
+    frame_group_details = serializers.SerializerMethodField()
+
+    def get_frame_group_details(self, obj):
+        return_data = []
+
+        for frame_group in obj.frame_group_details:
+            group_details = {}
+            group_details["frame_group_percentages"] = {}
+
+            group_details["frame_group"] = frame_group.frame_group
+            group_details["frame_group_percentages"]["happy_perct"] = frame_group.frame_group_percentages.happy_perct
+            group_details["frame_group_percentages"]["sad_perct"] = frame_group.frame_group_percentages.sad_perct
+            group_details["frame_group_percentages"]["angry_perct"] = frame_group.frame_group_percentages.angry_perct
+            group_details["frame_group_percentages"]["disgust_perct"] = frame_group.frame_group_percentages.disgust_perct
+            group_details["frame_group_percentages"]["surprise_perct"] = frame_group.frame_group_percentages.surprise_perct
+            group_details["frame_group_percentages"]["neutral_perct"] = frame_group.frame_group_percentages.neutral_perct
+
+            return_data.append(group_details)
+
+        return return_data
+
+
+    class Meta:
+        model = LectureEmotionFrameGroupings
+        fields = '__all__'
+
+
+
+# lecture emotion frame recognition serializer
+class LectureEmotionFrameRecognitionsSerializer(serializers.ModelSerializer):
+
+    lecture_emotion_id = LectureEmotionSerializer()
+    frame_recognition_details = serializers.SerializerMethodField()
+
+    # this method will be used to serialize the 'frame_recogition_details' field
+    def get_frame_recognition_details(self, obj):
+
+        return_data = []
+
+        for frame_recognition in obj.frame_recognition_details:
+            recognition = {}
+
+            recognition["frame_name"] = frame_recognition.frame_name
+            recognition["happy_perct"] = frame_recognition.happy_perct
+            recognition["sad_perct"] = frame_recognition.sad_perct
+            recognition["angry_perct"] = frame_recognition.angry_perct
+            recognition["surprise_perct"] = frame_recognition.surprise_perct
+            recognition["neutral_perct"] = frame_recognition.neutral_perct
+
+            return_data.append(recognition)
+
+        # return the data
+        return return_data
+
+
+    class Meta:
+        model = LectureEmotionFrameRecognitions
+        fields = '__all__'
+
+
+
 # lecture video meta serializer
 class VideoMetaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VideoMeta
+        fields = '__all__'
+
+# lecture gaze serializer
+class LectureGazeEstimationSerializer(serializers.ModelSerializer):
+
+    lecture_video_id = LectureVideoSerializer()
+
+    class Meta:
+        model = LectureGazeEstimation
+        fields = '__all__'
+
+
+# Lecture emotion Frame Group Serializer
+class LectureGazeFrameGroupingsSerializer(serializers.ModelSerializer):
+
+    lecture_gaze_id = LectureGazeEstimationSerializer()
+    frame_group_details = serializers.SerializerMethodField()
+
+    def get_frame_group_details(self, obj):
+        return_data = []
+
+        for frame_group in obj.frame_group_details:
+            group_details = {}
+            group_details["frame_group_percentages"] = {}
+
+            group_details["frame_group"] = frame_group.frame_group
+            group_details["frame_group_percentages"]["upright_perct"] = frame_group.frame_group_percentages.upright_perct
+            group_details["frame_group_percentages"]["upleft_perct"] = frame_group.frame_group_percentages.upleft_perct
+            group_details["frame_group_percentages"]["downright_perct"] = frame_group.frame_group_percentages.downright_perct
+            group_details["frame_group_percentages"]["downleft_perct"] = frame_group.frame_group_percentages.downleft_perct
+            group_details["frame_group_percentages"]["front_perct"] = frame_group.frame_group_percentages.front_perct
+
+            return_data.append(group_details)
+
+        return return_data
+
+
+    class Meta:
+        model = LectureGazeFrameGroupings
+        fields = '__all__'
+
+
+
+# lecture emotion frame recognition serializer
+class LectureGazeFrameRecognitionsSerializer(serializers.ModelSerializer):
+
+    lecture_gaze_id = LectureGazeEstimationSerializer()
+    frame_recognition_details = serializers.SerializerMethodField()
+
+    # this method will be used to serialize the 'frame_recogition_details' field
+    def get_frame_recognition_details(self, obj):
+
+        return_data = []
+
+        for frame_recognition in obj.frame_recognition_details:
+            recognition = {}
+
+            recognition["frame_name"] = frame_recognition.frame_name
+            recognition["upright_perct"] = frame_recognition.upright_perct
+            recognition["upleft_perct"] = frame_recognition.upleft_perct
+            recognition["downright_perct"] = frame_recognition.downright_perct
+            recognition["downleft_perct"] = frame_recognition.downleft_perct
+            recognition["front_perct"] = frame_recognition.front_perct
+
+            return_data.append(recognition)
+
+        # return the data
+        return return_data
+
+
+    class Meta:
+        model = LectureGazeFrameRecognitions
         fields = '__all__'

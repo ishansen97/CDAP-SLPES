@@ -1,7 +1,6 @@
 from django.shortcuts import render
-from django.http import HttpResponse
 
 
-# Create your views here.
-def first(request):
-    return HttpResponse('<h1>Hello Attendance App</h1>')
+def initiate_lecture(request):
+
+    return render(request, "AttendanceApp/Initiate_lecture.html")

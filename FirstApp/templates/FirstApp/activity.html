@@ -29,6 +29,7 @@
         var global_lecture_video_id = '';
         var global_video_name = '';
         var global_lecturer_subject_index = 0;
+        var global_lecture_date = '';
 
         //jquery
         $(document).ready(function () {
@@ -72,6 +73,8 @@
                 real_class = '.' + real_class;
 
                 let date = e.target.parentNode.parentNode.firstChild.innerHTML;
+                //assign the date
+                global_lecture_date = date;
 
                 fetch('http://127.0.0.1:8000/get-lecture-video/?lecturer=' + global_lecturer + '&date=' + date + '&index=' + global_lecturer_subject_index)
                     .then((res) => res.json())
@@ -79,7 +82,7 @@
                     .catch((error) => alert('an error occurred: ' + error));
             });
 
-
+            //this function will display the timetable for the lecturer
             function createTimeTable(timetable, subject, lecturer) {
                 $('#loader').attr('hidden', true);
                 $('#timetable').attr('hidden', false);
@@ -146,16 +149,19 @@
 
 
                 if (lectureVideo.isActivityFound) {
-                    e.target.parentNode.parentNode.lastChild.innerHTML = '<button type="button" class="btn btn-primary">Results</button>';
+                    e.target.parentNode.parentNode.lastChild.innerHTML = '<button type="button" class="btn btn-primary" id="result_btn">Results</button>';
                 } else {
                     e.target.parentNode.parentNode.lastChild.innerHTML = '<button type="button" class="btn btn-success">Process</button>';
                 }
+
+                //enable the 'generate report' button
+                $('#generate_report_before').attr('disabled', false);
 
                 $('#video_modal').modal();
             }
 
             //binding a click event for 'btn-primary' buttons
-            $(document).on('click', '.btn-primary', function (e) {
+            $(document).on('click', '#result_btn', function (e) {
 
                 //removing the previous frames (if there is any)
                 $('#main_frames').remove();
@@ -215,15 +221,15 @@
                 //sending the POST request to process the lecture activities
                 fetch('http://127.0.0.1:8000/process-lecture-activity/?lecture_video_name=' + global_video_name + '&lecture_video_id=' + global_lecture_video_id)
                     .then((res) => res.json())
-                    .then((out) => handleResponse(out.response, e))
+                    .then((out) => handleActivityResponse(out.response, e))
                     .catch((error) => alert('error: ' + error));
             });
 
-            //this is to change the button from 'process' to 'results'
-            function handleResponse(response, e) {
+            //this is to detect the response gained from activity recognition porcess
+            function handleActivityResponse(response, e) {
                 //change the button, if the response is positive
                 if (response) {
-                    e.target.parentNode.parentNode.lastChild.innerHTML = '<button type="button" class="btn btn-primary">Results</button>';
+                    e.target.parentNode.parentNode.lastChild.innerHTML = '<button type="button" class="btn btn-primary" id="result_btn">Results</button>';
                 }
             }
 
@@ -736,7 +742,7 @@
 
 
             //to handle the 'integrate' modal
-            $('#integrate_activity').click(function () {
+            $('#integrate_gaze').click(function () {
                 //define the student video src
                 let video_src = "{% static '' %}FirstApp/videos/" + global_video_name;
 
@@ -768,7 +774,8 @@
                 response.map((frame) => {
                    let frame_name = frame.frame_name;
                    let phone_perct = Math.round(frame.phone_perct, 0);
-                   let listen_perct = Math.round(frame.listening_perct, 0);
+                   let listen_perct = Math.round(frame.listen_perct, 0);
+                   {#let listen_perct = Math.round(frame.listening_perct, 0);#}
                    let note_perct = Math.round(frame.note_perct, 0);
 
                    //append to the html string
@@ -852,7 +859,7 @@
                     $('#listening_instant_value').width(listening_number + '%');
 
                      */
-                }, 1000);
+                }, 33);
 
                 //check for the current class
                 if (classes === play_class) {
@@ -874,6 +881,29 @@
                     //stop changing the activity values
                     clearInterval(video_interval);
                 }
+
+            });
+
+
+            //this method will call the API to generate activity report
+            $('#generate_report_btn').click(function () {
+                //call the fetch API
+
+                //hide the message
+                $('#generate_report_message').hide();
+
+
+
+                fetch('http://127.0.0.1:8000/lecture-activity-report-generation/?lecturer=' + global_lecturer + '&subject=' + global_subject + '&date=' + global_lecture_date)
+                .then((res) => res.json())
+                .then((out) => {
+                    //show the loader and loading message
+                    $('#generate_report_loader').attr('hidden', true);
+                    $('#generate_report_loading_message').attr('hidden', true);
+                    $('#generateReportModal').modal('hide');
+                })
+                .catch((err) => alert('error: ' + err))
+
 
             });
 
@@ -901,9 +931,12 @@
                     {% load static %}
 
                     <!-- Page Heading -->
-                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-                        <h1 class="h3 mb-0 text-gray-800">Student Activity Recognition</h1>
-                    </div>
+{#                    <div class="d-sm-flex align-items-center justify-content-between mb-4">#}
+{#                        <h1 class="h3 mb-0 text-gray-800">Student Activity Recognition</h1>#}
+{#                        <button type="button" data-target="#generateReportModal" data-toggle="modal" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" id="generate_report_before" disabled><i#}
+{#                                class="fas fa-download fa-sm text-white-50"></i> Generate Report</button>#}
+{#                    </div>#}
+
 
                     <!--first row -->
                     <div class="row p-2">
@@ -1183,104 +1216,65 @@
 
 
                         <!--2nd column -->
-                        <div class="col-lg-6">
-                            <!--card content -->
-                            <div class="card shadow mb-4">
-                                <!--card header -->
-                                <div class="card-header py-3">
-                                    <h5 class="m-0 font-weight-bold text-primary">Frame Detections</h5>
-                                </div>
+{#                        <div class="col-lg-6">#}
 
-                                <!--card body -->
-                                <div class="text-center p-4" id="detection_frames">
+{#                            <!--card content -->#}
+{#                            <div class="card shadow mb-4">#}
+{#                                <!--card header -->#}
+{#                                <div class="card-header py-3">#}
+{#                                    <h5 class="m-0 font-weight-bold text-primary">Frame Detections</h5>#}
+{#                                </div>#}
+{##}
+{#                                <!--card body -->#}
+{#                                <div class="text-center p-4" id="detection_frames">#}
+{##}
+{#                                    <!--no content message-->#}
+{#                                    <div class="text-center p-2" id="no_detection_message_content">#}
+{#                                        <span class="font-italic">No frame is selected</span>#}
+{#                                    </div>#}
+{##}
+{#                                    <div class="text-left m-3" id="detection_number_area" hidden>#}
+{#                                        <p>No of detections: <span id="no_of_detections"></span></p>#}
+{#                                    </div>#}
+{#                                    <!--the detection loader -->#}
+{#                                    <div class="text-center p-2" id="detection_loader" hidden>#}
+{#                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"#}
+{#                                             alt="Loader">#}
+{#                                    </div>#}
+{#                                </div>#}
+{#                            </div>#}
 
-                                    <!--no content message-->
-                                    <div class="text-center p-2" id="no_detection_message_content">
-                                        <span class="font-italic">No frame is selected</span>
-                                    </div>
-
-                                    <div class="text-left m-3" id="detection_number_area" hidden>
-                                        <p>No of detections: <span id="no_of_detections"></span></p>
-                                    </div>
-                                    <!--the detection loader -->
-                                    <div class="text-center p-2" id="detection_loader" hidden>
-                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
-                                             alt="Loader">
-                                    </div>
-                                </div>
-                            </div>
 
                             <!--detection person card -->
-                            <div class="card shadow mb-4">
-                                <!--card header -->
-                                <div class="card-header py-3">
-                                    <h5 class="m-0 font-weight-bold text-primary">Detected Students (by activity
-                                        type)</h5>
-                                </div>
-
-                                <!--card body -->
-                                <div class="text-center p-4" id="detection_students">
-                                    <!--activity type line -->
-                                    <div class="text-center p-2" id="activity_type" hidden>
-                                        <p>Activity Type: <span class="font-weight-bold" id="activity_type_text"></span>
-                                        </p>
-                                    </div>
-
-                                    <!--no content message-->
-                                    <div class="text-center p-2" id="no_detection_student_content">
-                                        <span class="font-italic">No activity type is selected</span>
-                                    </div>
-
-                                    <!--the detection student loader -->
-                                    <div class="text-center p-2" id="detection_student_loader" hidden>
-                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
-                                             alt="Loader">
-                                    </div>
-
-                                </div>
-                            </div>
-                        </div>
-
-
-                    </div>
-                    <!-- end of 2nd row -->
-
-                    <!--3rd row -->
-                    <div class="row p-2">
-
-                        <!--1st column -->
-                        <div class="col-lg-6">
-                            <!--card -->
-                            <div class="card shadow mb-4">
-                                <!--card header -->
-                                <div class="card-header">
-                                    <h5 class="m-0 font-weight-bold text-primary">Evaluated Students</h5>
-                                </div>
-
-                                <!--card body -->
-                                <div class="card-body" id="evaluation_students">
-
-                                    <!--no content message-->
-                                    <div class="text-center p-2" id="no_evaluated_student_content">
-                                        <span class="font-italic">Press 'Evaluate' button to evaluate students</span>
-                                    </div>
-
-                                    <!--the detection student loader -->
-                                    <div class="text-center p-2" id="evaluate_student_loader" hidden>
-                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
-                                             alt="Loader">
-                                    </div>
-                                    <!--end of student detection loader -->
-
-
-                                </div>
-
-                            </div>
-
-
-                        </div>
-                        <!--end of 1st column -->
-
+{#                            <div class="card shadow mb-4">#}
+{#                                <!--card header -->#}
+{#                                <div class="card-header py-3">#}
+{#                                    <h5 class="m-0 font-weight-bold text-primary">Detected Students (by activity#}
+{#                                        type)</h5>#}
+{#                                </div>#}
+{##}
+{#                                <!--card body -->#}
+{#                                <div class="text-center p-4" id="detection_students">#}
+{#                                    <!--activity type line -->#}
+{#                                    <div class="text-center p-2" id="activity_type" hidden>#}
+{#                                        <p>Activity Type: <span class="font-weight-bold" id="activity_type_text"></span>#}
+{#                                        </p>#}
+{#                                    </div>#}
+{##}
+{#                                    <!--no content message-->#}
+{#                                    <div class="text-center p-2" id="no_detection_student_content">#}
+{#                                        <span class="font-italic">No activity type is selected</span>#}
+{#                                    </div>#}
+{##}
+{#                                    <!--the detection student loader -->#}
+{#                                    <div class="text-center p-2" id="detection_student_loader" hidden>#}
+{#                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"#}
+{#                                             alt="Loader">#}
+{#                                    </div>#}
+{##}
+{#                                </div>#}
+{#                            </div>#}
+{#                        </div>#}
                         <!--2nd column -->
                         <div class="col-lg-6">
                             <!--card -->
@@ -1298,7 +1292,7 @@
 
                                     <!--button -->
                                     <div class="text-right m-4">
-                                        <button type="button" class="btn btn-outline-success" id="integrate_activity">
+                                        <button type="button" class="btn btn-outline-success" id="integrate_gaze">
                                             Process
                                         </button>
                                     </div>
@@ -1306,6 +1300,46 @@
                             </div>
                         </div>
                         <!--end of 2nd column -->
+
+
+                    </div>
+                    <!-- end of 2nd row -->
+
+                    <!--3rd row -->
+                    <div class="row p-2">
+
+                        <!--1st column -->
+                        <div class="col-lg-6">
+{#                            <!--card -->#}
+{#                            <div class="card shadow mb-4">#}
+{#                                <!--card header -->#}
+{#                                <div class="card-header">#}
+{#                                    <h5 class="m-0 font-weight-bold text-primary">Evaluated Students</h5>#}
+{#                                </div>#}
+{##}
+{#                                <!--card body -->#}
+{#                                <div class="card-body" id="evaluation_students">#}
+{##}
+{#                                    <!--no content message-->#}
+{#                                    <div class="text-center p-2" id="no_evaluated_student_content">#}
+{#                                        <span class="font-italic">Press 'Evaluate' button to evaluate students</span>#}
+{#                                    </div>#}
+{##}
+{#                                    <!--the detection student loader -->#}
+{#                                    <div class="text-center p-2" id="evaluate_student_loader" hidden>#}
+{#                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"#}
+{#                                             alt="Loader">#}
+{#                                    </div>#}
+{#                                    <!--end of student detection loader -->#}
+{##}
+{##}
+{#                                </div>#}
+{##}
+{#                            </div>#}
+
+
+                        </div>
+                        <!--end of 1st column -->
 
                     </div>
                     <!--end of 3rd row -->
@@ -1451,6 +1485,37 @@
     </div>
 
 
+    <!-- generate report Modal-->
+    <div class="modal fade" id="generateReportModal" tabindex="-1" role="dialog" aria-labelledby="generateReportModal"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Generate Activity Report</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="generate_report_message">
+                        Are you sure you want to generate the report without going through the content?
+                    </div>
+                    <div class="text-center" id="generate_report_loader" hidden>
+                        <img src="{% static 'FirstApp/images/ajax-loader-1.gif' %}" alt="loader">y
+                    </div>
+                    <div class="text-center" id="generate_report_loading_message" hidden>
+                        <span class="font-italic">This will take some time</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal" id="generate_report_btn">Yes</button>
+                    <button type="button" class="btn btn-danger" data-dismiss="modal">No</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <!--integrate modal -->
     <div class="modal fade" id="integrate_modal" tabindex="-1" role="dialog" aria-labelledby="integrate_modal">
         <div class="modal-dialog" style="max-width: 1300px">
@@ -1548,12 +1613,12 @@
                                         <span class="font-italic">No video was found</span>
                                     </div>
 
-
-                                    <video width="500" height="300" id="lecturer_video" controls>
-                                        <source src="#"
-                                                type="video/mp4">
-                                        Your browser does not support the video tag.
-                                    </video>
+                                    <!-- video -->
+{#                                    <video width="500" height="300" id="lecturer_video" controls>#}
+{#                                        <source src="#"#}
+{#                                                type="video/mp4">#}
+{#                                        Your browser does not support the video tag.#}
+{#                                    </video>#}
 
                                 </div>
                                 <!--end of lecture video section -->

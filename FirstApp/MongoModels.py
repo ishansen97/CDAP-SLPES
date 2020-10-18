@@ -111,6 +111,36 @@ class LectureVideo(models.Model):
         return self.lecture_video_id
 
 
+
+class Landmarks(models.Model):
+    landmark = models.CharField(max_length=15)
+
+    class Meta:
+        abstract = True
+
+
+# lecture video time landmarks table
+class LectureVideoTimeLandmarks(models.Model):
+    lecture_video_time_landmarks_id = models.CharField(max_length=15)
+    lecture_video_id = models.ForeignKey(LectureVideo, on_delete=models.CASCADE)
+    time_landmarks = models.ArrayField(Landmarks)
+
+    def __str__(self):
+        return self.lecture_video_time_landmarks_id
+
+
+# lecture video frame landmarks table
+class LectureVideoFrameLandmarks(models.Model):
+    lecture_video_frame_landmarks_id = models.CharField(max_length=15)
+    lecture_video_id = models.ForeignKey(LectureVideo, on_delete=models.CASCADE)
+    frame_landmarks = models.ArrayField(Landmarks)
+
+    def __str__(self):
+        return self.lecture_video_frame_landmarks_id
+
+
+
+# ACTIVITY section
 # lecture activity table
 class LectureActivity(models.Model):
     lecture_activity_id = models.CharField(max_length=10)
@@ -122,6 +152,60 @@ class LectureActivity(models.Model):
 
     def __str__(self):
         return self.lecture_activity_id
+
+
+# this abstract class will define the lecture activity frame group percentages
+class LectureActivityFrameGroupPercentages(models.Model):
+    phone_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    listen_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    note_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+
+    class Meta:
+        abstract = True
+
+
+# this abstract class will define the details for an activity frame group
+class LectureActivityFrameGroupDetails(models.Model):
+    frame_group = models.CharField(max_length=10)
+    frame_group_percentages = models.EmbeddedField(
+       model_container=LectureActivityFrameGroupPercentages
+    )
+
+    class Meta:
+        abstract = True
+
+
+# this class will contain the activity frame groupings
+class LectureActivityFrameGroupings(models.Model):
+    lecture_activity_frame_groupings_id = models.CharField(max_length=15, default="")
+    lecture_activity_id = models.ForeignKey(LectureActivity, on_delete=models.CASCADE)
+    frame_group_details = models.ArrayField(model_container=LectureActivityFrameGroupDetails)
+
+    def __str__(self):
+        return self.lecture_activity_frame_groupings_id
+
+
+
+# this abstract class will contain lecture activity frame recognition details
+class LectureActivityFrameRecognitionDetails(models.Model):
+    frame_name = models.CharField(max_length=15)
+    phone_perct = models.FloatField()
+    listen_perct = models.FloatField()
+    note_perct = models.FloatField()
+
+    class Meta:
+        abstract = True
+
+
+# this class will contain lecture activity frame recognitions
+class LectureActivityFrameRecognitions(models.Model):
+    lecture_activity_frame_recognition_id = models.CharField(max_length=15)
+    lecture_activity_id = models.ForeignKey(LectureActivity, on_delete=models.CASCADE)
+    frame_recognition_details = models.ArrayField(LectureActivityFrameRecognitionDetails)
+
+    def __str__(self):
+        return self.lecture_activity_frame_recognition_id
+
 
 
 # EMOTIONS section
@@ -141,8 +225,132 @@ class LectureEmotionReport(models.Model):
         return self.lecture_emotion_id
 
 
+# this abstract class will define the lecture emotion frame group percentages
+class LectureEmotionFrameGroupPercentages(models.Model):
+    happy_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    sad_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    angry_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    disgust_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    surprise_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    neutral_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+
+    class Meta:
+        abstract = True
+
+
+# this abstract class will define the details for an emotion frame group
+class LectureEmotionFrameGroupDetails(models.Model):
+    frame_group = models.CharField(max_length=10)
+    frame_group_percentages = models.EmbeddedField(
+       model_container=LectureEmotionFrameGroupPercentages
+    )
+
+    class Meta:
+        abstract = True
+
+
+# this class will contain the emotion frame groupings
+class LectureEmotionFrameGroupings(models.Model):
+    lecture_emotion_frame_groupings_id = models.CharField(max_length=15, default="")
+    lecture_emotion_id = models.ForeignKey(LectureEmotionReport, on_delete=models.CASCADE)
+    frame_group_details = models.ArrayField(model_container=LectureEmotionFrameGroupDetails)
+
+    def __str__(self):
+        return self.lecture_emotion_frame_groupings_id
+
+
+# this abstract class will contain lecture emotion frame recognition details
+class LectureEmotionFrameRecognitionDetails(models.Model):
+    frame_name = models.CharField(max_length=15)
+    happy_perct = models.FloatField()
+    sad_perct = models.FloatField()
+    angry_perct = models.FloatField()
+    surprise_perct = models.FloatField()
+    neutral_perct = models.FloatField()
+
+    class Meta:
+        abstract = True
+
+
+# this class will contain lecture emotion frame recognitions
+class LectureEmotionFrameRecognitions(models.Model):
+    lecture_emotion_frame_recognition_id = models.CharField(max_length=15)
+    lecture_emotion_id = models.ForeignKey(LectureEmotionReport, on_delete=models.CASCADE)
+    frame_recognition_details = models.ArrayField(LectureEmotionFrameRecognitionDetails)
+
+    def __str__(self):
+        return self.lecture_emotion_frame_recognition_id
+
+
+
+
 # POSE section
 # lecture pose estimation
-class LecturePoseEstimation(models.Model):
-    lecture_pose_id = models.CharField(max_length=10)
+class LectureGazeEstimation(models.Model):
+    lecture_gaze_id = models.CharField(max_length=10)
     lecture_video_id = models.ForeignKey(LectureVideo, on_delete=models.CASCADE)
+    looking_up_and_right_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    looking_up_and_left_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    looking_down_and_right_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    looking_down_and_left_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    looking_front_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+
+    def __str__(self):
+        return self.lecture_gaze_id
+
+
+# this abstract class will define the lecture gaze frame group percentages
+class LectureGazeFrameGroupPercentages(models.Model):
+    upright_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    upleft_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    downright_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    downleft_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+    front_perct = models.DecimalField(default=0.0, max_digits=3, decimal_places=1)
+
+    class Meta:
+        abstract = True
+
+
+# this abstract class will define the details for a gaze frame group
+class LectureGazeFrameGroupDetails(models.Model):
+    frame_group = models.CharField(max_length=10)
+    frame_group_percentages = models.EmbeddedField(
+       model_container=LectureGazeFrameGroupPercentages
+    )
+
+    class Meta:
+        abstract = True
+
+
+# this class will contain the gaze frame groupings
+class LectureGazeFrameGroupings(models.Model):
+    lecture_gaze_frame_groupings_id = models.CharField(max_length=15, default="")
+    lecture_gaze_id = models.ForeignKey(LectureGazeEstimation, on_delete=models.CASCADE)
+    frame_group_details = models.ArrayField(model_container=LectureGazeFrameGroupDetails)
+
+    def __str__(self):
+        return self.lecture_gaze_frame_groupings_id
+
+
+
+# this abstract class will contain lecture gaze frame recognition details
+class LectureGazeFrameRecognitionDetails(models.Model):
+    frame_name = models.CharField(max_length=15)
+    upright_perct = models.FloatField()
+    upleft_perct = models.FloatField()
+    downright_perct = models.FloatField()
+    downleft_perct = models.FloatField()
+    front_perct = models.FloatField()
+
+    class Meta:
+        abstract = True
+
+
+# this class will contain lecture gaze frame recognitions
+class LectureGazeFrameRecognitions(models.Model):
+    lecture_gaze_frame_recognition_id = models.CharField(max_length=15)
+    lecture_gaze_id = models.ForeignKey(LectureGazeEstimation, on_delete=models.CASCADE)
+    frame_recognition_details = models.ArrayField(LectureGazeFrameRecognitionDetails)
+
+    def __str__(self):
+        return self.lecture_gaze_frame_recognition_id
