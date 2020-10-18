@@ -46,7 +46,7 @@ def run():
             else:
                 d[word] = 1
 
-    # the key words are "extraneous filler words(ok, well, like, Actually, Basically, that, jest, only, really, very, now, simply, maybe, perhaps, somehow, almost, slightly, seemed ....)"
+    # the key words are "extraneous filler words                (ok, well, like, Actually, Basically, that, jest, only, really, very, now, simply, maybe, perhaps, somehow, almost, slightly, seemed ....)"
 
     for key in list(d.keys()):
         if (key == "like"):
@@ -170,3 +170,46 @@ def run():
     analysis['non_lexical_count'] = non_lexical_count
 
     return analysis
+
+
+# this method will return the lecturer audio summary for period
+def get_lecturer_audio_summary_for_period(lecture_audio_text_data):
+    # declare variables to add percentage values
+    word_count = 0
+    lexical_count_combined = 0
+    non_lexical_count_combined = 0
+
+
+    # get the number of activties to calculate average
+    no_of_data = len(lecture_audio_text_data)
+
+    individual_lec_data = []
+    labels = ["lexical_wordcount", "non_lexical_wordcount", "wordcount"]
+
+    # iterate through the activities
+    for audio_data in lecture_audio_text_data:
+
+        ind_word_count = int(audio_data["lecturer_audio_text_lexical_wordcount"])
+        ind_lexical_count = int(audio_data["lecturer_audio_text_non_lexical_wordcount"])
+        ind_non_lexical_count = int(audio_data["lecturer_audio_text_non_lexical_wordcount"])
+
+
+        individual_lecture = {}
+        individual_lecture["lexical_wordcount"] = int(audio_data["lecturer_audio_text_lexical_wordcount"])
+        individual_lecture["non_lexical_wordcount"] = int(audio_data["lecturer_audio_text_non_lexical_wordcount"])
+        individual_lecture["wordcount"] = int(audio_data["lecturer_audio_text_wordcount"])
+
+        lexical_count_combined += int(audio_data["lecturer_audio_text_lexical_wordcount"])
+        non_lexical_count_combined += int(audio_data["lecturer_audio_text_non_lexical_wordcount"])
+        word_count += int(audio_data["lecturer_audio_text_wordcount"])
+
+        # calculate the percentages
+        # individual_lecture["lexical_perct"] = round((ind_lexical_count / ind_word_count), 1)
+        # individual_lecture["non_lexical_perct"] = round((ind_non_lexical_count / ind_word_count), 1)
+
+        # append to the list
+        individual_lec_data.append(individual_lecture)
+
+
+
+    return individual_lec_data, labels

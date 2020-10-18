@@ -8,11 +8,18 @@ import os
 def activity_recognition(video_name):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     CLASSIFIER_DIR = os.path.join(BASE_DIR, "MonitorLecturerApp\\models")
-    VIDEO_PATH = os.path.join(BASE_DIR, "assets\\FirstApp\\lecturer_videos\\{}".format(video_name))
+    # VIDEO_PATH = os.path.join(BASE_DIR, "assets\\FirstApp\\lecturer_videos\\{}".format(video_name)) -> Uncomment after integration
+    VIDEO_PATH = os.path.join(BASE_DIR, "static\\FirstApp\\lecturer_videos\\{}".format(video_name))
 
     print('video name: ', video_name)
 
-    detector_path = os.path.join(CLASSIFIER_DIR, "keras_model.h5")
+    # detector_path = os.path.join(CLASSIFIER_DIR, "keras_model.h5")
+
+
+    detector_path = os.path.join(CLASSIFIER_DIR, "keras_model_updated.h5")
+
+
+
 
     # Disable scientific notation for clarity
     np.set_printoptions(suppress=True)
@@ -50,9 +57,9 @@ def activity_recognition(video_name):
     # getting the number of frames using CAP_PROP_FRAME_COUNT method
     no_of_frames = video.get(cv2.CAP_PROP_FRAME_COUNT)
     frame_count = 0
-    seated_count = 0
-    standing_count = 0
-    walking_count = 0
+    seated_count = 0.0
+    standing_count = 0.0
+    walking_count = 0.0
 
     # while loop is conditioned like this to avoid the termination of the loop with an exception
     while (frame_count < no_of_frames):
@@ -88,13 +95,15 @@ def activity_recognition(video_name):
         # if cv2.waitKey(1) & 0xFF == ord('q'):
         #     break
 
-
-
     cv2.destroyAllWindows()
     print("No of frames: ", frame_count)
+    print("No of frames in seated_count: ", seated_count)
+    print("No of frames in standing_count: ", standing_count)
+    print("No of frames in walking_count: ", walking_count)
 
     # calculating the percentages
     sit_perct = (seated_count / no_of_frames) * 100
+
     stand_perct = (standing_count / no_of_frames) * 100
 
     walk_perct = (walking_count / no_of_frames) * 100
