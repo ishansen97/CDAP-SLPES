@@ -20,7 +20,7 @@ from . logic import video_extraction
 from . forms import *
 import cv2
 import os
-import datetime
+from datetime import datetime
 
 
 # hashing
@@ -113,28 +113,85 @@ class LectureViewSet(APIView):
 def hello(request):
 
     username = request.user.username
+    # retrieve the lecturer
+    lecturer = request.session['lecturer']
+
+
+    # retrieve the lecturer's timetable slots
+    lecturer_timetable = FacultyTimetable.objects.filter()
+
+    # serialize the timetable
+    lecturer_timetable_serialized = FacultyTimetableSerializer(lecturer_timetable, many=True)
+
+
+    lecturer_details = []
+
+    # loop through the serialized timetable
+    for timetable in lecturer_timetable_serialized.data:
+
+        # retrieve daily timetable
+        daily_timetable = timetable['timetable']
+
+        # loop through the daily timetable
+        for day_timetable in daily_timetable:
+            date = ''
+            lecture_index = 0
+
+            # loop through each timeslots
+            for slots in day_timetable:
+
+                if slots == "date":
+                    date = day_timetable[slots]
+
+
+                elif slots == "time_slots":
+                    slot = day_timetable[slots]
+
+                    # loop through each slot
+                    for lecture in slot:
+
+                        # check whether the lecturer is the current lecturer
+                        if lecturer == lecture['lecturer']['id']:
+                            lecturer_lecture_details = {}
+                            lecturer_lecture_details['date'] = date
+                            lecturer_lecture_details['start_time'] = lecture['start_time']
+                            lecturer_lecture_details['end_time'] = lecture['end_time']
+                            lecturer_lecture_details['subject_name'] = lecture['subject']['name']
+                            lecturer_lecture_details['index'] = lecture_index
+                            lecturer_lecture_details['lecturer'] = lecture['lecturer']['id']
+
+                            # append to the lecturer_details
+                            lecturer_details.append(lecturer_lecture_details)
+
+                        # increment the index
+                        lecture_index += 1
+
+    # sorting the dates in lecturer_details list
+    # for details in lecturer_details:
+    lecturer_details.sort(key=lambda date: datetime.strptime(str(date['date']), "%Y-%m-%d"), reverse=True)
+
+
     obj = {'Message': 'Student and Lecturer Performance Enhancement System', 'username': username}
     folder = os.path.join(BASE_DIR, os.path.join('static\\FirstApp\\videos'))
     videoPaths = [os.path.join(folder, file) for file in os.listdir(folder)]
     videos = []
     durations = []
-
-    for videoPath in videoPaths:
-        video = Video()
-        cap = cv2.VideoCapture(videoPath)
-        fps = cap.get(cv2.CAP_PROP_FPS)  # OpenCV2 version 2 used "CV_CAP_PROP_FPS"
-        frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        duration = int(frame_count / fps)
-        durations.append(duration)
-        videoName = os.path.basename(videoPath)
-        videoName = os.path.basename(videoPath)
-        # videoName = videos.append(os.path.basename(videoPath))
-        durationObj = datetime.timedelta(seconds=duration)
-        video.path = videoPath
-        video.name = videoName
-        video.duration = str(durationObj)
-        videos.append(video)
-    context = {'object': obj, 'Videos': videos, 'durations': durations, 'template_name': 'FirstApp/template.html'}
+    #
+    # for videoPath in videoPaths:
+    #     video = Video()
+    #     cap = cv2.VideoCapture(videoPath)
+    #     fps = cap.get(cv2.CAP_PROP_FPS)  # OpenCV2 version 2 used "CV_CAP_PROP_FPS"
+    #     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    #     duration = int(frame_count / fps)
+    #     durations.append(duration)
+    #     videoName = os.path.basename(videoPath)
+    #     # videoName = videos.append(os.path.basename(videoPath))
+    #     durationObj = datetime.timedelta(seconds=duration)
+    #     video.path = videoPath
+    #     video.name = videoName
+    #     video.duration = str(durationObj)
+    #     videos.append(video)
+    context = {'object': obj, 'Videos': videos, 'durations': durations, 'template_name': 'FirstApp/template.html', 'lecturer_details': lecturer_details, "lecturer": lecturer}
     return render(request, 'FirstApp/Home.html', context)
 
 def view404(request):
@@ -303,64 +360,87 @@ def child(request):
 # displaying video results
 @login_required(login_url='/login')
 def video_result(request):
-
     try:
+
         # retrieving data from the db
         lecturer = request.session['lecturer']
+        to_do_lecture_list = []
+        due_lecture_list = []
 
-        lecturer_subjects = LecturerSubject.objects.filter(lecturer_id_id=lecturer)
-        lec_sub_serilizer = LecturerSubjectSerializer(lecturer_subjects, many=True)
-        subject_list = []
+        lecturer_videos = LectureVideo.objects.filter(lecturer_id=lecturer)
+        serializer = LectureVideoSerializer(lecturer_videos, many=True)
 
-        subjects = lec_sub_serilizer.data[0]['subjects']
+        data = serializer.data
 
-        for sub in subjects:
-            subject = Subject.objects.filter(id=sub)
-            subject_serialized = SubjectSerializer(subject, many=True)
+        # iterate through the existing lecture videos for the lecturer
+        for video in data:
+            video_id = video['id']
+            date = video['date']
+            subject = video['subject']['id']
+            # check whether the video id exist in the Activity Recognition table
+            lec_activity = LectureActivity.objects.filter(lecture_video_id_id=video_id).exists()
 
-            subject_list.append(subject_serialized.data)
+            if lec_activity == False:
+                to_do_lecture_list.append({
+                    "lecturer": lecturer,
+                    "date": date,
+                    "subject": subject,
+                    "video_id": video['id'],
+                    "video_name": video['video_name']
+                })
+
+        # once the lectures that needs to be processed are found out, extract the corresponding timetable details
+        # retrieve the lecturer's timetable slots
+        lecturer_timetable = FacultyTimetable.objects.filter()
+
+        # serialize the timetable
+        lecturer_timetable_serialized = FacultyTimetableSerializer(lecturer_timetable, many=True)
+
+        # loop through the serialized timetable
+        for timetable in lecturer_timetable_serialized.data:
+
+            # retrieve daily timetable
+            daily_timetable = timetable['timetable']
+
+            # loop through the daily timetable
+            for day_timetable in daily_timetable:
+
+                # print('day timetable" ', day_timetable)
+
+                # loop through the to-do lecture list
+                for item in to_do_lecture_list:
+                    isDate = item['date'] == str(day_timetable['date'])
+                    # isLecturer = item['lecturer'] ==
+                    # check for the particular lecture on the day
+                    if isDate:
+                        slots = day_timetable['time_slots']
+
+                        # loop through the slots
+                        for slot in slots:
+                            # check for the lecturer and subject
+                            isLecturer = item['lecturer'] == slot['lecturer']['id']
+                            isSubject = item['subject'] == slot['subject']['id']
+
+                            if isLecturer & isSubject:
+                                obj = {}
+                                obj['date'] = item['date']
+                                obj['subject'] = slot['subject']['subject_code']
+                                obj['subject_name'] = slot['subject']['name']
+                                obj['start_time'] = slot['start_time']
+                                obj['end_time'] = slot['end_time']
+                                obj['video_id'] = item['video_id']
+                                obj['video_name'] = item['video_name']
+
+                                # append to the list
+                                due_lecture_list.append(obj)
 
 
-
-
-        folder = os.path.join(BASE_DIR, os.path.join('static\\FirstApp\\videos'))
-        videoPaths = [os.path.join(folder, file) for file in os.listdir(folder)]
-        videos = []
-        durations = []
-
-        # setting up the first video details
-        first_video_path = videoPaths[0]
-        first_video = Video()
-        cap = cv2.VideoCapture(first_video_path)
-        fps = cap.get(cv2.CAP_PROP_FPS)  # OpenCV2 version 2 used "CV_CAP_PROP_FPS"
-        frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        duration = int(frame_count / fps)
-        videoName = os.path.basename(first_video_path)
-        durationObj = datetime.timedelta(seconds=duration)
-        first_video.path = first_video_path
-        first_video.name = videoName
-        first_video.duration = str(durationObj)
-
-        for videoPath in videoPaths:
-            video = Video()
-            cap = cv2.VideoCapture(videoPath)
-            fps = cap.get(cv2.CAP_PROP_FPS)  # OpenCV2 version 2 used "CV_CAP_PROP_FPS"
-            frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            duration = int(frame_count / fps)
-            durations.append(duration)
-            videoName = os.path.basename(videoPath)
-            durationObj = datetime.timedelta(seconds=duration)
-            video.path = videoPath
-            video.name = videoName
-            video.duration = str(durationObj)
-            videos.append(video)
-        context = {'Videos': videos, 'firstVideo': first_video, 'durations': durations, 'lecturer_subjects': lecturer_subjects, 'subjects': subject_list,
-                   'template_name': 'FirstApp/template.html'}
-
-    except Exception as ex:
+    except Exception as exc:
+        print('what is wrong?: ', exc)
         return redirect('/500')
 
-    return render(request, 'FirstApp/video_results.html', context)
+    return render(request, "FirstApp/video_results.html",
+                  {"lecturer": lecturer, "due_lectures": due_lecture_list})
 
 
 # view for emotion page
@@ -438,6 +518,7 @@ def view500(request):
 def tables(request):
     return render(request, "FirstApp/tables.html")
 
+
 @login_required(login_url='/login')
 def activity(request):
     try:
@@ -461,3 +542,7 @@ def activity(request):
         return redirect('/500')
 
     return render(request, "FirstApp/activity.html", {"lecturer_subjects": lecturer_subjects, "subjects": subject_list, "lecturer": lecturer})
+
+
+def test(request):
+    return render(request, "FirstApp/pdf_template.html")

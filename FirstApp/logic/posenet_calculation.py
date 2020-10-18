@@ -117,10 +117,6 @@ def calculate_pose_estimation_for_student(video_name, student, poses):
 
                 left_upper_x = 0 if (middle_x - fraction) < 0 else (middle_x - fraction)
 
-                print('head_y: ', head_y)
-                print('fraction: ', fraction)
-                print('distance: ', distance)
-                print('left_upper_x: ', left_upper_x)
 
                 # extract the new image
                 new_img = detection_img[head_y:head_y+fraction, left_upper_x:left_upper_x+distance]
