@@ -1,0 +1,72 @@
+{% extends 'FirstApp/template.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+{% block javascript %}
+{% load static %}
+
+<!-- Bootstrap core JavaScript-->
+<script src="{% static 'FirstApp/vendor/jquery/jquery.min.js' %}"></script>
+<script src="{% static 'FirstApp/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+
+<!-- Page level plugins -->
+<script src="{% static 'FirstApp/vendor/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'FirstApp/vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+
+<!-- Page level custom scripts -->
+<script src="{% static 'FirstApp/js/demo/datatables-demo.js' %}"></script>
+
+<!-- Core plugin JavaScript-->
+<script src="{% static 'FirstApp/vendor/jquery-easing/jquery.easing.min.js' %}"></script>
+
+<!-- Load TensorFlow.js -->
+<script src="https://unpkg.com/@tensorflow/tfjs"></script>
+<!-- Load Posenet -->
+<script src="https://unpkg.com/@tensorflow-models/posenet">
+</script>
+
+
+<script type="text/javascript">
+
+    $(document).ready(function() {
+        $('#initiate_btn').click(function() {
+
+            fetch('http://127.0.0.1:8000/attendance/process-initiate-lecture')
+            .then((res) => res.json())
+            .then((out) => alert(out.response))
+            .catch((err) => alert('error: ' + err))
+        });
+    })
+
+</script>
+
+{% endblock %}
+
+
+{% block 'container-fluid' %}
+<div class="container">
+    <div class="row p-4">
+        <div class="col-lg-12">
+            <div class="text-center">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title">Starting the lecture....</h4>
+                    </div>
+
+                    <div class="card-body">
+                        <button type="button" class="btn btn-success" id="initiate_btn">Initiate Lecture</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+</body>
+</html>
