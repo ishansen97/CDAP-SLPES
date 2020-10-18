@@ -15,10 +15,7 @@ def activity_recognition(video_name):
 
     # detector_path = os.path.join(CLASSIFIER_DIR, "keras_model.h5")
 
-
     detector_path = os.path.join(CLASSIFIER_DIR, "keras_model_updated.h5")
-
-
 
 
     # Disable scientific notation for clarity
@@ -36,20 +33,15 @@ def activity_recognition(video_name):
                   metrics=['accuracy'])
 
 
-
-
-
-
     # Create the array of the right shape to feed into the keras model
     # The 'length' or number of images you can put into the array is
     # determined by the first position in the shape tuple, in this case 1.
     data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32)
     size = (224, 224)
+
     # "C://Users//DELL//Downloads//Classroom_Video.mp4"
     video1 = 'E:\\Studies\\SLIIT\\4th Year\\Python Projects\\classroom activity models\\videos\\{}'.format(video_name)
-
     video = cv2.VideoCapture(VIDEO_PATH)
-
     # additional
     # getting the frames per second (fps)
     # fps = video.get(cv2.CAP_PROP_FPS)

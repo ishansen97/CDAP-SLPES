@@ -29,7 +29,21 @@ class LecturerVideo(models.Model):
         return self.name
 
 
+class LectureRecordedVideo (models.Model):
+    lecture_video_id = models.CharField(max_length=10)
+    lecturer_date = models.DateField()
+    lecture_video_name = models.CharField(max_length=50)
+    lecture_video_length = models.DurationField()
+    lecturer = models.ForeignKey(Lecturer, on_delete=models.CASCADE, default=0)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, default=0)
+
+    def __str__(self):
+        return self.lecture_video_id
+
+
+
 class LecturerVideoMetaData(models.Model):
+    lecturer_video_id = models.ForeignKey(LectureRecordedVideo, on_delete=models.CASCADE, default=0)
     fps = models.IntegerField()
     frame_count = models.IntegerField()
     seated_count = models.IntegerField()
@@ -73,13 +87,3 @@ class LecturerAudioText (models.Model):
     def __str__(self):
         return self.lecturer_audio_text_id
 
-class LectureRecordedVideo (models.Model):
-    lecture_video_id = models.CharField(max_length=10)
-    lecturer_date = models.DateField()
-    lecture_video_name = models.CharField(max_length=50)
-    lecture_video_length = models.DurationField()
-    lecturer = models.ForeignKey(Lecturer, on_delete=models.CASCADE, default=0)
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, default=0)
-
-    def __str__(self):
-        return self.lecture_video_id
