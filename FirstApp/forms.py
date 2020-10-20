@@ -58,3 +58,50 @@ class LecturerCredentialsForm(forms.ModelForm):
         widgets = {
             'password': forms.PasswordInput()
         }
+
+
+# admin login form
+class AdminLoginForm(forms.Form):
+    # username = forms.CharField(max_length=100)
+    email = forms.EmailField()
+    password = forms.CharField(widget=forms.PasswordInput())
+
+    def clean(self):
+        # cleaned_username = self.cleaned_data.get('username')
+        cleaned_email = self.cleaned_data.get('email')
+        cleaned_password = self.cleaned_data.get('password')
+
+        admin = Admin.objects.get(email=cleaned_email)
+
+        # if an admin is already in the system
+        if (admin):
+            # retrieve the User object
+            user = User.objects.get(email=cleaned_email)
+            is_user = user.check_password(cleaned_password)
+
+            # if the password is correct
+            if (is_user):
+                # lec_credentials = LecturerCredentials.objects.filter(username_id=lecturer.id)
+                admin_credentials = AdminCredentialDetails.objects.get(username_id=admin.id)
+
+                print('credentials: ', admin_credentials)
+
+                # if lecture credentials are already created
+                if (admin_credentials):
+                    admin_credentials.password = user.password
+                    admin_credentials.save(force_update=True)
+
+                else:
+                    LecturerCredentials(
+                        username_id=admin.id,
+                        password=user.password
+                    ).save()
+
+            else:
+                raise forms.ValidationError("Username or password is incorrect")
+
+        else:
+            print('the admin does not exist')
+            raise forms.ValidationError("The admin does not exist")
+
+        return super(AdminLoginForm, self).clean()

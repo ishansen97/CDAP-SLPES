@@ -506,7 +506,7 @@ def logoutView(request):
 
     logout(request)
 
-    return redirect('/login')
+    return redirect('/user-direct')
 
 
 # 500 error page
@@ -546,3 +546,59 @@ def activity(request):
 
 def test(request):
     return render(request, "FirstApp/pdf_template.html")
+
+
+# this method will handle user directing function
+def userDirect(request):
+    return render(request, "FirstApp/user_direct.html")
+
+
+# this method will handle user redirection process
+def processUserRedirect(request):
+
+    if request.POST:
+
+        user_type = request.POST.get('user_type')
+
+        if user_type == 'admin':
+            return redirect('/admin-login')
+        elif user_type == 'lecturer':
+            return redirect('/login')
+
+    return redirect('/500')
+
+
+# admin login page
+def adminLogin(request):
+
+    return render(request, "FirstApp/admin_login.html")
+
+
+# this method will process admin login
+def processAdminLogin(request):
+    username = "not logged in"
+    message = "Invalid Username or Password"
+    adminLoginForm = AdminLoginForm(request.POST)
+
+    print('message: ', message)
+
+    try:
+        # if the details are valid, let the user log in
+        if adminLoginForm.is_valid():
+            email = adminLoginForm.cleaned_data.get('email')
+
+            user = User.objects.get(email=email)
+            admin = Admin.objects.get(email=email)
+
+            login(request, user)
+            # setting up the session
+            request.session['admin'] = admin.id
+
+            return redirect('/summary/lecture')
+
+        else:
+            message = "Please provide correct credntials"
+    except Exception as exc:
+        print('exception: ', exc)
+
+    return render(request, 'FirstApp/admin_login.html', {'message': message})
