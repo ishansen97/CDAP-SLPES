@@ -300,7 +300,7 @@ class LectureEmotionFrameRecognitions(models.Model):
 
 
 # POSE section
-# lecture pose estimation
+# lecture gaze estimation
 class LectureGazeEstimation(models.Model):
     lecture_gaze_id = models.CharField(max_length=10)
     lecture_video_id = models.ForeignKey(LectureVideo, on_delete=models.CASCADE)

@@ -14,6 +14,7 @@ urlpatterns = [
     path('logout', views.logoutView),
     path('register-user', views.register),
     path('404', views.view404),
+    path('401', views.view401),
     path('500', views.view500),
     path('blank', views.blank),
     path('gaze', views.gaze),
