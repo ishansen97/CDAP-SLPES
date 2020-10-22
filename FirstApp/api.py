@@ -512,8 +512,6 @@ class GetLectureEmotionReportViewSet(APIView):
     def get(self, request):
         lecture_video_id = request.query_params.get('lecture_video_id')
         lecture_video_name = request.query_params.get('lecture_video_name')
-        # retrieve the extracted frames
-        extracted = ar.getExtractedFrames(lecture_video_name)
 
         lecture_emotions = LectureEmotionReport.objects.filter(lecture_video_id__lecture_video_id=lecture_video_id)
         serializer = LectureEmotionSerializer(lecture_emotions, many=True)
@@ -522,7 +520,6 @@ class GetLectureEmotionReportViewSet(APIView):
 
         return Response({
             "response": serializer.data,
-            "extracted": extracted
         })
 
 
@@ -729,8 +726,6 @@ class GetLectureGazeEstimationViewSet(APIView):
     def get(self, request):
         lecture_video_id = request.query_params.get('lecture_video_id')
         lecture_video_name = request.query_params.get('lecture_video_name')
-        # retrieve the extracted frames
-        # extracted = hge.getExtractedFrames(lecture_video_name)
 
         lecture_gaze_estimations = LectureGazeEstimation.objects.filter(
             lecture_video_id__lecture_video_id=lecture_video_id)
@@ -738,7 +733,6 @@ class GetLectureGazeEstimationViewSet(APIView):
 
         return Response({
             "response": serializer.data,
-            # "extracted": extracted
         })
 
 

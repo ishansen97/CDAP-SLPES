@@ -147,7 +147,6 @@
                 global_video_name = video.video_name;
 
 
-
                 if (lectureVideo.isActivityFound) {
                     e.target.parentNode.parentNode.lastChild.innerHTML = '<button type="button" class="btn btn-primary" id="result_btn">Results</button>';
                 } else {
@@ -174,13 +173,14 @@
                 fetch('http://127.0.0.1:8000/get-lecture-activity/?lecture_video_id=' + global_lecture_video_id + '&lecture_video_name=' + global_video_name)
                     .then((res) => res.json())
                     .then((out) => {
-                        let frames = createFrames(out);
-                        return frames
+                        {#let frames = createFrames(out);#}
+                        {#return frames#}
+                        displayActivity(out);
                     })
                     .then((obj) => {
-                        $('#video_frames').prepend(obj);
+                        {#$('#video_frames').prepend(obj);#}
                         $('#frame_loader').attr('hidden', true);
-                        $('#slidecontainer').attr('hidden', false);
+                        {#$('#slidecontainer').attr('hidden', false);#}
                     })
                     .catch((error) => alert('this is the error: ' + error));
             });
@@ -234,513 +234,6 @@
             }
 
 
-            //this section is responsible for displaying the frames as  video
-            //creating the frame content
-            function createFrames(res) {
-                let main_frame_content = "<div class='row' id='main_frames'>";
-                main_frame_content += "<ul class='list-group list-group-horizontal'>";
-                let count = 0;
-                //loop through the frames
-                res.extracted.map((image) => {
-                    let img_src = "";
-                    let len = image.detections.length;
-
-
-                    if (count === 0) {
-                        main_frame_content += "<li class='list-group-item text-center' id='image_0'>";
-                        img_src = "<img src='{% static '' %}FirstApp/activity/" + global_video_name + "/" + res.extracted[0].frame + "/" + res.extracted[0].detections[0] + "' width='400' height='400'>";
-                    } else {
-                        main_frame_content += "<li class='list-group-item other-frames' id='image_" + count + "' hidden>";
-                        img_src = "<img src='{% static '' %}FirstApp/activity/" + global_video_name + "/" + image.frame + "/" + image.detections[len - 1] + "' class='img-link' width='400' height='400'>";
-                    }
-
-
-                    main_frame_content += img_src;
-                    main_frame_content += "</li>";
-                    count++;
-                });
-
-                main_frame_content += "</ul>";
-                main_frame_content += "</div>";
-
-
-                //setting the min, max values of the slider
-                $('#myActivityRange').attr({'min': 0, 'max': count});
-
-                //display the progress bars
-                displayActivity(res);
-
-                return main_frame_content;
-            }
-
-
-            //declaring the variable for setInterval function
-            let timeVar = null;
-
-            //handling the play button
-            $('#play_pause_icon_activity').click(function () {
-                //defining the two possible classes
-                let play_class = "fas fa-play";
-                let pause_class = "fas fa-pause";
-
-
-                //retrieving the current icon class
-                let current_class = $(this).attr('class');
-
-                //assigning the correct class based on the icon clicked
-                let new_class = (current_class === play_class) ? pause_class : play_class;
-
-                //setting the new class
-                $(this).attr('class', new_class);
-
-                //handling the slider
-                let slider = document.getElementById("myActivityRange");
-                let output = document.getElementById("demo");
-
-                //when the button is playing
-                if (current_class === play_class) {
-                    timeVar = setInterval(() => {
-                        let value = slider.value;
-                        let new_slider_value = Number(value) + 1;
-                        slider.value = new_slider_value;
-                        output.innerHTML = new_slider_value.toString();
-
-
-                        let selectedImage = '#image_' + Number(value);
-
-                        //displaying the relevant image
-                        $('#image_0').html($(selectedImage).html());
-
-                    }, 50);
-                }
-                //when the button is paused
-                else if (current_class === pause_class) {
-                    clearInterval(timeVar);
-                }
-
-
-            });
-
-
-            //handling the slider
-            let slider = document.getElementById("myActivityRange");
-            let output = document.getElementById("demo");
-            output.innerHTML = slider.value;
-
-            slider.oninput = function () {
-                output.innerHTML = this.value;
-                let selectedImage = '#image_' + Number(this.value);
-
-                //hide
-                {#$('#image_0').attr('hidden', true);#}
-                $('#image_0').html($(selectedImage).html());
-
-                //setting the selected image
-                {#$(selectedImage).attr('hidden', false);#}
-
-
-            };
-
-            $(document).on('click', '.img-link', function (e) {
-
-                //removing previously displayed detections
-                $('.detections').remove();
-
-                //removing the no-content message
-                $('#no_detection_message_content').hide();
-
-                //appearing the loader
-                $('#detection_loader').attr('hidden', false);
-
-                let img_src_arr = e.target.src.split('/');
-                let len = img_src_arr.length;
-                let src = img_src_arr[len - 1];
-                let frame_name_arr = src.split('.');
-                let frame_name = frame_name_arr[0];
-
-                //fetching the detection for the selected frame
-                fetch('http://127.0.0.1:8000/get-lecture-activity-frame-detection/?video_name=' + global_video_name + "&frame_name=" + frame_name)
-                    .then((res) => res.json())
-                    .then((out) => displayDetections(out.detections, frame_name))
-                    .catch((error) => alert('this is an error'));
-
-            });
-
-            //the function to display detections
-            function displayDetections(detections, frame_name) {
-                let img_string = '';
-                let no_of_detections = detections.length;
-
-                //disabling the loader
-                $('#detection_loader').attr('hidden', true);
-
-                //appearing the no of detections number area
-                $('#detection_number_area').attr('hidden', false);
-                $('#no_of_detections').text(no_of_detections);
-
-                detections.map((detection) => {
-                    img_string += "<img src='{% static '' %}FirstApp/activity/" + global_video_name + "/" + frame_name + "/" + detection + "' class='detections m-2' width='100' height='100' >"
-                });
-
-                $('#detection_frames').prepend(img_string);
-
-            }
-
-
-            //listening for click events in labels
-            $('.labels').click(function () {
-
-                let label = Number($(this).attr('data-number'));
-                let label_name = $(this).attr('data-label');
-
-                //removing the previous student detection lists
-                $('.student_detection_lists').remove();
-
-                //appearing the loader
-                $('#detection_student_loader').attr('hidden', false);
-                //appearing the loader
-                $('#activity_type').attr('hidden', false);
-                $('#activity_type_text').text(label_name);
-                //disappearing the no content message
-                $('#no_detection_student_content').attr('hidden', true);
-
-                //fetching from the api
-                fetch('http://127.0.0.1:8000/get-lecture-activity-detection-for-label/?video_name=' + global_video_name + '&label=' + label)
-                    .then((res) => res.json())
-                    .then((out) => createDetectedStudentFrames(out))
-                    .catch((error) => alert('this is the error: ' + error))
-            });
-
-
-            //creating the detected students frames
-            function createDetectedStudentFrames(detections) {
-
-                let htmlString = "";
-                //iterating through the student
-                detections.people.map((student) => {
-
-                    let title = student.split('.')[0];
-                    let images = "";
-                    htmlString += "<div class='row p-3 student-detection-rows'>";
-
-                    let student_count = 0;
-
-                    //iterating through the frames
-                    detections.response.map((frame) => {
-                        let frame_detections = frame.detections;
-
-                        if (frame_detections.includes(student)) {
-
-
-                            if (student_count === 0) {
-                                images += "<li class='list-group-item frame-0' id='image_0_" + title + "'>";
-                            } else {
-                                images += "<li class='list-group-item other-student-frames' id='image_" + student_count + "_" + title + "' hidden>";
-                            }
-
-                            images += "<img src='{% static '' %}FirstApp/Activity/" + global_video_name + "/" + frame.frame + "/" + student + "' width='200' height='200'>";
-                            images += "</li>";
-
-                            //increment the student count
-                            student_count++;
-                        }
-                    });
-
-                    htmlString += "<ul class='list-group'>";
-                    htmlString += "<li class='list-group-item'>";
-                    htmlString += "<div class='row m-3'>";
-                    htmlString += "<h4 class='font-weight-bold'>Student ID: <span>" + title + "</span></h4>";
-                    htmlString += "</div>";
-                    htmlString += "</li>";
-                    {#htmlString += "<div class='row m-3'></div>";#}
-                    htmlString += "<li class='list-group-item'>";
-                    htmlString += "<div class='row'>";
-                    htmlString += "<ul class='list-group list-group-horizontal student_detection_lists' style='overflow-x: scroll'>";
-                    htmlString += images;
-                    htmlString += "</ul>";
-                    htmlString += "</div>";
-                    htmlString += "</li>";
-                    htmlString += "<li class='list-group-item'>";
-                    htmlString += "<div class='slidecontainer'>";
-                    htmlString += "<div class='row m-3'></div>";
-                    htmlString += "<div class='row'>";
-                    htmlString += "<span><i class='fas fa-play play-pause-icon-student-frames' id='icon_" + title + "'></i></span>";
-                    htmlString += "</div>";
-                    htmlString += "<input type='range' min='1' max='100' value='0' class='slider' id='slider_" + title + "'>";
-                    htmlString += "<p>No of frames: <span id='demo_" + title + "'></span></p>";
-                    htmlString += "</div>";
-                    htmlString += "</div>";
-                    htmlString += "</li>";
-                    htmlString += "</ul>";
-                });
-
-                //disappearing the loader
-                $('#detection_student_loader').attr('hidden', true);
-
-                //append to the relevant html card content
-                $('#detection_students').append(htmlString);
-
-            }
-
-
-            let studentTimeVar = null;
-
-            //playing the frames for each student detection
-            $(document).on('click', '.play-pause-icon-student-frames', function (e) {
-
-                //defining the two possible classes
-                let play_class = "fas fa-play play-pause-icon-student-frames";
-                let pause_class = "fas fa-pause play-pause-icon-student-frames";
-
-
-                //retrieving the current icon class
-                let current_class = $(this).attr('class');
-
-
-                //assigning the correct class based on the icon clicked
-                let new_class = (current_class === play_class) ? pause_class : play_class;
-
-
-                //setting the new class
-                $(this).attr('class', new_class);
-
-                //extracting the title pf the clicked icon
-                let title_part = $(this).attr('id');
-                let title = title_part.split("_")[1];
-
-
-                //handling the slider
-                let slider = document.getElementById("slider_" + title);
-                let output = document.getElementById("demo_" + title);
-
-
-                //when the button is playing
-                if (current_class === play_class) {
-                    studentTimeVar = setInterval(() => {
-                        let value = slider.value;
-                        let new_slider_value = Number(value) + 1;
-                        slider.value = new_slider_value;
-                        output.innerHTML = new_slider_value.toString();
-
-
-                        let selectedImage = '#image_' + Number(value) + '_' + title;
-
-                        //displaying the relevant image
-                        $('#image_0_' + title).html($(selectedImage).html());
-
-                    }, 100);
-                }
-
-                //when the button is paused
-                else if (current_class === pause_class) {
-                    clearInterval(studentTimeVar);
-                }
-
-            });
-
-            //this is to handle the 'evaluate' button
-            $('#evaluate_button').click(function () {
-
-                //hide the message
-                $('#no_evaluated_student_content').attr('hidden', true);
-                //show the loader
-                $('#evaluate_student_loader').attr('hidden', false);
-
-
-                //using the fetch api
-                fetch('http://127.0.0.1:8000/get-lecture-activity-student-evaluation/?video_name=' + global_video_name)
-                    .then((res) => res.json())
-                    .then((out) => evaluate_student(out))
-                    .catch((error) => alert('this is the error: ' + error))
-            });
-
-
-            //to create html for evaluate function
-            function evaluate_student(response) {
-                let htmlString = "";
-                //iterating through the student
-                response.people.map((student) => {
-
-                    let title = student.split('.')[0];
-                    let images = "";
-                    htmlString += "<div class='row p-3 student-evaluation-rows'>";
-
-                    let student_count = 0;
-
-                    //iterating through the frames
-                    response.response.map((frame) => {
-                        let frame_detections = frame.detections;
-                        let frame_detection_length = frame_detections.length;
-
-                        if (frame_detections.includes(student)) {
-
-
-                            if (student_count === 0) {
-                                images += "<li class='list-group-item frame-0' id='image_0_evaluation" + title + "'>";
-                            } else {
-                                images += "<li class='list-group-item other-student-frames' id='image_evaluation" + student_count + "_" + title + "' hidden>";
-                            }
-
-                            images += "<img src='{% static '' %}FirstApp/Activity/" + global_video_name + "/" + frame.frame + "/" + student + "' width='200' height='200'>";
-                            images += "</li>";
-
-                            if (student_count === (frame_detection_length)) {
-                                images += "<li class='list-group-item'>";
-                                images += "<button type='button' class='btn btn-dark individual-evaluation' id='evaluate_student_" + title + "'>evaluate</button>";
-                                images += "</li>";
-                            }
-
-
-                            //increment the student count
-                            student_count++;
-                        }
-                    });
-
-                    htmlString += "<ul class='list-group'>";
-                    htmlString += "<li class='list-group-item'>";
-                    htmlString += "<div class='row m-3'>";
-                    htmlString += "<h4 class='font-weight-bold'>Student ID: <span>" + title + "</span></h4>";
-                    htmlString += "</div>";
-                    htmlString += "</li>";
-                    {#htmlString += "<div class='row m-3'></div>";#}
-                    htmlString += "<li class='list-group-item'>";
-                    htmlString += "<div class='row'>";
-                    htmlString += "<ul class='list-group list-group-horizontal student_detection_lists' style='overflow-x: scroll'>";
-                    htmlString += images;
-                    htmlString += "</ul>";
-                    htmlString += "</div>";
-                    htmlString += "</li>";
-                    htmlString += "<li class='list-group-item'>";
-                    htmlString += "<div class='slidecontainer'>";
-                    htmlString += "<div class='row m-3'></div>";
-                    htmlString += "<div class='row'>";
-                    htmlString += "<span><i class='fas fa-play play-pause-icon-student-evaluations' id='icon_" + title + "'></i></span>";
-                    htmlString += "</div>";
-                    htmlString += "<input type='range' min='1' max='100' value='0' class='slider' id='slider_evaluation" + title + "'>";
-                    htmlString += "<p>No of frames: <span id='demo_evaluation" + title + "'></span></p>";
-                    htmlString += "</div>";
-                    htmlString += "</div>";
-                    htmlString += "</li>";
-                    htmlString += "</ul>";
-                });
-
-                //disappearing the loader
-                $('#evaluate_student_loader').attr('hidden', true);
-
-                //append to the relevant html card content
-                $('#evaluation_students').append(htmlString);
-
-            }
-
-
-            //interval variable for individual students
-            let studentEvaluationVar = null;
-
-            //playing the frames for each student evaluation
-            $(document).on('click', '.play-pause-icon-student-evaluations', function (e) {
-
-                //defining the two possible classes
-                let play_class = "fas fa-play play-pause-icon-student-evaluations";
-                let pause_class = "fas fa-pause play-pause-icon-student-evaluations";
-
-
-                //retrieving the current icon class
-                let current_class = $(this).attr('class');
-
-
-                //assigning the correct class based on the icon clicked
-                let new_class = (current_class === play_class) ? pause_class : play_class;
-
-
-                //setting the new class
-                $(this).attr('class', new_class);
-
-                //extracting the title pf the clicked icon
-                let title_part = $(this).attr('id');
-                let title = title_part.split("_")[1];
-
-
-                //handling the slider
-                let slider = document.getElementById("slider_evaluation" + title);
-                let output = document.getElementById("demo_evaluation" + title);
-
-
-                //when the button is playing
-                if (current_class === play_class) {
-                    studentEvaluationVar = setInterval(() => {
-                        let value = slider.value;
-                        let new_slider_value = Number(value) + 1;
-                        slider.value = new_slider_value;
-                        output.innerHTML = new_slider_value.toString();
-
-
-                        let selectedImage = '#image_evaluation' + Number(value) + '_' + title;
-
-                        //displaying the relevant image
-                        $('#image_0_evaluation' + title).html($(selectedImage).html());
-
-                    }, 100);
-                }
-
-                //when the button is paused
-                else if (current_class === pause_class) {
-                    clearInterval(studentEvaluationVar);
-                }
-
-            });
-            //end of student evaluation video frame
-
-
-             //to evaluate the individual student
-            $(document).on('click', '.individual-evaluation', function (e) {
-
-                let individual_id = $(this).attr('id');
-                let student_name = individual_id.split('_')[2];
-                student_name += ".png";
-                let html = $(this).html();
-
-                //after clicking, change the html
-                $(this).html("<span class='font-italic'>loading...</span>");
-
-
-                //fetching from the API
-                fetch('http://127.0.0.1:8000/get-lecture-activity-individual-student-evaluation/?video_name=' + global_video_name + '&student_name=' + student_name)
-                    .then((res) => res.json())
-                    .then((out) => displayIndividualStudentActivity(out.response, e, student_name))
-                    .catch((error) => alert('something went wrong'));
-
-
-            });
-
-
-            //this function will display the individual student emotions
-            function displayIndividualStudentActivity(res, e, title) {
-
-                let phone_perct = Math.round(res.phone_perct, 1);
-                let writing_perct = Math.round(res.writing_perct, 1);
-                let listening_perct = Math.round(res.listening_perct, 1);
-
-                //set the percentage values
-                //$('#talking_individual_perct').text(res.talking_perct + '%');
-                $('#phone_individual_perct').text(phone_perct + '%');
-                $('#writing_individual_perct').text(writing_perct + '%');
-                $('#listening_individual_perct').text(listening_perct + '%');
-
-                //set the width
-                //$('#talking_individual_width').width(res.talking_perct + '%');
-                $('#phone_individual_width').width(phone_perct + '%');
-                $('#writing_individual_width').width(writing_perct + '%');
-                $('#listening_individual_width').width(listening_perct + '%');
-
-                //open the student individual modal
-                $('#student_individual_modal').modal();
-
-                //set the button to default
-                e.target.innerHTML = "<span>evaluate</span>";
-
-            }
-
-
             //to handle the 'integrate' modal
             $('#integrate_activity').click(function () {
                 //define the student video src
@@ -754,9 +247,9 @@
 
                 //fetch data from the API
                 fetch('http://127.0.0.1:8000/get-lecture-activity-for-frame?video_name=' + global_video_name)
-                .then((res) => res.json())
-                .then((out) => displayActivityRecognitionForFrame(out.response))
-                .catch((err) => alert('error: ' + err));
+                    .then((res) => res.json())
+                    .then((out) => displayActivityRecognitionForFrame(out.response))
+                    .catch((err) => alert('error: ' + err));
 
             });
 
@@ -772,37 +265,37 @@
 
                 //creating the html string, iteratively
                 response.map((frame) => {
-                   let frame_name = frame.frame_name;
-                   let phone_perct = Math.round(frame.phone_perct, 0);
-                   let listen_perct = Math.round(frame.listen_perct, 0);
-                   {#let listen_perct = Math.round(frame.listening_perct, 0);#}
-                   let note_perct = Math.round(frame.note_perct, 0);
+                    let frame_name = frame.frame_name;
+                    let phone_perct = Math.round(frame.phone_perct, 0);
+                    let listen_perct = Math.round(frame.listen_perct, 0);
+                    {#let listen_perct = Math.round(frame.listening_perct, 0);#}
+                    let note_perct = Math.round(frame.note_perct, 0);
 
-                   //append to the html string
-                   //phone checking
-                   htmlString += "<div class='progress_area' id='progress_" +frame_name+ "' hidden>";
-                   htmlString += "<h4 class='small font-weight-bold'>Phone checking</h4>";
-                   htmlString += "<span class='float-right' id='phone_checking_instant_" +frame_name+ "'>" +phone_perct+ "%</span>";
-                   htmlString += "<div class='progress mb-4'>";
-                   htmlString += "<div class='progress-bar bg-warning' role='progressbar' id='phone_checking_instant_value_" +frame_name+ "' style='width: " +phone_perct+ "%' aria-valuenow='40' aria-valuemin='0' aria-valuemax='100'></div>";
-                   htmlString += "</div>";
+                    //append to the html string
+                    //phone checking
+                    htmlString += "<div class='progress_area' id='progress_" + frame_name + "' hidden>";
+                    htmlString += "<h4 class='small font-weight-bold'>Phone checking</h4>";
+                    htmlString += "<span class='float-right' id='phone_checking_instant_" + frame_name + "'>" + phone_perct + "%</span>";
+                    htmlString += "<div class='progress mb-4'>";
+                    htmlString += "<div class='progress-bar bg-warning' role='progressbar' id='phone_checking_instant_value_" + frame_name + "' style='width: " + phone_perct + "%' aria-valuenow='40' aria-valuemin='0' aria-valuemax='100'></div>";
+                    htmlString += "</div>";
 
-                   //note taking
-                   htmlString += "<h4 class='small font-weight-bold'>Writing</h4>";
-                   htmlString += "<span class='float-right' id='note_taking_instant_" +frame_name+ "'>" +note_perct+ "%</span>";
-                   htmlString += "<div class='progress mb-4'>";
-                   htmlString += "<div class='progress-bar' role='progressbar' id='note_taking_instant_value_" +frame_name+ "' style='width: " +note_perct+ "%' aria-valuenow='0' aria-valuemin='0' aria-valuemax='100'></div>";
-                   htmlString += "</div>";
+                    //note taking
+                    htmlString += "<h4 class='small font-weight-bold'>Writing</h4>";
+                    htmlString += "<span class='float-right' id='note_taking_instant_" + frame_name + "'>" + note_perct + "%</span>";
+                    htmlString += "<div class='progress mb-4'>";
+                    htmlString += "<div class='progress-bar' role='progressbar' id='note_taking_instant_value_" + frame_name + "' style='width: " + note_perct + "%' aria-valuenow='0' aria-valuemin='0' aria-valuemax='100'></div>";
+                    htmlString += "</div>";
 
-                   //listening
-                   htmlString += "<h4 class='small font-weight-bold'>Listening</h4>";
-                   htmlString += "<span class='float-right' id='listening_instant_" +frame_name+ "'>" +listen_perct+ "%</span>";
-                   htmlString += "<div class='progress mb-4'>";
-                   htmlString += "<div class='progress-bar bg-info' role='progressbar' id='listening_instant_value_" +frame_name+ "' style='width: " +listen_perct+ "%' aria-valuenow='80' aria-valuemin='0' aria-valuemax='100'></div>";
-                   htmlString += "</div>";
+                    //listening
+                    htmlString += "<h4 class='small font-weight-bold'>Listening</h4>";
+                    htmlString += "<span class='float-right' id='listening_instant_" + frame_name + "'>" + listen_perct + "%</span>";
+                    htmlString += "<div class='progress mb-4'>";
+                    htmlString += "<div class='progress-bar bg-info' role='progressbar' id='listening_instant_value_" + frame_name + "' style='width: " + listen_perct + "%' aria-valuenow='80' aria-valuemin='0' aria-valuemax='100'></div>";
+                    htmlString += "</div>";
 
-                   //ending the progress area
-                   htmlString += "</div>";
+                    //ending the progress area
+                    htmlString += "</div>";
 
                 });
 
@@ -893,20 +386,18 @@
                 $('#generate_report_message').hide();
 
 
-
                 fetch('http://127.0.0.1:8000/lecture-activity-report-generation/?lecturer=' + global_lecturer + '&subject=' + global_subject + '&date=' + global_lecture_date)
-                .then((res) => res.json())
-                .then((out) => {
-                    //show the loader and loading message
-                    $('#generate_report_loader').attr('hidden', true);
-                    $('#generate_report_loading_message').attr('hidden', true);
-                    $('#generateReportModal').modal('hide');
-                })
-                .catch((err) => alert('error: ' + err))
+                    .then((res) => res.json())
+                    .then((out) => {
+                        //show the loader and loading message
+                        $('#generate_report_loader').attr('hidden', true);
+                        $('#generate_report_loading_message').attr('hidden', true);
+                        $('#generateReportModal').modal('hide');
+                    })
+                    .catch((err) => alert('error: ' + err))
 
 
             });
-
 
 
         });
@@ -931,11 +422,11 @@
                     {% load static %}
 
                     <!-- Page Heading -->
-{#                    <div class="d-sm-flex align-items-center justify-content-between mb-4">#}
-{#                        <h1 class="h3 mb-0 text-gray-800">Student Activity Recognition</h1>#}
-{#                        <button type="button" data-target="#generateReportModal" data-toggle="modal" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" id="generate_report_before" disabled><i#}
-{#                                class="fas fa-download fa-sm text-white-50"></i> Generate Report</button>#}
-{#                    </div>#}
+                    {#                    <div class="d-sm-flex align-items-center justify-content-between mb-4">#}
+                    {#                        <h1 class="h3 mb-0 text-gray-800">Student Activity Recognition</h1>#}
+                    {#                        <button type="button" data-target="#generateReportModal" data-toggle="modal" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" id="generate_report_before" disabled><i#}
+                    {#                                class="fas fa-download fa-sm text-white-50"></i> Generate Report</button>#}
+                    {#                    </div>#}
 
 
                     <!--first row -->
@@ -1084,80 +575,67 @@
                                                          alt="Loader">
                                                 </div>
 
-                                                <!--frames -->.
-                                                <div class="text-center p-4" id="video_frames">
-                                                    <!-- slide container -->
-                                                    <div id="slidecontainer" hidden>
-                                                        <div class="row m-3"></div>
-                                                        <!-- play/pause icon -->
-                                                        <div class="row">
-                                                            <span><i class="fas fa-play"
-                                                                     id="play_pause_icon_activity"></i></span>
-                                                        </div>
-                                                        <input type="range" min="1" max="100" value="0" class="slider"
-                                                               id="myActivityRange">
-                                                        <p>No of frames: <span id="demo"></span></p>
+                                                <!--this area will display the progress bars -->
+                                                <div class="progress_area mt-4" hidden>
+                                                    <!--talking with friends -->
+                                                    <a href="#" class="btn btn-link labels" data-number="1"
+                                                       data-label="talking-with-friends">
+                                                        <h4 class="small font-weight-bold">Talking with friends</h4>
+                                                    </a>
+                                                    <span class="float-right" id="talking_perct">40%</span>
+                                                    <div class="progress mb-4">
+                                                        <div class="progress-bar bg-danger" role="progressbar"
+                                                             id="talking_width"
+                                                             style="width: 20%"
+                                                             aria-valuenow="20" aria-valuemin="0"
+                                                             aria-valuemax="100"></div>
                                                     </div>
+
+                                                    <!--phone checking -->
+                                                    <a href="#" class="btn btn-link labels" data-number="0"
+                                                       data-label="phone-checking">
+                                                        <h4 class="small font-weight-bold">Phone checking</h4>
+                                                    </a>
+                                                    <span class="float-right" id="phone_perct">45%</span>
+                                                    <div class="progress mb-4">
+                                                        <div class="progress-bar bg-warning" role="progressbar"
+                                                             id="phone_width"
+                                                             style="width: 40%"
+                                                             aria-valuenow="40" aria-valuemin="0"
+                                                             aria-valuemax="100"></div>
+                                                    </div>
+
+                                                    <!--note taking -->
+                                                    <a href="#" class="btn btn-link labels" data-number="2"
+                                                       data-label="note-taking">
+                                                        <h4 class="small font-weight-bold">Writing</h4>
+                                                    </a>
+                                                    <span class="float-right" id="writing_perct">50%</span>
+                                                    <div class="progress mb-4">
+                                                        <div class="progress-bar" role="progressbar" id="writing_width"
+                                                             style="width: 60%"
+                                                             aria-valuenow="60" aria-valuemin="0"
+                                                             aria-valuemax="100"></div>
+                                                    </div>
+
+                                                    <!--listening-->
+                                                    <a href="#" class="btn btn-link labels">
+                                                        <h4 class="small font-weight-bold">Listening</h4>
+                                                    </a>
+                                                    <span class="float-right" id="listening_perct">60%</span>
+                                                    <div class="progress mb-4">
+                                                        <div class="progress-bar bg-info" role="progressbar"
+                                                             id="listening_width" style="width: 80%"
+                                                             aria-valuenow="80" aria-valuemin="0"
+                                                             aria-valuemax="100"></div>
+                                                    </div>
+
                                                 </div>
+
+
+
                                             </div>
 
-                                            <!--this area will display the progress bars -->
-                                            <div class="progress_area" hidden>
-                                                <!--talking with friends -->
-                                                <a href="#" class="btn btn-link labels" data-number="1"
-                                                   data-label="talking-with-friends">
-                                                    <h4 class="small font-weight-bold">Talking with friends</h4>
-                                                </a>
-                                                <span class="float-right" id="talking_perct">40%</span>
-                                                <div class="progress mb-4">
-                                                    <div class="progress-bar bg-danger" role="progressbar"
-                                                         id="talking_width"
-                                                         style="width: 20%"
-                                                         aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
-                                                </div>
-
-                                                <!--phone checking -->
-                                                <a href="#" class="btn btn-link labels" data-number="0"
-                                                   data-label="phone-checking">
-                                                    <h4 class="small font-weight-bold">Phone checking</h4>
-                                                </a>
-                                                <span class="float-right" id="phone_perct">45%</span>
-                                                <div class="progress mb-4">
-                                                    <div class="progress-bar bg-warning" role="progressbar"
-                                                         id="phone_width"
-                                                         style="width: 40%"
-                                                         aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
-                                                </div>
-
-                                                <!--note taking -->
-                                                <a href="#" class="btn btn-link labels" data-number="2"
-                                                   data-label="note-taking">
-                                                    <h4 class="small font-weight-bold">Writing</h4>
-                                                </a>
-                                                <span class="float-right" id="writing_perct">50%</span>
-                                                <div class="progress mb-4">
-                                                    <div class="progress-bar" role="progressbar" id="writing_width"
-                                                         style="width: 60%"
-                                                         aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
-                                                </div>
-
-                                                <!--listening-->
-                                                <a href="#" class="btn btn-link labels">
-                                                    <h4 class="small font-weight-bold">Listening</h4>
-                                                </a>
-                                                <span class="float-right" id="listening_perct">60%</span>
-                                                <div class="progress mb-4">
-                                                    <div class="progress-bar bg-info" role="progressbar"
-                                                         id="listening_width" style="width: 80%"
-                                                         aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
-                                                </div>
-
-                                                <!--evaluate button -->
-                                                <button type="button" class="btn btn-danger float-right"
-                                                        id="evaluate_button">Evaluate
-                                                </button>
-
-                                            </div>
 
                                         </div>
 
@@ -1250,32 +728,32 @@
 
                         <!--1st column -->
                         <div class="col-lg-6">
-{#                            <!--card -->#}
-{#                            <div class="card shadow mb-4">#}
-{#                                <!--card header -->#}
-{#                                <div class="card-header">#}
-{#                                    <h5 class="m-0 font-weight-bold text-primary">Evaluated Students</h5>#}
-{#                                </div>#}
-{##}
-{#                                <!--card body -->#}
-{#                                <div class="card-body" id="evaluation_students">#}
-{##}
-{#                                    <!--no content message-->#}
-{#                                    <div class="text-center p-2" id="no_evaluated_student_content">#}
-{#                                        <span class="font-italic">Press 'Evaluate' button to evaluate students</span>#}
-{#                                    </div>#}
-{##}
-{#                                    <!--the detection student loader -->#}
-{#                                    <div class="text-center p-2" id="evaluate_student_loader" hidden>#}
-{#                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"#}
-{#                                             alt="Loader">#}
-{#                                    </div>#}
-{#                                    <!--end of student detection loader -->#}
-{##}
-{##}
-{#                                </div>#}
-{##}
-{#                            </div>#}
+                            {#                            <!--card -->#}
+                            {#                            <div class="card shadow mb-4">#}
+                            {#                                <!--card header -->#}
+                            {#                                <div class="card-header">#}
+                            {#                                    <h5 class="m-0 font-weight-bold text-primary">Evaluated Students</h5>#}
+                            {#                                </div>#}
+                            {##}
+                            {#                                <!--card body -->#}
+                            {#                                <div class="card-body" id="evaluation_students">#}
+                            {##}
+                            {#                                    <!--no content message-->#}
+                            {#                                    <div class="text-center p-2" id="no_evaluated_student_content">#}
+                            {#                                        <span class="font-italic">Press 'Evaluate' button to evaluate students</span>#}
+                            {#                                    </div>#}
+                            {##}
+                            {#                                    <!--the detection student loader -->#}
+                            {#                                    <div class="text-center p-2" id="evaluate_student_loader" hidden>#}
+                            {#                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"#}
+                            {#                                             alt="Loader">#}
+                            {#                                    </div>#}
+                            {#                                    <!--end of student detection loader -->#}
+                            {##}
+                            {##}
+                            {#                                </div>#}
+                            {##}
+                            {#                            </div>#}
 
 
                         </div>
@@ -1448,7 +926,8 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-dismiss="modal" id="generate_report_btn">Yes</button>
+                    <button type="button" class="btn btn-primary" data-dismiss="modal" id="generate_report_btn">Yes
+                    </button>
                     <button type="button" class="btn btn-danger" data-dismiss="modal">No</button>
                 </div>
             </div>
@@ -1498,7 +977,7 @@
                                     <div class="progress mb-4">
                                         <div class="progress-bar bg-danger" role="progressbar"
                                              id="talking_instant_value"
-{#                                             style="width: 0%"#}
+                                                {#                                             style="width: 0%"#}
                                              aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
                                     </div>
 
@@ -1509,7 +988,7 @@
                                     <div class="progress mb-4">
                                         <div class="progress-bar bg-warning" role="progressbar"
                                              id="phone_checking_instant_value"
-{#                                             style="width: 0%"#}
+                                                {#                                             style="width: 0%"#}
                                              aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
                                     </div>
 
@@ -1520,7 +999,7 @@
                                     <div class="progress mb-4">
                                         <div class="progress-bar" role="progressbar"
                                              id="note_taking_instant_value"
-{#                                             style="width: 0%"#}
+                                                {#                                             style="width: 0%"#}
                                              aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
                                     </div>
 
@@ -1531,7 +1010,7 @@
                                     <div class="progress mb-4">
                                         <div class="progress-bar bg-info" role="progressbar"
                                              id="listening_instant_value"
-{#                                             style="width: 80%"#}
+                                                {#                                             style="width: 80%"#}
                                              aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
                                     </div>
 
@@ -1554,11 +1033,11 @@
                                     </div>
 
                                     <!-- video -->
-{#                                    <video width="500" height="300" id="lecturer_video" controls>#}
-{#                                        <source src="#"#}
-{#                                                type="video/mp4">#}
-{#                                        Your browser does not support the video tag.#}
-{#                                    </video>#}
+                                    {#                                    <video width="500" height="300" id="lecturer_video" controls>#}
+                                    {#                                        <source src="#"#}
+                                    {#                                                type="video/mp4">#}
+                                    {#                                        Your browser does not support the video tag.#}
+                                    {#                                    </video>#}
 
                                 </div>
                                 <!--end of lecture video section -->
