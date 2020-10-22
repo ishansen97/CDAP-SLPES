@@ -632,7 +632,7 @@ def processAdminLogin(request):
             request.session['admin'] = admin.id
             request.session['user_type'] = "Admin"
 
-            return redirect('/summary/lecture')
+            return redirect('/lecturer')
 
         else:
             message = "Please provide correct credntials"
