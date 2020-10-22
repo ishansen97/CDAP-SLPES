@@ -300,7 +300,6 @@ class LectureActivityProcess(APIView):
         LectureActivity(
             lecture_activity_id=new_lecture_activity_id,
             lecture_video_id_id=lec_video_id,
-            talking_perct=percentages['talking_perct'],
             phone_perct=percentages['phone_perct'],
             listening_perct=percentages['listening_perct'],
             writing_perct=percentages['writing_perct']
@@ -473,16 +472,18 @@ class LectureEmotionProcess(APIView):
         pass
 
     def save_emotion_report(self, lec_video_id, percentages):
-        lec_video = LectureVideo.objects.get(lecture_video_id=lec_video_id)
+        lec_video = LectureVideo.objects.filter(lecture_video_id=lec_video_id)
         lec_video_serializer = LectureVideoSerializer(lec_video, many=True)
         lec_video_data = lec_video_serializer.data[0]
         last_lec_emotion = LectureEmotionReport.objects.order_by('lecture_emotion_id').last()
         new_lecture_emotion_id = ig.generate_new_id(last_lec_emotion.lecture_emotion_id)
 
+        lecture_video_id = lec_video_data['id']
+
         # creating a new lecture emotion report
         LectureEmotionReport(
             lecture_emotion_id=new_lecture_emotion_id,
-            lecture_video_id=lec_video,
+            lecture_video_id_id=lecture_video_id,
             happy_perct=percentages.happy_perct,
             sad_perct=percentages.sad_perct,
             angry_perct=percentages.angry_perct,
@@ -685,17 +686,23 @@ class ProcessLectureGazeEstimation(APIView):
         pass
 
     def estimate_gaze(self, lec_video_id, percentages):
-        lec_video = LectureVideo.objects.get(lecture_video_id=lec_video_id)
+        lec_video = LectureVideo.objects.filter(lecture_video_id=lec_video_id)
         last_lec_gaze = LectureGazeEstimation.objects.order_by('lecture_gaze_id').last()
         lec_video_serializer = LectureVideoSerializer(lec_video, many=True)
         lec_video_data = lec_video_serializer.data[0]
         new_lecture_gaze_id = "LG000001" if (last_lec_gaze is None) else ig.generate_new_id(
             last_lec_gaze.lecture_gaze_id)
+        new_lecture_gaze_primary_id = 1 if (last_lec_gaze is None) else int(last_lec_gaze.id) + 1
+
+
+        # get the video id
+        lecture_video_id = lec_video_data['id']
 
         # creating a new lecture gaze estimation
         LectureGazeEstimation(
+            id=new_lecture_gaze_primary_id,
             lecture_gaze_id=new_lecture_gaze_id,
-            lecture_video_id=lec_video,
+            lecture_video_id_id=lecture_video_id,
             looking_up_and_right_perct=percentages['head_up_right_perct'],
             looking_up_and_left_perct=percentages['head_up_left_perct'],
             looking_down_and_right_perct=percentages['head_down_right_perct'],
@@ -723,7 +730,7 @@ class GetLectureGazeEstimationViewSet(APIView):
         lecture_video_id = request.query_params.get('lecture_video_id')
         lecture_video_name = request.query_params.get('lecture_video_name')
         # retrieve the extracted frames
-        extracted = hge.getExtractedFrames(lecture_video_name)
+        # extracted = hge.getExtractedFrames(lecture_video_name)
 
         lecture_gaze_estimations = LectureGazeEstimation.objects.filter(
             lecture_video_id__lecture_video_id=lecture_video_id)
@@ -731,7 +738,7 @@ class GetLectureGazeEstimationViewSet(APIView):
 
         return Response({
             "response": serializer.data,
-            "extracted": extracted
+            # "extracted": extracted
         })
 
 

@@ -144,18 +144,10 @@ def process_gaze_estimation(video_path):
     VIDEO_PATH = os.path.join(BASE_DIR, "assets\\FirstApp\\videos\\{}".format(video_path))
     GAZE_DIR = os.path.join(BASE_DIR, "static\\FirstApp\\gaze")
 
-    # create a folder with the same name as the video
-    VIDEO_DIR = os.path.join(GAZE_DIR, video_path)
 
     # define a dictionary to return the percentage values
     percentages = {}
 
-    # checking whether the video directory exist
-    if os.path.isdir(VIDEO_DIR):
-        shutil.rmtree(VIDEO_DIR)
-
-    # create the new directory
-    os.mkdir(VIDEO_DIR)
 
     # load the face detection model
     face_model = get_face_detector()
@@ -201,6 +193,9 @@ def process_gaze_estimation(video_path):
          [0, focal_length, center[1]],
          [0, 0, 1]], dtype="double"
     )
+
+    # for testing purposes
+    print('starting the gaze estimation process')
 
     # iterate the video frames
     while True:
@@ -285,35 +280,39 @@ def process_gaze_estimation(video_path):
 
                 # checking for vertical and horizontal directions
                 if isLookingDown & isLookingRight:
-                    cv2.putText(img, 'looking down and right', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
+                    # cv2.putText(img, 'looking down and right', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     head_down_right_count += 1
                 elif isLookingDown & isLookingLeft:
-                    cv2.putText(img, 'looking down and left', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
+                    # cv2.putText(img, 'looking down and left', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     head_down_left_count += 1
                 elif isLookingUp & isLookingRight:
-                    cv2.putText(img, 'looking up and right', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
+                    # cv2.putText(img, 'looking up and right', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     head_up_right_count += 1
                 elif isLookingUp & isLookingLeft:
-                    cv2.putText(img, 'looking up and left', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
+                    # cv2.putText(img, 'looking up and left', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     head_up_left_count += 1
                 elif isLookingFront:
-                    cv2.putText(img, 'Head front', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
+                    # cv2.putText(img, 'Head front', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     head_front_count += 1
 
                 # indicate the student name
-                cv2.putText(img, student_name, (facebox[2], facebox[3]), font, 2, (255, 255, 128), 3)
+                # cv2.putText(img, student_name, (facebox[2], facebox[3]), font, 2, (255, 255, 128), 3)
 
                 # increment the face count
                 face_count += 1
 
             # naming the new image
-            image_name = "frame-{}.png".format(frame_count)
-
-            # new image path
-            image_path = os.path.join(VIDEO_DIR, image_name)
+            # image_name = "frame-{}.png".format(frame_count)
+            #
+            # # new image path
+            # image_path = os.path.join(VIDEO_DIR, image_name)
 
             # save the new image
-            cv2.imwrite(image_path, img)
+            # cv2.imwrite(image_path, img)
+
+
+            # for testing purposes
+            print('gaze estimation count: ', frame_count)
 
             # increment the frame count
             frame_count += 1
@@ -323,8 +322,8 @@ def process_gaze_estimation(video_path):
 
 
     # after extracting the frames, save the changes to static content
-    p = os.popen("python manage.py collectstatic", "w")
-    p.write("yes")
+    # p = os.popen("python manage.py collectstatic", "w")
+    # p.write("yes")
 
     # calculate percentages
     head_up_right_perct = (Decimal(head_up_right_count) / Decimal(face_count)) * 100
@@ -345,6 +344,9 @@ def process_gaze_estimation(video_path):
 
     cv2.destroyAllWindows()
     cap.release()
+
+    # for testing purposes
+    print('ending the gaze estimation process')
 
     # return the dictionary
     return percentages
@@ -370,7 +372,7 @@ def getExtractedFrames(lecture_video_name):
 
 
 # this method will retrieve lecture gaze estimation for each frame
-def get_lecture_gaze_esrimation_for_frames(video_name):
+def get_lecture_gaze_estimation_for_frames(video_name):
 
     # get the base directory
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -421,6 +423,10 @@ def get_lecture_gaze_esrimation_for_frames(video_name):
          [0, focal_length, center[1]],
          [0, 0, 1]], dtype="double"
     )
+
+
+    # for testing purposes
+    print('starting the gaze estimation for frames process')
 
     # iterate the video frames
     while True:
@@ -551,6 +557,9 @@ def get_lecture_gaze_esrimation_for_frames(video_name):
             # append the calculated percentages to the frame_detections
             frame_detections.append(percentages)
 
+            # for testing purposes
+            print('gaze estimation frame recognition count: ', frame_count)
+
             frame_count += 1
 
         else:
@@ -558,16 +567,17 @@ def get_lecture_gaze_esrimation_for_frames(video_name):
 
 
 
+    # for testing purposes
+    print('ending the gaze estimation for frames process')
+
+    # return the details
     return frame_detections, frame_rate
 
 
 # this method will get the student gaze estimation summary for period
 def get_student_gaze_estimation_summary_for_period(gaze_estimation_data):
-    # declare variables to add percentage values
-    phone_checking_perct_combined = 0.0
-    listening_perct_combined = 0.0
-    note_taking_perct_combined = 0.0
 
+    # declare variables to add percentage values
     looking_up_right_perct_combined = 0.0
     looking_up_left_perct_combined = 0.0
     looking_down_right_perct_combined = 0.0
@@ -601,16 +611,16 @@ def get_student_gaze_estimation_summary_for_period(gaze_estimation_data):
 
     # calculate the average percentages
     looking_up_right_average_perct = round((looking_up_right_perct_combined / no_of_gaze_estimations), 1)
-    looking_up_left_perct = round((looking_up_left_perct_combined / no_of_gaze_estimations), 1)
+    looking_up_left_average_perct = round((looking_up_left_perct_combined / no_of_gaze_estimations), 1)
     looking_down_right_average_perct = round((looking_down_right_perct_combined / no_of_gaze_estimations), 1)
     looking_down_left_average_perct = round((looking_down_left_perct_combined / no_of_gaze_estimations), 1)
     looking_front_average_perct = round((looking_front_perct_combined / no_of_gaze_estimations), 1)
 
     percentages = {}
     percentages["looking_up_and_right_perct"] = looking_up_right_average_perct
-    percentages["looking_up_and_left_perct"] = looking_up_left_perct_combined
-    percentages["looking_down_and_right_perct"] = looking_down_right_perct_combined
-    percentages["looking_down_and_left_perct"] = looking_down_left_perct_combined
+    percentages["looking_up_and_left_perct"] = looking_up_left_average_perct
+    percentages["looking_down_and_right_perct"] = looking_down_right_average_perct
+    percentages["looking_down_and_left_perct"] = looking_down_left_average_perct
     percentages["looking_front_perct"] = looking_front_average_perct
 
     return percentages, individual_lec_gaze_estimations, gaze_estimation_labels
@@ -677,6 +687,8 @@ def gaze_estimation_frame_groupings(video_name, frame_landmarks, frame_group_dic
         # assign the difference
         frame_group_diff[key] = diff if diff > 0 else 1
 
+    # for testing purposes
+    print('starting gaze frame grouping process')
 
     # looping through the frames
     while True:
@@ -802,6 +814,9 @@ def gaze_estimation_frame_groupings(video_name, frame_landmarks, frame_group_dic
                             frame_group_dict[frame_name]['detection_count'] += detection_count
 
 
+            # for testing purposes
+            print('gaze frame groupings count: ', frame_count)
+
             # increment the frame count
             frame_count += 1
 
@@ -848,12 +863,20 @@ def gaze_estimation_frame_groupings(video_name, frame_landmarks, frame_group_dic
     # define the labels
     labels = ['upright_perct', 'upleft_perct', 'downright_perct', 'downleft_perct', 'front_perct']
 
+
+    # for testing purposes
+    print('ending gaze frame grouping process')
+
     # return the dictionary
     return frame_group_dict, labels
 
 
 # this section will handle some database operations
 def save_frame_detections(video_name):
+
+    # for testing purposes
+    print('starting the saving gaze frame recognition process')
+
     # retrieve the lecture emotion id
     lec_gaze = LectureGazeEstimation.objects.filter(lecture_video_id__video_name=video_name)
     lec_gaze_ser = LectureGazeEstimationSerializer(lec_gaze, many=True)
@@ -868,7 +891,7 @@ def save_frame_detections(video_name):
         ig.generate_new_id(last_lec_gaze_frame_recognitions.lecture_gaze_frame_recognition_id)
 
     # calculate the frame detections
-    frame_detections, frame_rate = get_lecture_gaze_esrimation_for_frames(video_name)
+    frame_detections, frame_rate = get_lecture_gaze_estimation_for_frames(video_name)
 
     # to be added to the field 'frame_recognition_details' in the Lecture Gaze Frame Recordings
     frame_recognition_details = []
@@ -892,12 +915,19 @@ def save_frame_detections(video_name):
 
     lec_gaze_frame_recognitions.save()
 
+    # for testing purposes
+    print('ending the saving gaze frame recognition process')
+
     # now return the frame recognitions
     return frame_detections
 
 
 # this method will save gaze frame groupings to the database
 def save_frame_groupings(video_name, frame_landmarks, frame_group_dict):
+
+    # for testing purposes
+    print('starting the saving gaze frame groupings process')
+
 
     frame_group_percentages, gaze_labels = gaze_estimation_frame_groupings(video_name, frame_landmarks,
                                                                                frame_group_dict)
@@ -927,6 +957,9 @@ def save_frame_groupings(video_name, frame_landmarks, frame_group_dict):
     new_lec_gaze_frame_groupings.lecture_gaze_frame_groupings_id = new_lecture_gaze_frame_grouping_id
     new_lec_gaze_frame_groupings.lecture_gaze_id_id = lec_gaze_id
     new_lec_gaze_frame_groupings.frame_group_details = frame_group_details
+
+    # for testing purposes
+    print('ending the saving gaze frame groupings process')
 
     # save
     new_lec_gaze_frame_groupings.save()

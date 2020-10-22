@@ -216,6 +216,7 @@
             //to handle the 'btn-success' (process) button
             $(document).on('click', '.btn-success', function (e) {
 
+
                 //sending the POST request to process the lecture activities
                 fetch('http://127.0.0.1:8000/process-lecture-emotion/?lecture_video_name=' + global_video_name + '&lecture_video_id=' + global_lecture_video_id)
                     .then((res) => res.json())

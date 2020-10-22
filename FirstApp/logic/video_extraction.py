@@ -1,7 +1,8 @@
 import os
 import cv2
 import shutil
-import datetime
+# import datetime
+from datetime import timedelta
 
 from FirstApp.MongoModels import *
 from FirstApp.serializers import *
@@ -94,7 +95,7 @@ def getTimeLandmarks(video_name):
     THRESHOLD_GAP = 5
 
     # calculating the real duration
-    real_duration = datetime.timedelta(seconds=(duration+THRESHOLD_GAP))
+    real_duration = timedelta(seconds=(duration))
 
     # defines the number of seconds included for a frame group
     THRESHOLD_TIME = 10
@@ -112,7 +113,7 @@ def getTimeLandmarks(video_name):
     # loop through the threshold gap limit to define the time landmarks
     for i in range(THRESHOLD_GAP):
         initial_landmark += unit_gap
-        time_landmark = str(datetime.timedelta(seconds=initial_landmark))
+        time_landmark = str(timedelta(seconds=initial_landmark))
         time_landmark_value = initial_landmark
         time_landmarks.append(time_landmark)
         time_landmarks_values.append(time_landmark_value)
@@ -204,6 +205,9 @@ def getFrameLandmarks(video_name, category):
 # this section will handle some database operations
 def save_time_landmarks(video_name):
 
+    # for testing purposes
+    print('starting the saving time landmarks process')
+
     last_lec_video_time_landmarks = LectureVideoTimeLandmarks.objects.order_by('lecture_video_time_landmarks_id').last()
     new_lecture_video_time_landmarks_id = "LVTL00001" if (last_lec_video_time_landmarks is None) else \
             ig.generate_new_id(last_lec_video_time_landmarks.lecture_video_time_landmarks_id)
@@ -233,11 +237,17 @@ def save_time_landmarks(video_name):
     new_lec_video_time_landmarks.lecture_video_id_id = lec_video_id
     new_lec_video_time_landmarks.time_landmarks = db_time_landmarks
 
+    # for testing purposes
+    print('ending the saving time landmarks process')
+
     new_lec_video_time_landmarks.save()
 
 
 # this method will save frame landmarks to the database
 def save_frame_landmarks(video_name):
+
+    # for testing purposes
+    print('starting the saving frame landmarks process')
 
     # retrieve the previous lecture video frame landmarks details
     last_lec_video_frame_landmarks = LectureVideoFrameLandmarks.objects.order_by(
@@ -270,6 +280,9 @@ def save_frame_landmarks(video_name):
     new_lec_video_frame_landmarks.frame_landmarks = db_frame_landmarks
 
     new_lec_video_frame_landmarks.save()
+
+    # for testing purposes
+    print('ending the saving frame landmarks process')
 
     # now return the frame landmarks and the frame group dictionary
     return frame_landmarks, frame_group_dict

@@ -10,6 +10,7 @@ from .MongoModels import *
 from . models import VideoMeta
 from . logic import custom_sorter as cs
 from .logic import id_generator as ig
+from .logic import activity_recognition as ar
 
 
 # emotion recognition method
@@ -47,7 +48,6 @@ def detect_emotion(video):
     face_classifier = cv2.CascadeClassifier(os.path.join(BASE_DIR, 'FirstApp\classifiers\haarcascade_frontalface_default.xml'))
     classifier_path = os.path.join(BASE_DIR, 'FirstApp\classifiers\Emotion_little_vgg.h5')
     classifier = load_model(classifier_path)
-    path = ''
     meta_data = VideoMeta()
 
     class_labels = ['Angry', 'Happy', 'Neutral', 'Sad', 'Surprise']
@@ -65,6 +65,9 @@ def detect_emotion(video):
     count_neutral = 0
     count_surprise = 0
 
+    # for testing purposes
+    print('starting the emotion recognition process')
+
     while (count_frames < frame_count):
         # Grab a single frame of video
         ret, frame = cap.read()
@@ -72,52 +75,34 @@ def detect_emotion(video):
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = face_classifier.detectMultiScale(gray,1.3,5)
 
+        label = emotion_recognition(classifier, face_classifier, frame)
 
-        for (x, y, w, h) in faces:
-            cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
-            roi_gray = gray[y:y+h, x:x+w]
-            roi_gray = cv2.resize(roi_gray, (48, 48), interpolation=cv2.INTER_AREA)
-        # rect,face,image = face_detector(frame)
+        # counting the number of frames for each label, to calculate the percentage for each emotion later on...
+
+        if (label == 'Anger'):
+            count_angry += 1
+            # path = os.path.join(BASE_DIR, 'static\\images\\Anger')
+            # cv2.imwrite(os.path.join(path, 'Anger-{0}.jpg'.format(count)), frame)
+
+        elif (label == 'Happy'):
+            count_happy += 1
+            # path = os.path.join(BASE_DIR, 'static\\images\\Happy')
+            # cv2.imwrite(os.path.join(path, 'Happy-{0}.jpg'.format(count)), frame)
+
+        elif (label == 'Neutral'):
+            count_neutral += 1
+            # path = os.path.join(BASE_DIR, 'static\\images\\Neutral')
+            # cv2.imwrite(os.path.join(path, 'Neutral-{0}.jpg'.format(count)), frame)
+
+        elif (label == 'Sad'):
+            count_sad += 1
+
+        elif (label == 'Surprise'):
+            count_surprise += 1
 
 
-            if np.sum([roi_gray])!=0:
-                roi = roi_gray.astype('float')/255.0
-                roi = img_to_array(roi)
-                roi = np.expand_dims(roi, axis=0)
-
-            # make a prediction on the ROI, then lookup the class
-
-                preds = classifier.predict(roi)[0]
-                label = class_labels[preds.argmax()]
-
-                # counting the number of frames for each label, to calculate the percentage for each emotion later on...
-
-                if (label == 'Anger'):
-                    count_angry += 1
-                    # path = os.path.join(BASE_DIR, 'static\\images\\Anger')
-                    # cv2.imwrite(os.path.join(path, 'Anger-{0}.jpg'.format(count)), frame)
-
-                elif (label == 'Happy'):
-                    count_happy += 1
-                    # path = os.path.join(BASE_DIR, 'static\\images\\Happy')
-                    # cv2.imwrite(os.path.join(path, 'Happy-{0}.jpg'.format(count)), frame)
-
-                elif (label == 'Neutral'):
-                    count_neutral += 1
-                    # path = os.path.join(BASE_DIR, 'static\\images\\Neutral')
-                    # cv2.imwrite(os.path.join(path, 'Neutral-{0}.jpg'.format(count)), frame)
-
-                elif (label == 'Sad'):
-                    count_sad += 1
-
-                elif (label == 'Surprise'):
-                    count_surprise += 1
-
-                label_position = (x, y)
-                # cv2.putText(frame, label, label_position, cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 3)
-                # cv2.imwrite("".format(label, count), frame)
-            else:
-                cv2.putText(frame, 'No Face Found', (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 3)
+        # for testing purposes
+        print('emotion frame count: ', count_frames)
 
         count_frames += 1
 
@@ -131,6 +116,9 @@ def detect_emotion(video):
 
     cap.release()
     cv2.destroyAllWindows()
+
+    # for testing purposes
+    print('ending the emotion recognition process')
 
     return meta_data
 
@@ -263,11 +251,24 @@ def get_individual_student_evaluation(video_name, student_name):
 # this method will
 def get_frame_emotion_recognition(video_name):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    VIDEO_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\videos\\{}".format(video_name))
     face_classifier = cv2.CascadeClassifier(
         os.path.join(BASE_DIR, 'FirstApp\classifiers\haarcascade_frontalface_default.xml'))
     classifier_path = os.path.join(BASE_DIR, 'FirstApp\classifiers\Emotion_little_vgg.h5')
     classifier = load_model(classifier_path)
-    EXTRACTED_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\activity\\{}".format(video_name))
+
+    # files required for person detection
+    config_file = os.path.join(BASE_DIR, "FirstApp\\classifiers\\MobileNetSSD_deploy.prototxt.txt")
+    model_file = os.path.join(BASE_DIR, "FirstApp\\classifiers\\MobileNetSSD_deploy.caffemodel")
+
+    # load our serialized persosn detection model from disk
+    print("[INFO] loading model...")
+    net = cv2.dnn.readNetFromCaffe(config_file, model_file)
+
+
+    cap = cv2.VideoCapture(VIDEO_DIR)
+    no_of_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
 
     # initializing the count variables
     frame_count = 0
@@ -276,16 +277,21 @@ def get_frame_emotion_recognition(video_name):
     # frame activity recognitions
     frame_emotion_recognitions = []
 
-
     # # class labels
     class_labels = ['Angry', 'Happy', 'Neutral', 'Sad', 'Surprise']
 
-    for frame in os.listdir(EXTRACTED_DIR):
-        # derive the frame folder path
-        FRAME_FOLDER = os.path.join(EXTRACTED_DIR, frame)
+
+    # for testing purposes
+    print('starting the emotion frame recognition process')
+
+    while (frame_count < no_of_frames):
+
+        ret, image = cap.read()
+
+        frame_name = "frame-{}".format(frame_count)
 
         frame_details = {}
-        frame_details['frame_name'] = frame
+        frame_details['frame_name'] = frame_name
 
         # initialize the count variables for a frame
         happy_count = 0
@@ -294,18 +300,19 @@ def get_frame_emotion_recognition(video_name):
         neutral_count = 0
         surprise_count = 0
 
+        # get the detections
+        detections = ar.person_detection(image, net)
+
         # to count the extracted detections for a frame
         detection_count = 0
 
-        for detections in os.listdir(FRAME_FOLDER):
+        # if there are detections
+        if (len(detections) > 0):
+            # loop through the detections
+            for detection in detections:
 
-            # only take the images with the student name
-            if "frame" not in detections:
-                # get the label for this image
-                IMAGE_PATH = os.path.join(FRAME_FOLDER, detections)
-                image = cv2.imread(IMAGE_PATH)
 
-                label = emotion_recognition(classifier, face_classifier, image)
+                label = emotion_recognition(classifier, face_classifier, detection)
 
                 # checking for the label
                 if label == class_labels[0]:
@@ -324,25 +331,39 @@ def get_frame_emotion_recognition(video_name):
 
 
 
-        # calculating the percentages for the frame
-        happy_perct = float(happy_count / detection_count) * 100 if detection_count > 0 else 0
-        sad_perct = float(sad_count / detection_count) * 100 if detection_count > 0 else 0
-        angry_perct = float(angry_count / detection_count) * 100 if detection_count > 0 else 0
-        neutral_perct = float(neutral_count / detection_count) * 100 if detection_count > 0 else 0
-        surprise_perct = float(surprise_count / detection_count) * 100 if detection_count > 0 else 0
+            # calculating the percentages for the frame
+            happy_perct = float(happy_count / detection_count) * 100 if detection_count > 0 else 0
+            sad_perct = float(sad_count / detection_count) * 100 if detection_count > 0 else 0
+            angry_perct = float(angry_count / detection_count) * 100 if detection_count > 0 else 0
+            neutral_perct = float(neutral_count / detection_count) * 100 if detection_count > 0 else 0
+            surprise_perct = float(surprise_count / detection_count) * 100 if detection_count > 0 else 0
 
-        # this dictionary will be returned
-        frame_details['happy_perct'] = happy_perct
-        frame_details['sad_perct'] = sad_perct
-        frame_details['angry_perct'] = angry_perct
-        frame_details['neutral_perct'] = neutral_perct
-        frame_details['surprise_perct'] = surprise_perct
+            # this dictionary will be returned
+            frame_details['happy_perct'] = happy_perct
+            frame_details['sad_perct'] = sad_perct
+            frame_details['angry_perct'] = angry_perct
+            frame_details['neutral_perct'] = neutral_perct
+            frame_details['surprise_perct'] = surprise_perct
 
-        # push to all the frame details
-        frame_emotion_recognitions.append(frame_details)
+            # push to all the frame details
+            frame_emotion_recognitions.append(frame_details)
+
+        else:
+            break
+
+
+        # for testing purposes
+        print('emotion frame recognition count: ', frame_count)
+
+        # increment the frame count
+        frame_count += 1
 
     # sort the recognitions based on the frame number
     sorted_activity_frame_recognitions = cs.custom_object_sorter(frame_emotion_recognitions)
+
+
+    # for testing purposes
+    print('ending the emotion frame recognition process')
 
     # return the detected frame percentages
     return sorted_activity_frame_recognitions
@@ -409,14 +430,27 @@ def get_student_emotion_summary_for_period(emotions):
 
 # this method will retrieve activity frame groupings for a lecture
 def emotion_frame_groupings(video_name, frame_landmarks, frame_group_dict):
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    EXTRACTED_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\activity\\{}".format(video_name))
 
-    # load the models
+
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    VIDEO_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\videos\\{}".format(video_name))
     face_classifier = cv2.CascadeClassifier(
         os.path.join(BASE_DIR, 'FirstApp\classifiers\haarcascade_frontalface_default.xml'))
     classifier_path = os.path.join(BASE_DIR, 'FirstApp\classifiers\Emotion_little_vgg.h5')
     classifier = load_model(classifier_path)
+
+    # files required for person detection
+    config_file = os.path.join(BASE_DIR, "FirstApp\\classifiers\\MobileNetSSD_deploy.prototxt.txt")
+    model_file = os.path.join(BASE_DIR, "FirstApp\\classifiers\\MobileNetSSD_deploy.caffemodel")
+
+    # load our serialized persosn detection model from disk
+    print("[INFO] loading model...")
+    net = cv2.dnn.readNetFromCaffe(config_file, model_file)
+
+
+    cap = cv2.VideoCapture(VIDEO_DIR)
+    no_of_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
 
 
 
@@ -441,9 +475,11 @@ def emotion_frame_groupings(video_name, frame_landmarks, frame_group_dict):
 
 
     # looping through the frames
-    for frame in os.listdir(EXTRACTED_DIR):
-        # getting the frame folder
-        FRAME_FOLDER = os.path.join(EXTRACTED_DIR, frame)
+    while (frame_count < no_of_frames):
+
+        # get the current frame
+        ret, image = cap.read()
+
 
         # initializing the variables
         happy_count = 0
@@ -453,17 +489,17 @@ def emotion_frame_groupings(video_name, frame_landmarks, frame_group_dict):
         neutral_count = 0
         detection_count = 0
 
-        # looping through the detections in each frame
-        for detections in os.listdir(FRAME_FOLDER):
+        detections = ar.person_detection(image, net)
 
-            # checking whether the image contains only one person
-            if "frame" not in detections:
-                # get the label for this image
-                IMAGE_PATH = os.path.join(FRAME_FOLDER, detections)
-                image = cv2.imread(IMAGE_PATH)
+        # if there are detections
+        if (len(detections) > 0):
+
+            # looping through the detections in each frame
+            for detection in detections:
+
 
                 # run the model and get the emotion label
-                label = emotion_recognition(classifier, face_classifier, image)
+                label = emotion_recognition(classifier, face_classifier, detection)
 
                 # increment the count based on the label
                 if label == class_labels[0]:
@@ -503,7 +539,11 @@ def emotion_frame_groupings(video_name, frame_landmarks, frame_group_dict):
                             frame_group_dict[frame_name]['neutral_count'] += neutral_count
                             frame_group_dict[frame_name]['detection_count'] += detection_count
 
+        else:
+            break
 
+        # for testing purposes
+        print('emotion frame groupings count: ', frame_count)
 
         # increment the frame count
         frame_count += 1
@@ -558,6 +598,10 @@ def emotion_frame_groupings(video_name, frame_landmarks, frame_group_dict):
 
 # this section will handle some database operations
 def save_frame_recognitions(video_name):
+
+    # for testing purposes
+    print('starting the saving emotion frame recognition process')
+
     # retrieve the lecture emotion id
     lec_emotion = LectureEmotionReport.objects.filter(lecture_video_id__video_name=video_name)
     lec_emotion_ser = LectureEmotionSerializer(lec_emotion, many=True)
@@ -595,12 +639,18 @@ def save_frame_recognitions(video_name):
 
     lec_emotion_frame_recognitions.save()
 
+    # for testing purposes
+    print('ending the saving emotion frame recognition process')
+
     # now return the frame recognitions
     return frame_detections
 
 
 # this method will save the emotion frame groupings to the database
 def save_frame_groupings(video_name, frame_landmarks, frame_group_dict):
+
+    # for testing purposes
+    print('starting the saving emotion frame grouoings process')
 
     frame_group_percentages, emotion_labels = emotion_frame_groupings(video_name, frame_landmarks, frame_group_dict)
 
@@ -630,6 +680,9 @@ def save_frame_groupings(video_name, frame_landmarks, frame_group_dict):
     new_lec_emotion_frame_groupings.lecture_emotion_frame_groupings_id = new_lecture_emotion_frame_grouping_id
     new_lec_emotion_frame_groupings.lecture_emotion_id_id = lec_emotion_id
     new_lec_emotion_frame_groupings.frame_group_details = frame_group_details
+
+    # for testing purposes
+    print('ending the saving emotion frame groupings process')
 
     # save
     new_lec_emotion_frame_groupings.save()

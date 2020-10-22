@@ -14,6 +14,7 @@ urlpatterns = [
     path('logout', views.logoutView),
     path('register-user', views.register),
     path('404', views.view404),
+    path('401', views.view401),
     path('500', views.view500),
     path('blank', views.blank),
     path('gaze', views.gaze),
@@ -32,10 +33,20 @@ urlpatterns = [
     # video results
     path('video_result', views.video_result),
 
-    # this is used for login
+    # this is used to process login
     path('process-login', views.loggedInView),
 
-    # this is used for login
+    # this is used to process admin login
+    path('process-admin-login', views.processAdminLogin),
+
+    # this is used for user-redirect processing
+    path('process-user-redirect', views.processUserRedirect),
+
+    # this is used for admin login page
+    path('admin-login', views.adminLogin),
+
+
+    # this is used for activity
     path('activity', views.activity),
 
     # tables view
@@ -43,6 +54,10 @@ urlpatterns = [
 
     # test view (delete later)
     path('test', views.test),
+
+
+    # user direct view
+    path('user-direct', views.userDirect),
 
     url(r'^register', views.RegisterViewSet),
     # re_path('video/?video_name<str:video_name>', views.video),

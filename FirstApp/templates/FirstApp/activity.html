@@ -742,7 +742,7 @@
 
 
             //to handle the 'integrate' modal
-            $('#integrate_gaze').click(function () {
+            $('#integrate_activity').click(function () {
                 //define the student video src
                 let video_src = "{% static '' %}FirstApp/videos/" + global_video_name;
 
@@ -1216,66 +1216,6 @@
 
 
                         <!--2nd column -->
-{#                        <div class="col-lg-6">#}
-
-{#                            <!--card content -->#}
-{#                            <div class="card shadow mb-4">#}
-{#                                <!--card header -->#}
-{#                                <div class="card-header py-3">#}
-{#                                    <h5 class="m-0 font-weight-bold text-primary">Frame Detections</h5>#}
-{#                                </div>#}
-{##}
-{#                                <!--card body -->#}
-{#                                <div class="text-center p-4" id="detection_frames">#}
-{##}
-{#                                    <!--no content message-->#}
-{#                                    <div class="text-center p-2" id="no_detection_message_content">#}
-{#                                        <span class="font-italic">No frame is selected</span>#}
-{#                                    </div>#}
-{##}
-{#                                    <div class="text-left m-3" id="detection_number_area" hidden>#}
-{#                                        <p>No of detections: <span id="no_of_detections"></span></p>#}
-{#                                    </div>#}
-{#                                    <!--the detection loader -->#}
-{#                                    <div class="text-center p-2" id="detection_loader" hidden>#}
-{#                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"#}
-{#                                             alt="Loader">#}
-{#                                    </div>#}
-{#                                </div>#}
-{#                            </div>#}
-
-
-                            <!--detection person card -->
-{#                            <div class="card shadow mb-4">#}
-{#                                <!--card header -->#}
-{#                                <div class="card-header py-3">#}
-{#                                    <h5 class="m-0 font-weight-bold text-primary">Detected Students (by activity#}
-{#                                        type)</h5>#}
-{#                                </div>#}
-{##}
-{#                                <!--card body -->#}
-{#                                <div class="text-center p-4" id="detection_students">#}
-{#                                    <!--activity type line -->#}
-{#                                    <div class="text-center p-2" id="activity_type" hidden>#}
-{#                                        <p>Activity Type: <span class="font-weight-bold" id="activity_type_text"></span>#}
-{#                                        </p>#}
-{#                                    </div>#}
-{##}
-{#                                    <!--no content message-->#}
-{#                                    <div class="text-center p-2" id="no_detection_student_content">#}
-{#                                        <span class="font-italic">No activity type is selected</span>#}
-{#                                    </div>#}
-{##}
-{#                                    <!--the detection student loader -->#}
-{#                                    <div class="text-center p-2" id="detection_student_loader" hidden>#}
-{#                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"#}
-{#                                             alt="Loader">#}
-{#                                    </div>#}
-{##}
-{#                                </div>#}
-{#                            </div>#}
-{#                        </div>#}
-                        <!--2nd column -->
                         <div class="col-lg-6">
                             <!--card -->
                             <div class="card shadow mb-4">
@@ -1292,7 +1232,7 @@
 
                                     <!--button -->
                                     <div class="text-right m-4">
-                                        <button type="button" class="btn btn-outline-success" id="integrate_gaze">
+                                        <button type="button" class="btn btn-outline-success" id="integrate_activity">
                                             Process
                                         </button>
                                     </div>
