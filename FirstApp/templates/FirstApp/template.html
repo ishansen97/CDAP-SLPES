@@ -66,6 +66,8 @@
         Interface
       </div>
 
+      {% if request.session.user_type == "Lecturer" %}
+
       <!-- Nav Item - Pages Collapse Menu -->
       <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
@@ -83,6 +85,7 @@
         </div>
       </li>
 
+
       <!-- Nav Item - Pages Collapse Menu -->
       <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseThree" aria-expanded="true" aria-controls="collapseThree">
@@ -96,6 +99,8 @@
           </div>
         </div>
       </li>
+
+
 
       <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseFour" aria-expanded="true" aria-controls="collapseThree">
@@ -126,6 +131,8 @@
           </div>
         </div>
       </li>
+
+    {% endif %}
 
       <!-- Divider -->
       <hr class="sidebar-divider">
@@ -178,6 +185,8 @@
       </div>
 
     </ul>
+
+
     <!-- End of Sidebar -->
 
     <div id="content-wrapper" class="d-flex flex-column">

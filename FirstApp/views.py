@@ -109,100 +109,117 @@ class LectureViewSet(APIView):
 
 
 ####### VIEWS ######
-@login_required(login_url='/login')
+@login_required(login_url='/user-direct')
 def hello(request):
 
-    username = request.user.username
-    # retrieve the lecturer
-    lecturer = request.session['lecturer']
+    try:
+        username = request.user.username
+        # retrieve the lecturer
+        lecturer = request.session['lecturer']
+
+        user_type = request.session['user_type']
+
+        print('user_type: ', user_type)
 
 
-    # retrieve the lecturer's timetable slots
-    lecturer_timetable = FacultyTimetable.objects.filter()
+        # retrieve the lecturer's timetable slots
+        lecturer_timetable = FacultyTimetable.objects.filter()
 
-    # serialize the timetable
-    lecturer_timetable_serialized = FacultyTimetableSerializer(lecturer_timetable, many=True)
-
-
-    lecturer_details = []
-
-    # loop through the serialized timetable
-    for timetable in lecturer_timetable_serialized.data:
-
-        # retrieve daily timetable
-        daily_timetable = timetable['timetable']
-
-        # loop through the daily timetable
-        for day_timetable in daily_timetable:
-            date = ''
-            lecture_index = 0
-
-            # loop through each timeslots
-            for slots in day_timetable:
-
-                if slots == "date":
-                    date = day_timetable[slots]
+        # serialize the timetable
+        lecturer_timetable_serialized = FacultyTimetableSerializer(lecturer_timetable, many=True)
 
 
-                elif slots == "time_slots":
-                    slot = day_timetable[slots]
+        lecturer_details = []
 
-                    # loop through each slot
-                    for lecture in slot:
+        # loop through the serialized timetable
+        for timetable in lecturer_timetable_serialized.data:
 
-                        # check whether the lecturer is the current lecturer
-                        if lecturer == lecture['lecturer']['id']:
-                            lecturer_lecture_details = {}
-                            lecturer_lecture_details['date'] = date
-                            lecturer_lecture_details['start_time'] = lecture['start_time']
-                            lecturer_lecture_details['end_time'] = lecture['end_time']
-                            lecturer_lecture_details['subject_name'] = lecture['subject']['name']
-                            lecturer_lecture_details['index'] = lecture_index
-                            lecturer_lecture_details['lecturer'] = lecture['lecturer']['id']
+            # retrieve daily timetable
+            daily_timetable = timetable['timetable']
 
-                            # append to the lecturer_details
-                            lecturer_details.append(lecturer_lecture_details)
+            # loop through the daily timetable
+            for day_timetable in daily_timetable:
+                date = ''
+                lecture_index = 0
 
-                        # increment the index
-                        lecture_index += 1
+                # loop through each timeslots
+                for slots in day_timetable:
 
-    # sorting the dates in lecturer_details list
-    # for details in lecturer_details:
-    lecturer_details.sort(key=lambda date: datetime.strptime(str(date['date']), "%Y-%m-%d"), reverse=True)
+                    if slots == "date":
+                        date = day_timetable[slots]
 
 
-    obj = {'Message': 'Student and Lecturer Performance Enhancement System', 'username': username}
-    folder = os.path.join(BASE_DIR, os.path.join('static\\FirstApp\\videos'))
-    videoPaths = [os.path.join(folder, file) for file in os.listdir(folder)]
-    videos = []
-    durations = []
-    #
-    # for videoPath in videoPaths:
-    #     video = Video()
-    #     cap = cv2.VideoCapture(videoPath)
-    #     fps = cap.get(cv2.CAP_PROP_FPS)  # OpenCV2 version 2 used "CV_CAP_PROP_FPS"
-    #     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    #     duration = int(frame_count / fps)
-    #     durations.append(duration)
-    #     videoName = os.path.basename(videoPath)
-    #     # videoName = videos.append(os.path.basename(videoPath))
-    #     durationObj = datetime.timedelta(seconds=duration)
-    #     video.path = videoPath
-    #     video.name = videoName
-    #     video.duration = str(durationObj)
-    #     videos.append(video)
-    context = {'object': obj, 'Videos': videos, 'durations': durations, 'template_name': 'FirstApp/template.html', 'lecturer_details': lecturer_details, "lecturer": lecturer}
-    return render(request, 'FirstApp/Home.html', context)
+                    elif slots == "time_slots":
+                        slot = day_timetable[slots]
 
+                        # loop through each slot
+                        for lecture in slot:
+
+                            # check whether the lecturer is the current lecturer
+                            if lecturer == lecture['lecturer']['id']:
+                                lecturer_lecture_details = {}
+                                lecturer_lecture_details['date'] = date
+                                lecturer_lecture_details['start_time'] = lecture['start_time']
+                                lecturer_lecture_details['end_time'] = lecture['end_time']
+                                lecturer_lecture_details['subject_name'] = lecture['subject']['name']
+                                lecturer_lecture_details['index'] = lecture_index
+                                lecturer_lecture_details['lecturer'] = lecture['lecturer']['id']
+
+                                # append to the lecturer_details
+                                lecturer_details.append(lecturer_lecture_details)
+
+                            # increment the index
+                            lecture_index += 1
+
+        # sorting the dates in lecturer_details list
+        # for details in lecturer_details:
+        lecturer_details.sort(key=lambda date: datetime.strptime(str(date['date']), "%Y-%m-%d"), reverse=True)
+
+
+        obj = {'Message': 'Student and Lecturer Performance Enhancement System', 'username': username}
+        folder = os.path.join(BASE_DIR, os.path.join('static\\FirstApp\\videos'))
+        videoPaths = [os.path.join(folder, file) for file in os.listdir(folder)]
+        videos = []
+        durations = []
+        #
+        # for videoPath in videoPaths:
+        #     video = Video()
+        #     cap = cv2.VideoCapture(videoPath)
+        #     fps = cap.get(cv2.CAP_PROP_FPS)  # OpenCV2 version 2 used "CV_CAP_PROP_FPS"
+        #     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        #     duration = int(frame_count / fps)
+        #     durations.append(duration)
+        #     videoName = os.path.basename(videoPath)
+        #     # videoName = videos.append(os.path.basename(videoPath))
+        #     durationObj = datetime.timedelta(seconds=duration)
+        #     video.path = videoPath
+        #     video.name = videoName
+        #     video.duration = str(durationObj)
+        #     videos.append(video)
+        context = {'object': obj, 'Videos': videos, 'durations': durations, 'template_name': 'FirstApp/template.html', 'lecturer_details': lecturer_details, "lecturer": lecturer}
+        return render(request, 'FirstApp/Home.html', context)
+
+    # in case of keyerror exception
+    except KeyError as exc:
+        return redirect('/401')
+
+    except Exception as exc:
+        return redirect('/500')
+
+# this method will handle 404 error page
 def view404(request):
     return render(request, 'FirstApp/404.html')
+
+# this page will handle 401 error page
+def view401(request):
+    return render(request, 'FirstApp/401.html')
 
 # querying the database
 def blank(request):
     emotions = LectureEmotionReport.objects.all().order_by('lecture_id')
     return render(request, 'FirstApp/blank.html', {'details': emotions})
 
-@login_required(login_url='/login')
+@login_required(login_url='/user-direct')
 def gaze(request):
     try:
 
@@ -221,6 +238,11 @@ def gaze(request):
             subject_list.append(subject_serialized.data)
 
 
+    # handling the keyError
+    except KeyError as exc:
+        return redirect('/401')
+
+    # handling the general exceptions
     except Exception as exc:
         return redirect('/500')
 
@@ -240,7 +262,7 @@ def processGaze(request):
 
 
 # the corresponding view for pose estimation
-@login_required(login_url='/login')
+@login_required(login_url='/user-direct')
 def pose(request):
     try:
 
@@ -295,7 +317,7 @@ def webcam(request):
     return redirect('/')
 
 # to process video for emotion detection
-@login_required(login_url='/login')
+@login_required(login_url='/user-direct')
 def video(request):
     title = 'Student and Lecturer Performance Enhancement System'
     video_name = request.GET.get('video_name')
@@ -310,7 +332,7 @@ def video(request):
 
 
 # extractor view
-@login_required(login_url='/login')
+@login_required(login_url='/user-direct')
 def extractor(request):
     folder = os.path.join(BASE_DIR, os.path.join('static\\FirstApp\\videos'))
     videoPaths = [os.path.join(folder, file) for file in os.listdir(folder)]
@@ -358,7 +380,7 @@ def child(request):
     return render(request, 'FirstApp/child.html', {'template_name': 'FirstApp/base.html'})
 
 # displaying video results
-@login_required(login_url='/login')
+@login_required(login_url='/user-direct')
 def video_result(request):
     try:
 
@@ -434,7 +456,11 @@ def video_result(request):
                                 # append to the list
                                 due_lecture_list.append(obj)
 
+    # handling the keyError
+    except KeyError as exc:
+        return redirect('/401')
 
+    # handling the general exceptions
     except Exception as exc:
         print('what is wrong?: ', exc)
         return redirect('/500')
@@ -444,7 +470,7 @@ def video_result(request):
 
 
 # view for emotion page
-@login_required(login_url='/login')
+@login_required(login_url='/user-direct')
 def emotion_view(request):
     try:
 
@@ -463,6 +489,11 @@ def emotion_view(request):
             subject_list.append(subject_serialized.data)
 
 
+    # handling the keyError
+    except KeyError as exc:
+        return redirect('/401')
+
+    # handling the general exceptions
     except Exception as exc:
         return redirect('/500')
 
@@ -490,6 +521,7 @@ def loggedInView(request):
             login(request, user)
             # setting up the session
             request.session['lecturer'] = lecturer.id
+            request.session['user_type'] = "Lecturer"
 
             return redirect('/')
 
@@ -506,7 +538,7 @@ def logoutView(request):
 
     logout(request)
 
-    return redirect('/login')
+    return redirect('/user-direct')
 
 
 # 500 error page
@@ -519,7 +551,7 @@ def tables(request):
     return render(request, "FirstApp/tables.html")
 
 
-@login_required(login_url='/login')
+@login_required(login_url='/user-direct')
 def activity(request):
     try:
 
@@ -538,6 +570,11 @@ def activity(request):
             subject_list.append(subject_serialized.data)
 
 
+    # handling the keyError
+    except KeyError as exc:
+        return redirect('/401')
+
+    # handling the general exception
     except Exception as exc:
         return redirect('/500')
 
@@ -546,3 +583,60 @@ def activity(request):
 
 def test(request):
     return render(request, "FirstApp/pdf_template.html")
+
+
+# this method will handle user directing function
+def userDirect(request):
+    return render(request, "FirstApp/user_direct.html")
+
+
+# this method will handle user redirection process
+def processUserRedirect(request):
+
+    if request.POST:
+
+        user_type = request.POST.get('user_type')
+
+        if user_type == 'admin':
+            return redirect('/admin-login')
+        elif user_type == 'lecturer':
+            return redirect('/login')
+
+    return redirect('/500')
+
+
+# admin login page
+def adminLogin(request):
+
+    return render(request, "FirstApp/admin_login.html")
+
+
+# this method will process admin login
+def processAdminLogin(request):
+    username = "not logged in"
+    message = "Invalid Username or Password"
+    adminLoginForm = AdminLoginForm(request.POST)
+
+    print('message: ', message)
+
+    try:
+        # if the details are valid, let the user log in
+        if adminLoginForm.is_valid():
+            email = adminLoginForm.cleaned_data.get('email')
+
+            user = User.objects.get(email=email)
+            admin = Admin.objects.get(email=email)
+
+            login(request, user)
+            # setting up the session
+            request.session['admin'] = admin.id
+            request.session['user_type'] = "Admin"
+
+            return redirect('/lecturer')
+
+        else:
+            message = "Please provide correct credntials"
+    except Exception as exc:
+        print('exception: ', exc)
+
+    return render(request, 'FirstApp/admin_login.html', {'message': message})
