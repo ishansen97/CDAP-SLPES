@@ -155,6 +155,7 @@ urlpatterns = [
     # lecture emotion detection for frames API (to retrieve detections for each frame in lecture video)
     url(r'^get-lecture-emotion-for-frame/$', api.GetLectureEmotionRecognitionsForFrames.as_view()),
 
+
     ###### POSE Section #####
     # lecture video API (for Pose estimation)
     url(r'^get-lecture-video-for-pose/$', api.GetLectureVideoForPose.as_view()),
