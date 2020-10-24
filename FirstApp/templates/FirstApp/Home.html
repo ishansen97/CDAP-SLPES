@@ -965,6 +965,24 @@
             }
 
 
+            //this function will handle the advanced analysis for activity
+            $('#activity_advanced_btn').click(function () {
+                $('#activity_advanced_modal').modal();
+            });
+
+
+            //this function will handle the advanced analysis for emotion
+            $('#emotion_advanced_btn').click(function () {
+                $('#emotion_advanced_modal').modal();
+
+            });
+
+            //this function will handle the advanced analysis for gaze
+            $('#gaze_advanced_btn').click(function () {
+                $('#gaze_advanced_modal').modal();
+            });
+
+
         });
 
     </script>
@@ -1404,6 +1422,14 @@
                                                 Summary
                                             </button>
                                             <!-- end of button to view activity summary -->
+
+
+                                            <!-- button to view advanced analysis -->
+                                            <button type="button" class="btn btn-danger float-right mr-2" id="activity_advanced_btn">
+                                                Advanced Analysis
+                                            </button>
+                                            <!-- end of button to view advanced analysis -->
+
                                         </li>
                                         <!-- end of the activity list item -->
 
@@ -1473,6 +1499,15 @@
                                                 Summary
                                             </button>
                                             <!-- end of button to view emotion summary -->
+
+
+                                            <!-- button to view advanced analysis -->
+                                            <button type="button" class="btn btn-danger float-right mr-2" id="emotion_advanced_btn">
+                                                Advanced Analysis
+                                            </button>
+                                            <!-- end of button to view advanced analysis -->
+
+
                                         </li>
                                         <!-- end of the emotion list item -->
 
@@ -1548,6 +1583,13 @@
                                                 Summary
                                             </button>
                                             <!-- end of button to view gaze summary -->
+
+
+                                            <!-- button to view advanced analysis -->
+                                            <button type="button" class="btn btn-danger float-right mr-2" id="gaze_advanced_btn">
+                                                Advanced Analysis
+                                            </button>
+                                            <!-- end of button to view advanced analysis -->
 
 
                                         </li>
@@ -1975,6 +2017,73 @@
         </div>
     </div>
     <!-- end of activity statistics modal -->
+
+
+    <!-- activity advanced analysis modal -->
+    <div class="modal fade" id="activity_advanced_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document" style="max-width: 1400px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Activity Advanced Analysis</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center">
+                    <p>Hello</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end of activity advanced analysis modal -->
+
+    <!-- emotion advanced analysis modal -->
+    <div class="modal fade" id="emotion_advanced_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document" style="max-width: 1400px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Emotion Advanced Analysis</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center">
+                    <p>Hello</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end of emotion advanced analysis modal -->
+
+    <!-- gaze advanced analysis modal -->
+    <div class="modal fade" id="gaze_advanced_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document" style="max-width: 1400px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Gaze Advanced Analysis</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center">
+                    <p>Hello</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end of gaze advanced analysis modal -->
 
 
 {% endblock %}
