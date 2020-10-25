@@ -87,3 +87,27 @@ class LecturerAudioText (models.Model):
     def __str__(self):
         return self.lecturer_audio_text_id
 
+
+
+# this abstract class will contain lecture activity frame recognition details
+class LecturerActivityFrameRecognitionDetails(models.Model):
+    frame_name = models.CharField(max_length=15)
+    sitting_perct = models.FloatField()
+    standing_perct = models.FloatField()
+    walking_perct = models.FloatField()
+
+    class Meta:
+        abstract = True
+
+
+# this class will contain lecture activity frame recognitions
+class LecturerActivityFrameRecognitions(models.Model):
+    lecturer_activity_frame_recognition_id = models.CharField(max_length=15)
+    lecturer_meta_id = models.ForeignKey(LecturerVideoMetaData, on_delete=models.CASCADE)
+    frame_recognition_details = models.ArrayField(LecturerActivityFrameRecognitionDetails)
+    fps = models.FloatField(default=30.0)
+
+    def __str__(self):
+        return self.lecturer_activity_frame_recognition_id
+
+
