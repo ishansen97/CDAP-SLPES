@@ -187,3 +187,6 @@ def lecVideo(request):
     # for  audioPath in audiopaths:
     #     audio = tAudio()
 
+
+def testFrameRecognitions(request):
+    return render(request, "MonitorLecturerApp/test_frame_recognitions.html")
