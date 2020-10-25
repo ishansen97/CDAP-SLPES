@@ -210,3 +210,44 @@ class LecturerAudioSummaryPeriodAPI(APIView):
         })
 
 
+# this section is for student and lecturer behavior integration
+class StudentLecturerIntegratedAPI(APIView):
+
+    def get(self, request):
+        video_name = request.query_params.get('video_name')
+
+        # finding the existence of Lecture activity frame recognition record
+        isExist = LecturerActivityFrameRecognitions.objects.filter(
+            lecturer_meta_id__lecturer_video_id__lecture_video_name=video_name).exists()
+
+        if (isExist):
+            lecture_activity_frame_recognitions = LecturerActivityFrameRecognitions.objects.filter(
+                lecturer_meta_id__lecturer_video_id__lecture_video_name=video_name)
+            lecture_activity_frame_recognitions_ser = LecturerActivityFrameRecognitionsSerializer(
+                lecture_activity_frame_recognitions, many=True)
+            lecture_activity_frame_recognitions_data = lecture_activity_frame_recognitions_ser.data[0]
+
+            frame_detections = lecture_activity_frame_recognitions_data['frame_recognition_details']
+            fps = lecture_activity_frame_recognitions_data['fps']
+            int_fps = int(fps)
+
+            return Response({
+                "frame_recognitions": frame_detections,
+                "fps": fps
+            })
+
+        else:
+
+            # frame_recognitions = classroom_activity.get_lecturer_activity_for_frames(video_name)
+            frame_recognitions, fps = classroom_activity.save_frame_recognition(video_name)
+
+            int_fps = int(fps)
+
+            # print('frame recognitions: ', frame_recognitions)
+
+            return Response({
+                "frame_recognitions": frame_recognitions,
+                "fps": fps
+            })
+
+
