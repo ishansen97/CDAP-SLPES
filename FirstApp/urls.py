@@ -203,6 +203,21 @@ urlpatterns = [
     # retrieves lecture activity summary
     url(r'^get-lecture-gaze-summary/$', api.GetLectureGazeSummary.as_view()),
 
+    # retrieves lecture activity summary
+    url(r'^get-activity-correlations/$', api.GetLectureActivityCorrelations.as_view()),
+
+    # retrieves lecture activity summary
+    url(r'^get-emotion-correlations/$', api.GetLectureEmotionCorrelations.as_view()),
+
+    # retrieves lecture activity summary
+    url(r'^get-gaze-correlations/$', api.GetLectureGazeCorrelations.as_view()),
+
+
+    ##### OTHERS #####
+
+    # retrieves lecture recorded video name
+    url(r'^get-lecture-recorded-video-name/$', api.GetLecturerRecordedVideo.as_view()),
+
 
     # routers
     # path('', include(router.urls)),
