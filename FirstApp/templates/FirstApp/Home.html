@@ -234,9 +234,9 @@
 
                 //fetch the video time landmark details
                 fetch('http://127.0.0.1:8000/get-lecture-video-summary-time-landmarks/?video_name=' + global_video_name)
-                .then((res) => res.json())
-                .then((out) => assignTimeLandmarks(out.response))
-                .catch((err) => alert('error: ' + err));
+                    .then((res) => res.json())
+                    .then((out) => assignTimeLandmarks(out.response))
+                    .catch((err) => alert('error: ' + err));
 
 
                 //display the progress bar area
@@ -251,7 +251,6 @@
             }
 
 
-
             //this function will handle the activity 'summary' button
             $('#activity_summary_btn').click(function (e) {
 
@@ -260,9 +259,9 @@
 
                 //fetch the activity summary details
                 fetch('http://127.0.0.1:8000/get-lecture-activity-summary/?video_name=' + global_video_name)
-                .then((res) => res.json())
-                .then((out) => activityFrameGroupPercentages(out, e))
-                .catch((err) => alert('error: ' + err));
+                    .then((res) => res.json())
+                    .then((out) => activityFrameGroupPercentages(out, e))
+                    .catch((err) => alert('error: ' + err));
 
 
             });
@@ -275,9 +274,9 @@
 
                 //fetch the activity summary details
                 fetch('http://127.0.0.1:8000/get-lecture-emotion-summary/?video_name=' + global_video_name)
-                .then((res) => res.json())
-                .then((out) => emotionFrameGroupPercentages(out, e))
-                .catch((err) => alert('error: ' + err));
+                    .then((res) => res.json())
+                    .then((out) => emotionFrameGroupPercentages(out, e))
+                    .catch((err) => alert('error: ' + err));
 
             });
 
@@ -288,11 +287,10 @@
 
                 //fetch the activity summary details
                 fetch('http://127.0.0.1:8000/get-lecture-gaze-summary/?video_name=' + global_video_name)
-                .then((res) => res.json())
-                .then((out) => gazeFrameGroupPercentages(out, e))
-                .catch((err) => alert('error: ' + err));
+                    .then((res) => res.json())
+                    .then((out) => gazeFrameGroupPercentages(out, e))
+                    .catch((err) => alert('error: ' + err));
             });
-
 
 
             //this function will handle the retrieved activity frame group percentages
@@ -355,7 +353,6 @@
                 renderGazeChart(gaze_labels);
 
             }
-
 
 
             //this function will call the activity chart function
@@ -486,7 +483,6 @@
                 }
 
 
-
                 var chart = new CanvasJS.Chart("EmotionChartContainer", {
                     animationEnabled: true,
                     theme: "light2",
@@ -570,7 +566,6 @@
                 }
 
 
-
                 var chart = new CanvasJS.Chart("GazeChartContainer", {
                     animationEnabled: true,
                     theme: "light2",
@@ -609,7 +604,6 @@
             }
 
 
-
             //this function will render the chart for Activity statistics
             function renderActivityStatistics() {
 
@@ -626,7 +620,6 @@
                 ];
 
 
-
                 for (let i = 0; i < label_length; i++) {
 
                     let label = activity_labels[i];
@@ -634,7 +627,7 @@
 
                     for (let j = 0; j < activity_length; j++) {
                         let activity = individual_activities[j];
-                        datapoints.push({label: "lecture " + (j+1), y: activity[label]});
+                        datapoints.push({label: "lecture " + (j + 1), y: activity[label]});
                     }
 
 
@@ -644,7 +637,7 @@
                         name: label,
                         markerType: "square",
                         {#xValueFormatString: "DD MMM, YYYY",#}
-                        xValueFormatString: "lec " + (i+1),
+                        xValueFormatString: "lec " + (i + 1),
                         color: getRandomColor(),
                         dataPoints: datapoints
                     };
@@ -714,7 +707,7 @@
 
                     for (let j = 0; j < emotion_length; j++) {
                         let emotion = individual_emotions[j];
-                        datapoints.push({label: "lecture " + (j+1), y: emotion[label]});
+                        datapoints.push({label: "lecture " + (j + 1), y: emotion[label]});
                     }
 
                     let obj = {
@@ -723,7 +716,7 @@
                         name: label,
                         markerType: "square",
                         {#xValueFormatString: "DD MMM, YYYY",#}
-                        xValueFormatString: "Lec " + (i+1),
+                        xValueFormatString: "Lec " + (i + 1),
                         color: colors[i - 1],
                         dataPoints: datapoints
                     };
@@ -740,7 +733,7 @@
                     axisX: {
                         title: "Lecture",
                         {#valueFormatString: "DD MMM",#}
-                        valueFormatString: "lec" ,
+                        valueFormatString: "lec",
                         crosshair: {
                             enabled: true,
                             snapToDataPoint: true
@@ -792,7 +785,7 @@
 
                     for (let j = 0; j < gaze_estimation_length; j++) {
                         let gaze_estimation = individual_gaze_estimations[j];
-                        datapoints.push({label: "lecture " + (j+1), y: gaze_estimation[label]});
+                        datapoints.push({label: "lecture " + (j + 1), y: gaze_estimation[label]});
                     }
 
                     let obj = {
@@ -801,7 +794,7 @@
                         name: label,
                         markerType: "square",
                         {#xValueFormatString: "DD MMM, YYYY",#}
-                        xValueFormatString: "Lec " + (i+1),
+                        xValueFormatString: "Lec " + (i + 1),
                         color: colors[i - 1],
                         dataPoints: datapoints
                     };
@@ -818,7 +811,7 @@
                     axisX: {
                         title: "Lecture",
                         {#valueFormatString: "DD MMM",#}
-                        valueFormatString: "lec" ,
+                        valueFormatString: "lec",
                         crosshair: {
                             enabled: true,
                             snapToDataPoint: true
@@ -862,7 +855,7 @@
                 $('#student_behavior_view_summary_modal').modal();
 
 
-          });
+            });
 
             //this function will handle the view summary option form
             $('#view_summary_option_form').submit(function (e) {
@@ -968,6 +961,21 @@
             //this function will handle the advanced analysis for activity
             $('#activity_advanced_btn').click(function () {
                 $('#activity_advanced_modal').modal();
+
+                //enable the loader
+                $('#activity_corr_loader').attr('hidden', false);
+
+
+                let lecturer = "{{ lecturer }}";
+                let option = $("input[name='option']:checked").val();
+
+
+                //fetch the correlation data
+                fetch('http://127.0.0.1:8000/get-activity-correlations/?lecturer=' + lecturer + '&option=' + option)
+                    .then((res) => res.json())
+                    .then((out) => displayActivityCorrelations(out.correlations))
+                    .catch((err) => alert('error: ' + err));
+
             });
 
 
@@ -975,12 +983,208 @@
             $('#emotion_advanced_btn').click(function () {
                 $('#emotion_advanced_modal').modal();
 
+                //enable the loader
+                $('#emotion_corr_loader').attr('hidden', false);
+
+                let lecturer = "{{ lecturer }}";
+                let option = $("input[name='option']:checked").val();
+
+                //fetch the correlation data
+                fetch('http://127.0.0.1:8000/get-emotion-correlations/?lecturer=' + lecturer + "&option=" + option)
+                    .then((res) => res.json())
+                    .then((out) => displayEmotionCorrelations(out.correlations))
+                    .catch((err) => alert('err: ' + err));
+
             });
 
             //this function will handle the advanced analysis for gaze
             $('#gaze_advanced_btn').click(function () {
                 $('#gaze_advanced_modal').modal();
+
+                //enable the loader
+                $('#gaze_corr_loader').attr('hidden', false);
+
+
+                let lecturer = "{{ lecturer }}";
+                let option = $("input[name='option']:checked").val();
+
+                //fetch the correlation data
+                fetch('http://127.0.0.1:8000/get-gaze-correlations/?lecturer=' + lecturer + "&option=" + option)
+                    .then((res) => res.json())
+                    .then((out) => displayGazeCorrelations(out.correlations))
+                    .catch((err) => alert('err: ' + err));
+
             });
+
+
+            //this method will display the activity correlations in a table
+            function displayActivityCorrelations(correlations) {
+
+                let htmlString = "";
+
+                //create the html content for the activity correlation table
+                for (let i = 0; i < correlations.length; i++) {
+                    let corr = correlations[i];
+
+                    let indices = corr.index;
+                    let value = corr.value;
+                    value = Math.round(value * 100, 1);
+
+                    if (value <= 100 && value > 80) {
+                        htmlString += "<tr class='bg-success text-white'>";
+                    }
+                    else if (value <= 80 && value > 60) {
+                        htmlString += "<tr class='bg-primary text-white'>";
+                    }
+                    else if (value <= 60 && value > 40) {
+                        htmlString += "<tr class='bg-warning text-white'>";
+                    }
+                    else if (value <= 40 && value > 20) {
+                        htmlString += "<tr class='bg-danger text-white'>";
+                    }
+                    else if (value <= 20 && value > 0) {
+                        htmlString += "<tr class='bg-dark text-white'>";
+                    }
+
+                    //create a <tr> to be inserted
+                    htmlString += "<td>";
+                    htmlString += indices[0];
+                    htmlString += "</td>";
+                    htmlString += "<td>";
+                    htmlString += indices[1];
+                    htmlString += "</td>";
+                    htmlString += "<td>";
+                    htmlString += value;
+                    htmlString += "</td>";
+
+                    htmlString += "</tr>";
+
+                }
+
+                //append to the <tbody>
+                $('#activity_corr_tbody').append(htmlString);
+
+
+                //hide the loader
+                $('#activity_corr_loader').hide();
+
+                //show the table
+                $('#activity_corr_table').attr('hidden', false);
+
+            }
+
+            //this method will display the emotion correlations in a table
+            function displayEmotionCorrelations(correlations) {
+
+                let htmlString = "";
+
+                //create the html content for the activity correlation table
+                for (let i = 0; i < correlations.length; i++) {
+                    let corr = correlations[i];
+
+                    let indices = corr.index;
+                    let value = corr.value;
+                    value = Math.round(value * 100, 1);
+
+                    if (value <= 100 && value > 80) {
+                        htmlString += "<tr class='bg-success text-white'>";
+                    }
+                    else if (value <= 80 && value > 60) {
+                        htmlString += "<tr class='bg-primary text-white'>";
+                    }
+                    else if (value <= 60 && value > 40) {
+                        htmlString += "<tr class='bg-warning text-white'>";
+                    }
+                    else if (value <= 40 && value > 20) {
+                        htmlString += "<tr class='bg-danger text-white'>";
+                    }
+                    else if (value <= 20 && value > 0) {
+                        htmlString += "<tr class='bg-dark text-white'>";
+                    }
+
+                    //create a <tr> to be inserted
+                    htmlString += "<td>";
+                    htmlString += indices[0];
+                    htmlString += "</td>";
+                    htmlString += "<td>";
+                    htmlString += indices[1];
+                    htmlString += "</td>";
+                    htmlString += "<td>";
+                    htmlString += value;
+                    htmlString += "</td>";
+
+                    htmlString += "</tr>";
+
+                }
+
+                //append to the <tbody>
+                $('#emotion_corr_tbody').append(htmlString);
+
+
+                //hide the loader
+                $('#emotion_corr_loader').hide();
+
+                //show the table
+                $('#emotion_corr_table').attr('hidden', false);
+
+            }
+
+
+            //this method will display the activity correlations in a table
+            function displayGazeCorrelations(correlations) {
+
+                let htmlString = "";
+
+                //create the html content for the activity correlation table
+                for (let i = 0; i < correlations.length; i++) {
+                    let corr = correlations[i];
+
+                    let indices = corr.index;
+                    let value = corr.value;
+                    value = Math.round(value * 100, 1);
+
+                    if (value <= 100 && value > 80) {
+                        htmlString += "<tr class='bg-success text-white'>";
+                    }
+                    else if (value <= 80 && value > 60) {
+                        htmlString += "<tr class='bg-primary text-white'>";
+                    }
+                    else if (value <= 60 && value > 40) {
+                        htmlString += "<tr class='bg-warning text-white'>";
+                    }
+                    else if (value <= 40 && value > 20) {
+                        htmlString += "<tr class='bg-danger text-white'>";
+                    }
+                    else if (value <= 20 && value > 0) {
+                        htmlString += "<tr class='bg-dark text-white'>";
+                    }
+
+                    //create a <tr> to be inserted
+                    htmlString += "<td>";
+                    htmlString += indices[0];
+                    htmlString += "</td>";
+                    htmlString += "<td>";
+                    htmlString += indices[1];
+                    htmlString += "</td>";
+                    htmlString += "<td>";
+                    htmlString += value;
+                    htmlString += "</td>";
+
+                    htmlString += "</tr>";
+
+                }
+
+                //append to the <tbody>
+                $('#gaze_corr_tbody').append(htmlString);
+
+
+                //hide the loader
+                $('#gaze_corr_loader').hide();
+
+                //show the table
+                $('#gaze_corr_table').attr('hidden', false);
+
+            }
 
 
         });
@@ -1207,6 +1411,13 @@
                                                     </button>
                                                 </div>
                                                 <!-- end of stats button -->
+
+                                                <!-- button to view advanced analysis -->
+                                                <button type="button" class="btn btn-danger float-right mr-2"
+                                                        id="activity_advanced_btn">
+                                                    Advanced Analysis
+                                                </button>
+                                                <!-- end of button to view advanced analysis -->
                                             </div>
                                         </div>
                                         <!-- end of Activity card -->
@@ -1282,6 +1493,14 @@
                                                     </button>
                                                 </div>
                                                 <!-- end of stats button -->
+
+
+                                                <!-- button to view advanced analysis -->
+                                                <button type="button" class="btn btn-danger float-right mr-2"
+                                                        id="emotion_advanced_btn">
+                                                    Advanced Analysis
+                                                </button>
+                                                <!-- end of button to view advanced analysis -->
                                             </div>
 
                                         </div>
@@ -1351,6 +1570,14 @@
                                                     </button>
                                                 </div>
                                                 <!-- end of stats button -->
+
+                                                <!-- button to view advanced analysis -->
+                                                <button type="button" class="btn btn-danger float-right mr-2"
+                                                        id="gaze_advanced_btn">
+                                                    Advanced Analysis
+                                                </button>
+                                                <!-- end of button to view advanced analysis -->
+
                                             </div>
 
                                         </div>
@@ -1418,17 +1645,12 @@
                                             <hr>
 
                                             <!-- button to view activity summary -->
-                                            <button type="button" class="btn btn-primary float-right" id="activity_summary_btn">
+                                            <button type="button" class="btn btn-primary float-right"
+                                                    id="activity_summary_btn">
                                                 Summary
                                             </button>
                                             <!-- end of button to view activity summary -->
 
-
-                                            <!-- button to view advanced analysis -->
-                                            <button type="button" class="btn btn-danger float-right mr-2" id="activity_advanced_btn">
-                                                Advanced Analysis
-                                            </button>
-                                            <!-- end of button to view advanced analysis -->
 
                                         </li>
                                         <!-- end of the activity list item -->
@@ -1495,17 +1717,11 @@
                                             <hr>
 
                                             <!-- button to view emotion summary -->
-                                            <button type="button" class="btn btn-primary float-right" id="emotion_summary_btn">
+                                            <button type="button" class="btn btn-primary float-right"
+                                                    id="emotion_summary_btn">
                                                 Summary
                                             </button>
                                             <!-- end of button to view emotion summary -->
-
-
-                                            <!-- button to view advanced analysis -->
-                                            <button type="button" class="btn btn-danger float-right mr-2" id="emotion_advanced_btn">
-                                                Advanced Analysis
-                                            </button>
-                                            <!-- end of button to view advanced analysis -->
 
 
                                         </li>
@@ -1548,7 +1764,8 @@
 
                                                 <span class="float-right" id="looking_down_right_perct">50%</span>
                                                 <div class="progress mb-4">
-                                                    <div class="progress-bar bg-success" role="progressbar" id="looking_down_right_width"
+                                                    <div class="progress-bar bg-success" role="progressbar"
+                                                         id="looking_down_right_width"
                                                          style="width: 60%"
                                                          aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
                                                 </div>
@@ -1579,22 +1796,15 @@
 
 
                                             <!-- button to view gaze summary -->
-                                            <button type="button" class="btn btn-primary float-right" id="gaze_summary_btn">
+                                            <button type="button" class="btn btn-primary float-right"
+                                                    id="gaze_summary_btn">
                                                 Summary
                                             </button>
                                             <!-- end of button to view gaze summary -->
 
 
-                                            <!-- button to view advanced analysis -->
-                                            <button type="button" class="btn btn-danger float-right mr-2" id="gaze_advanced_btn">
-                                                Advanced Analysis
-                                            </button>
-                                            <!-- end of button to view advanced analysis -->
-
-
                                         </li>
                                         <!-- end of the gaze list item -->
-
 
 
                                     </ul>
@@ -1926,7 +2136,8 @@
                         </div>
 
                         <div class="custom-control custom-radio mt-2">
-                            <input type="radio" class="custom-control-input" id="customRadio3" name="option" value="10000">
+                            <input type="radio" class="custom-control-input" id="customRadio3" name="option"
+                                   value="10000">
                             <label class="custom-control-label" for="customRadio3">All</label>
                         </div>
 
@@ -1997,7 +2208,8 @@
 
 
     <!-- gaze estimation Modal-->
-    <div class="modal fade" id="gaze_estimation_stats_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+    <div class="modal fade" id="gaze_estimation_stats_modal" tabindex="-1" role="dialog"
+         aria-labelledby="exampleModalLabel"
          aria-hidden="true">
         <div class="modal-dialog" role="document" style="max-width: 1400px">
             <div class="modal-content">
@@ -2022,7 +2234,7 @@
     <!-- activity advanced analysis modal -->
     <div class="modal fade" id="activity_advanced_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
          aria-hidden="true">
-        <div class="modal-dialog" role="document" style="max-width: 1400px">
+        <div class="modal-dialog" role="document" style="max-width: 700px">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="exampleModalLabel">Activity Advanced Analysis</h5>
@@ -2031,7 +2243,29 @@
                     </button>
                 </div>
                 <div class="modal-body text-center">
-                    <p>Hello</p>
+                    <h3 class="font-weight-bold">Student Activity VS. Lecturer Activity</h3>
+
+                    <!-- ajax loader -->
+                    <div class="text-center" id="activity_corr_loader" hidden>
+                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="Loader">
+                    </div>
+
+                    <!-- correlation table -->
+                    <table class="table table-striped" id="activity_corr_table" hidden>
+                        <thead>
+                        <tr>
+                            <th>Student Activity</th>
+                            <th>Lecturer Activity</th>
+                            <th>Correlation Score</th>
+                        </tr>
+                        </thead>
+
+                        <tbody id="activity_corr_tbody">
+
+                        </tbody>
+                    </table>
+                    <!-- end of correlation table -->
+
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
@@ -2044,7 +2278,7 @@
     <!-- emotion advanced analysis modal -->
     <div class="modal fade" id="emotion_advanced_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
          aria-hidden="true">
-        <div class="modal-dialog" role="document" style="max-width: 1400px">
+        <div class="modal-dialog" role="document" style="max-width: 700px">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="exampleModalLabel">Emotion Advanced Analysis</h5>
@@ -2053,7 +2287,29 @@
                     </button>
                 </div>
                 <div class="modal-body text-center">
-                    <p>Hello</p>
+                    <h3 class="font-weight-bold">Student Emotions VS. Lecturer Activity</h3>
+
+                    <!-- ajax loader -->
+                    <div class="text-center" id="emotion_corr_loader" hidden>
+                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="Loader">
+                    </div>
+
+                    <!-- correlation table -->
+                    <table class="table table-striped" id="emotion_corr_table" hidden>
+                        <thead>
+                        <tr>
+                            <th>Student Emotion</th>
+                            <th>Lecturer Activity</th>
+                            <th>Correlation Score</th>
+                        </tr>
+                        </thead>
+
+                        <tbody id="emotion_corr_tbody">
+
+                        </tbody>
+                    </table>
+                    <!-- end of correlation table -->
+
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
@@ -2066,7 +2322,7 @@
     <!-- gaze advanced analysis modal -->
     <div class="modal fade" id="gaze_advanced_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
          aria-hidden="true">
-        <div class="modal-dialog" role="document" style="max-width: 1400px">
+        <div class="modal-dialog" role="document" style="max-width: 700px">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="exampleModalLabel">Gaze Advanced Analysis</h5>
@@ -2075,7 +2331,29 @@
                     </button>
                 </div>
                 <div class="modal-body text-center">
-                    <p>Hello</p>
+                    <h3 class="font-weight-bold">Student Gaze estimation VS. Lecturer Activity</h3>
+
+                    <!-- ajax loader -->
+                    <div class="text-center" id="gaze_corr_loader" hidden>
+                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="Loader">
+                    </div>
+
+                    <!-- correlation table -->
+                    <table class="table table-striped" id="gaze_corr_table" hidden>
+                        <thead>
+                        <tr>
+                            <th>Student Gaze estimation</th>
+                            <th>Lecturer Activity</th>
+                            <th>Correlation Score</th>
+                        </tr>
+                        </thead>
+
+                        <tbody id="gaze_corr_tbody">
+
+                        </tbody>
+                    </table>
+                    <!-- end of correlation table -->
+
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>

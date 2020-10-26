@@ -15,10 +15,12 @@ from . face_landmarks import get_landmark_model, detect_marks
 import os
 import shutil
 import math
+import pandas as pd
 
 from ..MongoModels import *
 from ..serializers import *
 from . import id_generator as ig
+from . import utilities as ut
 
 
 def get_2d_points(img, rotation_vector, translation_vector, camera_matrix, val):
@@ -964,3 +966,77 @@ def save_frame_groupings(video_name, frame_landmarks, frame_group_dict):
     # save
     new_lec_gaze_frame_groupings.save()
 
+
+# this method will get gaze estimation correlations
+def get_gaze_correlations(individual_lec_gaze, lec_recorded_activity_data):
+    # this variable will be used to store the correlations
+    correlations = []
+
+    limit = 10
+
+    data_index = ['lecture-{}'.format(i + 1) for i in range(len(individual_lec_gaze))]
+
+    # student gaze labels
+    student_gaze_labels = ['Up and Right', 'Up and Left', 'Down and Right', 'Down and Left', 'Front']
+    lecturer_activity_labels = ['seated', 'standing', 'walking']
+
+    # lecturer recorded data list (lecturer)
+    sitting_perct_list = []
+    standing_perct_list = []
+    walking_perct_list = []
+
+    # lecture activity data list (student)
+    upright_perct_list = []
+    upleft_perct_list = []
+    downright_perct_list = []
+    downleft_perct_list = []
+    front_perct_list = []
+
+    # loop through the lecturer recorded data (lecturer)
+    for data in lec_recorded_activity_data:
+        sitting_perct_list.append(int(data['seated_count']))
+        standing_perct_list.append(int(data['standing_count']))
+        walking_perct_list.append(int(data['walking_count']))
+
+    # loop through the lecturer recorded data (student)
+    for data in individual_lec_gaze:
+        upright_perct_list.append(int(data['looking_up_and_right_perct']))
+        upleft_perct_list.append(int(data['looking_up_and_left_perct']))
+        downright_perct_list.append(int(data['looking_down_and_right_perct']))
+        downleft_perct_list.append(int(data['looking_down_and_left_perct']))
+        front_perct_list.append(int(data['looking_front_perct']))
+
+    corr_data = {'Up and Right': upright_perct_list, 'Up and Left': upleft_perct_list, 'Down and Right': downright_perct_list,
+                 'Down and Left': downleft_perct_list, 'Front': front_perct_list,
+                 'seated': sitting_perct_list, 'standing': standing_perct_list, 'walking': walking_perct_list}
+
+    # create the dataframe
+    df = pd.DataFrame(corr_data, index=data_index)
+
+    # calculate the correlation
+    pd_series = ut.get_top_abs_correlations(df, limit)
+
+    print('====correlated variables=====')
+    print(pd_series)
+
+    for i in range(limit):
+        # this dictionary will get the pandas.Series object's  indices and values separately
+        corr_dict = {}
+
+        index = pd_series.index[i]
+
+        # check whether the first index is a student activity
+        isStudentGaze = index[0] in student_gaze_labels
+        # check whether the second index is a lecturer activity
+        isLecturerAct = index[1] in lecturer_activity_labels
+
+        # if both are student and lecturer activities, add to the dictionary
+        if isStudentGaze & isLecturerAct:
+            corr_dict['index'] = index
+            corr_dict['value'] = pd_series.values[i]
+
+            # append the dictionary to the 'correlations' list
+            correlations.append(corr_dict)
+
+    # return the list
+    return correlations

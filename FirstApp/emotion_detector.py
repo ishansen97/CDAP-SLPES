@@ -11,12 +11,12 @@ from . models import VideoMeta
 from . logic import custom_sorter as cs
 from .logic import id_generator as ig
 from .logic import activity_recognition as ar
-
-
-# emotion recognition method
+from .logic import utilities as ut
 from .serializers import LectureEmotionSerializer
 
+import pandas as pd
 
+# emotion recognition method
 def emotion_recognition(classifier, face_classifier, image):
     label = ""
     class_labels = ['Angry', 'Happy', 'Neutral', 'Sad', 'Surprise']
@@ -686,3 +686,79 @@ def save_frame_groupings(video_name, frame_landmarks, frame_group_dict):
 
     # save
     new_lec_emotion_frame_groupings.save()
+
+
+# this method will get emotion correlations
+def get_emotion_correlations(individual_lec_emotions, lec_recorded_activity_data):
+    # this variable will be used to store the correlations
+    correlations = []
+
+    limit = 10
+
+    data_index = ['lecture-{}'.format(i + 1) for i in range(len(individual_lec_emotions))]
+
+    # student activity labels
+    student_emotion_labels = ['Happy', 'Sad', 'Angry', 'Surprise', 'Neutral']
+    lecturer_activity_labels = ['seated', 'standing', 'walking']
+
+    # lecturer recorded data list (lecturer)
+    sitting_perct_list = []
+    standing_perct_list = []
+    walking_perct_list = []
+
+    # lecture activity data list (student)
+    happy_perct_list = []
+    sad_perct_list = []
+    angry_perct_list = []
+    surprise_perct_list = []
+    neutral_perct_list = []
+
+
+    # loop through the lecturer recorded data (lecturer)
+    for data in lec_recorded_activity_data:
+        sitting_perct_list.append(int(data['seated_count']))
+        standing_perct_list.append(int(data['standing_count']))
+        walking_perct_list.append(int(data['walking_count']))
+
+    # loop through the lecturer recorded data (student)
+    for data in individual_lec_emotions:
+        happy_perct_list.append(int(data['happy_perct']))
+        sad_perct_list.append(int(data['sad_perct']))
+        angry_perct_list.append(int(data['angry_perct']))
+        surprise_perct_list.append(int(data['surprise_perct']))
+        neutral_perct_list.append(int(data['neutral_perct']))
+
+
+    corr_data = {'Happy': happy_perct_list, 'Sad': sad_perct_list, 'Angry': angry_perct_list, 'Surprise': surprise_perct_list, 'Neutral': neutral_perct_list,
+                 'seated': sitting_perct_list, 'standing': standing_perct_list, 'walking': walking_perct_list}
+
+    # create the dataframe
+    df = pd.DataFrame(corr_data, index=data_index)
+
+    # calculate the correlation
+    pd_series = ut.get_top_abs_correlations(df, limit)
+
+    print('====correlated variables=====')
+    print(pd_series)
+
+    for i in range(limit):
+        # this dictionary will get the pandas.Series object's  indices and values separately
+        corr_dict = {}
+
+        index = pd_series.index[i]
+
+        # check whether the first index is a student activity
+        isStudentEmotion = index[0] in student_emotion_labels
+        # check whether the second index is a lecturer activity
+        isLecturerAct = index[1] in lecturer_activity_labels
+
+        # if both are student and lecturer activities, add to the dictionary
+        if isStudentEmotion & isLecturerAct:
+            corr_dict['index'] = index
+            corr_dict['value'] = pd_series.values[i]
+
+            # append the dictionary to the 'correlations' list
+            correlations.append(corr_dict)
+
+    # return the list
+    return correlations

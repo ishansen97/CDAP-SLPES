@@ -9,6 +9,9 @@ from .custom_sorter import *
 from ..MongoModels import *
 from ..serializers import *
 from . import id_generator as ig
+from . import utilities as ut
+
+import pandas as pd
 
 
 def activity_recognition(video_path):
@@ -849,3 +852,77 @@ def save_frame_groupings(video_name, frame_landmarks, frame_group_dict):
 
     # save
     new_lec_activity_frame_groupings.save()
+
+
+# this method will get activity correlations
+def get_activity_correlations(individual_lec_activities, lec_recorded_activity_data):
+
+    # this variable will be used to store the correlations
+    correlations = []
+
+    limit = 10
+
+    data_index = ['lecture-{}'.format(i+1)  for i in range(len(individual_lec_activities))]
+
+    # student activity labels
+    student_activity_labels = ['phone checking', 'listening', 'note taking']
+    lecturer_activity_labels = ['seated', 'standing', 'walking']
+
+    # lecturer recorded data list (lecturer)
+    sitting_perct_list = []
+    standing_perct_list = []
+    walking_perct_list = []
+
+    # lecture activity data list (student)
+    phone_perct_list = []
+    listen_perct_list = []
+    note_perct_list = []
+
+    # loop through the lecturer recorded data (lecturer)
+    for data in lec_recorded_activity_data:
+        sitting_perct_list.append(int(data['seated_count']))
+        standing_perct_list.append(int(data['standing_count']))
+        walking_perct_list.append(int(data['walking_count']))
+
+   # loop through the lecturer recorded data (student)
+    for data in individual_lec_activities:
+        phone_perct_list.append(int(data['phone_perct']))
+        listen_perct_list.append(int(data['listening_perct']))
+        note_perct_list.append(int(data['writing_perct']))
+
+
+    corr_data = {'phone checking': phone_perct_list, 'listening': listen_perct_list, 'note taking': note_perct_list,
+                         'seated': sitting_perct_list, 'standing': standing_perct_list, 'walking': walking_perct_list}
+
+    # create the dataframe
+    df = pd.DataFrame(corr_data, index=data_index)
+
+    # calculate the correlation
+    pd_series = ut.get_top_abs_correlations(df, limit)
+
+    print('====correlated variables=====')
+    print(pd_series)
+
+    for i in range(limit):
+        # this dictionary will get the pandas.Series object's  indices and values separately
+        corr_dict = {}
+
+        index = pd_series.index[i]
+
+        # check whether the first index is a student activity
+        isStudentAct = index[0] in student_activity_labels
+        # check whether the second index is a lecturer activity
+        isLecturerAct = index[1] in lecturer_activity_labels
+
+        # if both are student and lecturer activities, add to the doctionary
+        if isStudentAct & isLecturerAct:
+            corr_dict['index'] = index
+            corr_dict['value'] = pd_series.values[i]
+
+            # append the dictionary to the 'correlations' list
+            correlations.append(corr_dict)
+
+
+    # return the list
+    return correlations
+
