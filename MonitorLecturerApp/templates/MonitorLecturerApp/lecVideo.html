@@ -1,6 +1,8 @@
 {% extends 'FirstApp/template.html' %}
 <!DOCTYPE html>
 <html lang="en">
+
+
 <body id="page-top">
 
 {% block 'javascript' %}
@@ -73,72 +75,19 @@
           <!-- Page Heading -->
 
           <div class="d-sm-flex align-items-center justify-content-between mb-4">
-            <h1 class="h3 mb-0 text-gray-800">{{video_name}}</h1>
-            <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> Generate Report</a>
+            <h1 class="h3 mb-0 text-gray-800">Lecturer Audio Analysis keywords.</h1>
           </div>
 
 <!--          &lt;!&ndash; Content Row &ndash;&gt;-->
           <div class="row">
 
-            <!-- Earnings (Monthly) Card Example -->
-            <div class="col-xl-12 col-md-6 mb-4">
-              <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                  <div class="row">
-                    <div class="col-3">
-                      <video width="500" height="300" controls>
-                        <source src="{% static '' %}FirstApp/lecturer_videos/{{video_name}}" type="video/mp4">
-                        Your browser does not support the video tag.
-                      </video>
-                    </div>
 
-                    <div class="col-3"></div>
-                    <!--progress bars-->
-<!--                    <div class="col-6">-->
-<!--                      <h4 class="small font-weight-bold">Anger-->
-<!--                        <span class="float-right">{{meta.angry_perct}}%</span></h4>-->
-<!--                      <div class="progress mb-4">-->
-<!--                        <div class="progress-bar bg-danger" role="progressbar" style="width: 20%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>-->
-<!--                      </div>-->
-<!--                      <h4 class="small font-weight-bold">Happy-->
-<!--                        <span class="float-right">{{meta.happy_perct}}%</span></h4>-->
-<!--                      <div class="progress mb-4">-->
-<!--                        <div class="progress-bar bg-warning" role="progressbar" style="width: 40%" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>-->
-<!--                      </div>-->
-<!--                      <h4 class="small font-weight-bold">Sadness-->
-<!--                        <span class="float-right">{{meta.sad_perct}}%</span></h4>-->
-<!--                      <div class="progress mb-4">-->
-<!--                        <div class="progress-bar" role="progressbar" style="width: 60%" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>-->
-<!--                      </div>-->
-<!--                      <h4 class="small font-weight-bold">Surprise-->
-<!--                        <span class="float-right">{{meta.surprise_perct}}%</span></h4>-->
-<!--                      <div class="progress mb-4">-->
-<!--                        <div class="progress-bar bg-info" role="progressbar" style="width: 80%" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>-->
-<!--                      </div>-->
-<!--                      <h4 class="small font-weight-bold">Neutral-->
-<!--                        <span class="float-right">{{meta.neutral_perct}}%</span></h4>-->
-<!--                      <div class="progress">-->
-<!--                        <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>-->
-<!--                      </div>-->
-
-<!--                      <div class="form-control">-->
-<!--                        <button type="button" id="test" data-target="#gif-body" data-toggle="modal">Test</button>-->
-<!--                      </div>-->
-
-<!--                    </div>-->
-
-                  </div>
-
-                </div>
-              </div>
-            </div>
-
-            <!-- Video List -->
+            <!-- Extraneous Word List -->
               <div class="col-xl-6 col-lg-5">
                   <div class="card shadow mb-4">
                       <!-- Card Header - Dropdown -->
                       <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                          <h6 class="m-0 font-weight-bold text-primary">Video List</h6>
+                          <h6 class="m-0 font-weight-bold text-primary">Extraneous Key Words</h6>
 
                       </div>
                       <!-- Card Body -->
@@ -146,24 +95,11 @@
                           <div class="chart-pie pt-4 pb-2">
                               <table class="table table-striped">
                                   <thead>
-                                  <tr>
-                                      <th>Video Name</th>
-                                      <th>Duration</th>
-                                  </tr>
+
                                   </thead>
 
                                   <tbody>
-                                  {% for video in Videos %}
-{#                                  {% for video in lecturer_videos %}    #}
 
-                                  <tr>
-                                      <td>{{video.name}}</td>
-                                      <td>{{video.duration}}</td>
-                                      <td class="btn_class">
-                                          <button type="button" class="btn btn-success calc" id='{{video.name}}'>Calculate</button>
-                                      </td>
-                                  </tr>
-                                  {% endfor %}
                                   </tbody>
                               </table>
                           </div>
@@ -173,48 +109,30 @@
               </div>
               <!--end of video list column -->
 
-              <!--video summary -->
+              <!--Non-Lexical Key Words -->
             <div class="col-lg-6">
       <!-- Illustrations -->
                 <div class="card shadow mb-4">
                     <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Video Summary</h6>
+                        <h6 class="m-0 font-weight-bold text-primary">Non-Lexical Key Words.</h6>
                     </div>
-                    <div class="card-body">
-                        <div class="text-center" id="no_content_message">
-                            <span class="font-italic">No content to be displayed</span>
-                        </div>
+                    <div class="card-body" style="overflow-y: scroll">
+                        <div class="chart-pie pt-4 pb-2">
+                              <table class="table table-striped">
+                                  <thead>
 
-                        <!--loader -->
-                        <div class="text-center" id="loader" hidden>
-<!--                                    <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="">-->
-                            <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="">
+                                  </thead>
 
-                        </div>
+                                  <tbody>
 
-                        <!--progress -->
-                        <div id="progress_bars" hidden>
+                                  </tbody>
+                              </table>
+                          </div>
 
-                            <h4 class="small font-weight-bold">Sitting <span class="float-right" id="sitting_span">20%</span></h4>
-                            <div class="progress mb-4">
-                                <div class="progress-bar bg-danger" id="sitting_val" role="progressbar" style="width: 20%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                            <h4 class="small font-weight-bold">Standing <span class="float-right" id="standing_span">40%</span></h4>
-                            <div class="progress mb-4">
-                                <div class="progress-bar bg-warning" id="standing_val" role="progressbar" style="width: 40%" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                            <h4 class="small font-weight-bold">Walking<span class="float-right" id="walking_span">60%</span></h4>
-                            <div class="progress mb-4">
-                                <div class="progress-bar" id="walking_val" role="progressbar" style="width: 60%" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-
-                        </div>
 
                     </div>
                 </div>
             </div>
-
-            <!--end of video summary column -->
 
           </div>
 
@@ -229,26 +147,6 @@
     <!-- End of Content Wrapper -->
 
   </div>
-
-  {% block 'modal' %}
-    <div class="modal fade" id="gif-body" role="dialog" aria-labelledby="gif-body">
-      <div class="modal-dialog modal-lg" style="max-width: 1600px; max-height: 800px">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h2 class="modal-title">Processing....</h2>
-            <button class="close" type="button" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">×</span>
-            </button>
-          </div>
-
-          <div class="modal-body text-center">
-            <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" width="200" height="500" alt="This is a GIF">
-            <h5>This might take few seconds...</h5>
-          </div>
-        </div>
-      </div>
-   </div>
-  {% endblock %}
 
 </body>
 </html>
