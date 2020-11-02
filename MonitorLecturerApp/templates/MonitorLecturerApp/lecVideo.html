@@ -1,4 +1,4 @@
-{% extends 'MonitorLecturerApp/template.html' %}
+{% extends 'FirstApp/template.html' %}
 <!DOCTYPE html>
 <html lang="en">
 <body id="page-top">
@@ -154,6 +154,8 @@
 
                                   <tbody>
                                   {% for video in Videos %}
+{#                                  {% for video in lecturer_videos %}    #}
+
                                   <tr>
                                       <td>{{video.name}}</td>
                                       <td>{{video.duration}}</td>

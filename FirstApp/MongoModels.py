@@ -40,6 +40,15 @@ class Lecturer(models.Model):
         return self.lecturer_id
 
 
+# admin model
+class Admin(models.Model):
+    admin_id = models.CharField(max_length=10)
+    name = models.CharField(max_length=20)
+    email = models.EmailField()
+
+    def __str__(self):
+        return self.admin_id
+
 # Lecturer_subject model
 class LecturerSubject(models.Model):
     lec_subject_id = models.CharField(max_length=10)
@@ -53,6 +62,12 @@ class LecturerSubject(models.Model):
 # lecturer credential details
 class LecturerCredentials(models.Model):
     username = models.ForeignKey(Lecturer, on_delete=models.CASCADE)
+    password = models.CharField(max_length=15)
+
+
+# admin credential details
+class AdminCredentialDetails(models.Model):
+    username = models.ForeignKey(Admin, on_delete=models.CASCADE)
     password = models.CharField(max_length=15)
 
 
@@ -285,7 +300,7 @@ class LectureEmotionFrameRecognitions(models.Model):
 
 
 # POSE section
-# lecture pose estimation
+# lecture gaze estimation
 class LectureGazeEstimation(models.Model):
     lecture_gaze_id = models.CharField(max_length=10)
     lecture_video_id = models.ForeignKey(LectureVideo, on_delete=models.CASCADE)

@@ -9,6 +9,9 @@ from .custom_sorter import *
 from ..MongoModels import *
 from ..serializers import *
 from . import id_generator as ig
+from . import utilities as ut
+
+import pandas as pd
 
 
 def activity_recognition(video_path):
@@ -50,38 +53,21 @@ def activity_recognition(video_path):
     frame_count = 0
     total_detections = 0
     phone_checking_count = 0
-    talking_count = 0
     note_taking_count = 0
     listening_count = 0
 
-    # video activity directory
-    VIDEO_ACTIVITY_DIR = os.path.join(ACTIVITY_DIR, video_path)
-
-    # creating the directory for the video
-    # if (os.path.isdir(VIDEO_ACTIVITY_DIR)):
-    #     shutil.rmtree(VIDEO_ACTIVITY_DIR)
-    #
-    # # create the video directory
-    # os.mkdir(VIDEO_ACTIVITY_DIR)
+    # for testing purposes
+    print('starting the activity recognition process')
 
     while (frame_count < no_of_frames):
         ret, image = video.read()
-        FRAME_DIR = os.path.join(VIDEO_ACTIVITY_DIR, "frame-{}".format(frame_count))
-        # frame_name = "frame-{}.png".format(frame_count)
-        #
-        # FRAME_IMG = os.path.join(FRAME_DIR, frame_name)
-        #
-        # if (os.path.isdir(FRAME_DIR)):
-        #     shutil.rmtree(FRAME_DIR)
-
-        # create the new frame directory
-        # os.mkdir(FRAME_DIR)
 
         image = cv2.resize(image, size)
         detections = person_detection(image, net)
 
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        # cv2.imwrite(FRAME_IMG, image)
+        # this is for testing purposes
+        print('frame count: ', frame_count)
+
 
         # if there are any person detections
         if (len(detections) > 0):
@@ -90,6 +76,7 @@ def activity_recognition(video_path):
 
             detection_count = 0
 
+            # looping through the person detections of the frame
             for detection in detections:
 
                 detection = cv2.resize(detection, size)
@@ -113,34 +100,26 @@ def activity_recognition(video_path):
                 elif (label == class_labels[2]):
                     note_taking_count += 1
 
-                # saving the detection for the particular frame
-                # detection_name = "detection-{}.png".format(detection_count)
-                # detection_image_path = os.path.join(FRAME_DIR, detection_name)
-                #
-                # # converting detected image into grey-scale
-                # detection = cv2.cvtColor(detection, cv2.COLOR_BGR2GRAY)
-                #
-                # cv2.imwrite(detection_image_path, detection)
 
                 detection_count += 1
 
         frame_count += 1
 
-    # after extracting the frames, save the changes to static content
-    # p = os.popen("python manage.py collectstatic", "w")
-    # p.write("yes")
 
     # calculating the percentages for each label
     phone_perct = float(phone_checking_count / total_detections) * 100 if total_detections > 0 else 0
-    talking_perct = float(talking_count / total_detections) * 100 if total_detections > 0 else 0
+    # talking_perct = float(talking_count / total_detections) * 100 if total_detections > 0 else 0
     note_perct = float(note_taking_count / total_detections) * 100 if total_detections > 0 else 0
     listening_perct = float(listening_count / total_detections) * 100 if total_detections > 0 else 0
 
     # assigning the percentages to the dictionary
     percentages["phone_perct"] = phone_perct
-    percentages["talking_perct"] = talking_perct
+    # percentages["talking_perct"] = talking_perct
     percentages["writing_perct"] = note_perct
     percentages["listening_perct"] = listening_perct
+
+    # for testing purposes
+    print('activity recognition process is over')
 
     return percentages
 
@@ -148,8 +127,6 @@ def activity_recognition(video_path):
 def person_detection(image, net):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-    config_file = os.path.join(BASE_DIR, "FirstApp\\classifiers\\MobileNetSSD_deploy.prototxt.txt")
-    model_file = os.path.join(BASE_DIR, "FirstApp\\classifiers\\MobileNetSSD_deploy.caffemodel")
     threshold = 0.2
     detected_person = []
 
@@ -391,14 +368,27 @@ def get_student_activity_evaluation(video_name):
 # recognize the activity for each frame
 def get_frame_activity_recognition(video_name):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    EXTRACTED_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\activity\\{}".format(video_name))
-    # CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_03.h5")
+    VIDEO_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\videos\\{}".format(video_name))
     # CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_02.h5")
+    # CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_03.h5")
     CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_04.h5")
+    ACTIVITY_DIR = os.path.join(BASE_DIR, "static\\FirstApp\\activity")
+
+    # files required for person detection
+    config_file = os.path.join(BASE_DIR, "FirstApp\\classifiers\\MobileNetSSD_deploy.prototxt.txt")
+    model_file = os.path.join(BASE_DIR, "FirstApp\\classifiers\\MobileNetSSD_deploy.caffemodel")
+
+    # load our serialized persosn detection model from disk
+    print("[INFO] loading model...")
+    net = cv2.dnn.readNetFromCaffe(config_file, model_file)
+
 
     np.set_printoptions(suppress=True)
 
-    # load the model
+    # class_labels = ['Phone checking', 'Talking with friends', 'note taking']
+    # class labels
+    class_labels = ['Phone checking', 'Listening', 'Note taking']
+
     model = tensorflow.keras.models.load_model(CLASSIFIER_DIR)
     model.compile(optimizer='adam',
                   loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
@@ -407,45 +397,54 @@ def get_frame_activity_recognition(video_name):
     data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32)
     size = (224, 224)
 
-    # class labels
-    class_labels = ['Phone checking', 'Listening', 'Note taking']
-
+    # iteration
+    video = cv2.VideoCapture(VIDEO_DIR)
+    no_of_frames = video.get(cv2.CAP_PROP_FRAME_COUNT)
     frame_count = 0
-    # total_detections = 10
+
+
 
     # frame activity recognitions
     frame_activity_recognitions = []
 
+
+    # for testing purposes
+    print('starting the frame activity recognition process')
+
     # looping through the frames
-    for frame in os.listdir(EXTRACTED_DIR):
+    while (frame_count < no_of_frames):
 
         # define the count variables for each frame
         phone_checking_count = 0
         listening_count = 0
         note_taking_count = 0
 
+        ret, image = video.read()
+
         # derive the frame folder path
-        FRAME_FOLDER = os.path.join(EXTRACTED_DIR, frame)
+        # FRAME_FOLDER = os.path.join(EXTRACTED_DIR, frame)
+
+        frame_name = "frame-{}".format(frame_count)
 
         frame_details = {}
-        frame_details['frame_name'] = frame
+        frame_details['frame_name'] = frame_name
 
         # to count the extracted detections for a frame
         detection_count = 0
         detected_percentages = []
 
-        # loop through each detection in the frame
-        for detection in os.listdir(FRAME_FOLDER):
+        detections = person_detection(image, net)
 
-            DETECTION_PATH = os.path.join(FRAME_FOLDER, detection)
 
-            # check whether the image is not the frame itself
-            if "frame" not in detection:
-                image = cv2.imread(DETECTION_PATH)
+        # if there are detections
+        if (len(detections) > 0):
 
-                image = cv2.resize(image, size)
+            # loop through each detection in the frame
+            for detection in detections:
 
-                image_array = np.asarray(image)
+                detection = cv2.resize(detection, size)
+
+                image_array = np.asarray(detection)
                 normalized_image_array = (image_array.astype(np.float32) / 127.0) - 1
 
                 # Load the image into the array
@@ -467,24 +466,38 @@ def get_frame_activity_recognition(video_name):
                 # increment the detection count
                 detection_count += 1
 
-        # calculating the percentages for the frame
-        phone_checking_perct = float(phone_checking_count / detection_count) * 100 if detection_count > 0 else 0
-        listening_perct = float(listening_count / detection_count) * 100 if detection_count > 0 else 0
-        note_taking_perct = float(note_taking_count / detection_count) * 100 if detection_count > 0 else 0
 
-        # adding the percentage values to the frame details
-        frame_details['phone_perct'] = phone_checking_perct
-        frame_details['listening_perct'] = listening_perct
-        frame_details['note_perct'] = note_taking_perct
+            # calculating the percentages for the frame
+            phone_checking_perct = float(phone_checking_count / detection_count) * 100 if detection_count > 0 else 0
+            listening_perct = float(listening_count / detection_count) * 100 if detection_count > 0 else 0
+            note_taking_perct = float(note_taking_count / detection_count) * 100 if detection_count > 0 else 0
 
-        # push to all the frame details
-        frame_activity_recognitions.append(frame_details)
+            # adding the percentage values to the frame details
+            frame_details['phone_perct'] = phone_checking_perct
+            frame_details['listening_perct'] = listening_perct
+            frame_details['note_perct'] = note_taking_perct
+
+            # push to all the frame details
+            frame_activity_recognitions.append(frame_details)
+
+        else:
+            break
+
+
+        print('current frame: ', frame_count)
+        # increment frame count
+        frame_count += 1
+
 
     # sort the recognitions based on the frame number
     sorted_activity_frame_recognitions = custom_object_sorter(frame_activity_recognitions)
 
+    # for testing purposes
+    print('ending the frame activity recognition process')
+
     # return the detected frame percentages
     return sorted_activity_frame_recognitions
+
 
 
 # this method will retrieve individual student evaluation
@@ -753,6 +766,10 @@ def activity_frame_groupings(video_name, frame_landmarks, frame_group_dict):
 
 # this section will handle saving activity entities to the database
 def save_frame_recognition(video_name):
+
+    # for testing purposes
+    print('starting the saving activity frame recognition process')
+
     # retrieve the lecture activity id
     lec_activity = LectureActivity.objects.filter(lecture_video_id__video_name=video_name)
     lec_activity_ser = LectureActivitySerializer(lec_activity, many=True)
@@ -787,6 +804,9 @@ def save_frame_recognition(video_name):
 
     lec_activity_frame_recognitions.save()
 
+    # for testing purposes
+    print('ending the saving activity frame recognition process')
+
     # now return the frame detections
     return frame_detections
 
@@ -794,6 +814,8 @@ def save_frame_recognition(video_name):
 # this method will save the activity frame groupings to the database
 def save_frame_groupings(video_name, frame_landmarks, frame_group_dict):
 
+    # for testing purposes
+    print('starting the saving activity frame groupings process')
 
     frame_group_percentages, activity_labels = activity_frame_groupings(video_name, frame_landmarks,
                                                                            frame_group_dict)
@@ -825,5 +847,82 @@ def save_frame_groupings(video_name, frame_landmarks, frame_group_dict):
     new_lec_activity_frame_groupings.lecture_activity_id_id = lec_activity_id
     new_lec_activity_frame_groupings.frame_group_details = frame_group_details
 
+    # for testing purposes
+    print('ending the saving activity frame groupings process')
+
     # save
     new_lec_activity_frame_groupings.save()
+
+
+# this method will get activity correlations
+def get_activity_correlations(individual_lec_activities, lec_recorded_activity_data):
+
+    # this variable will be used to store the correlations
+    correlations = []
+
+    limit = 10
+
+    data_index = ['lecture-{}'.format(i+1)  for i in range(len(individual_lec_activities))]
+
+    # student activity labels
+    student_activity_labels = ['phone checking', 'listening', 'note taking']
+    lecturer_activity_labels = ['seated', 'standing', 'walking']
+
+    # lecturer recorded data list (lecturer)
+    sitting_perct_list = []
+    standing_perct_list = []
+    walking_perct_list = []
+
+    # lecture activity data list (student)
+    phone_perct_list = []
+    listen_perct_list = []
+    note_perct_list = []
+
+    # loop through the lecturer recorded data (lecturer)
+    for data in lec_recorded_activity_data:
+        sitting_perct_list.append(int(data['seated_count']))
+        standing_perct_list.append(int(data['standing_count']))
+        walking_perct_list.append(int(data['walking_count']))
+
+   # loop through the lecturer recorded data (student)
+    for data in individual_lec_activities:
+        phone_perct_list.append(int(data['phone_perct']))
+        listen_perct_list.append(int(data['listening_perct']))
+        note_perct_list.append(int(data['writing_perct']))
+
+
+    corr_data = {'phone checking': phone_perct_list, 'listening': listen_perct_list, 'note taking': note_perct_list,
+                         'seated': sitting_perct_list, 'standing': standing_perct_list, 'walking': walking_perct_list}
+
+    # create the dataframe
+    df = pd.DataFrame(corr_data, index=data_index)
+
+    # calculate the correlation
+    pd_series = ut.get_top_abs_correlations(df, limit)
+
+    print('====correlated variables=====')
+    print(pd_series)
+
+    for i in range(limit):
+        # this dictionary will get the pandas.Series object's  indices and values separately
+        corr_dict = {}
+
+        index = pd_series.index[i]
+
+        # check whether the first index is a student activity
+        isStudentAct = index[0] in student_activity_labels
+        # check whether the second index is a lecturer activity
+        isLecturerAct = index[1] in lecturer_activity_labels
+
+        # if both are student and lecturer activities, add to the doctionary
+        if isStudentAct & isLecturerAct:
+            corr_dict['index'] = index
+            corr_dict['value'] = pd_series.values[i]
+
+            # append the dictionary to the 'correlations' list
+            correlations.append(corr_dict)
+
+
+    # return the list
+    return correlations
+
