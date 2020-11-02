@@ -1,3 +1,23 @@
+"""
+
+this file contain the relevant methods to implement the student activity recognition logic
+
+main methods include
+    * the execution of activity recognition model and saving the results into the database,
+    * retrieving the activity recognition details for lectures within a given time period
+    * calculating the activity recognition details for each frame, for a given lecture
+    * calculating the activity recognition details for frame groups, for a given lecture
+    * calculating the activity recognition correlations with the lecturer posture activities
+
+
+
+"""
+
+
+
+
+
+
 import tensorflow as tf
 import tensorflow.keras
 from PIL import Image, ImageOps

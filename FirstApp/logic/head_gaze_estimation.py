@@ -1,8 +1,16 @@
-# -*- coding: utf-8 -*-
 """
-Created on Fri Jul 31 03:00:36 2020
 
-@author: hp
+this file contain the relevant methods to implement the student gaze estimation logic
+
+main methods include
+    * the execution of gaze estimation model and saving the results into the database,
+    * retrieving the gaze estimation details for lectures within a given time period
+    * calculating the gaze estimation details for each frame, for a given lecture
+    * calculating the gaze estimation details for frame groups, for a given lecture
+    * calculating the gaze estimation correlations with the lecturer posture activities
+
+
+
 """
 from decimal import Decimal
 from . custom_sorter import *
