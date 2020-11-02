@@ -1,3 +1,19 @@
+"""
+
+this file contain the relevant methods to implement the student emotion recognition logic
+
+main methods include
+    * the execution of emotion recognition model and saving the results into the database,
+    * retrieving the emotion recognition details for lectures within a given time period
+    * calculating the emotion recognition details for each frame, for a given lecture
+    * calculating the emotion recognition details for frame groups, for a given lecture
+    * calculating the emotion recognition correlations with the lecturer posture activities
+
+
+
+"""
+
+
 from tensorflow.keras.models import load_model
 from time import sleep
 from keras.preprocessing.image import img_to_array

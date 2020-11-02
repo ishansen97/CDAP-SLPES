@@ -1,3 +1,17 @@
+"""
+
+- this file will handle the urlpatterns for the 'FirstApp' application
+
+- the 'urlpatterns' variable will contain the list of url patterns exist for this application
+
+- inside this 'list' variable, the 'path' variable will accept the url mappings to be redirected
+to an HTML page (view)
+
+- the 'url' will accept the url mappings to be redirected to a RESTful endpoint
+
+
+"""
+
 from django.urls import path, re_path, include
 from django.conf.urls import url
 from rest_framework import routers
@@ -5,29 +19,18 @@ from . import views
 from . import api
 
 router = routers.DefaultRouter()
-router.register(r'^register', views.RegisterViewSet)
 # router.register(r'^createImage', views.ImageViewSet)
 
 urlpatterns = [
     path('', views.hello),
     path('login', views.loginForm),
     path('logout', views.logoutView),
-    path('register-user', views.register),
     path('404', views.view404),
     path('401', views.view401),
     path('500', views.view500),
-    path('blank', views.blank),
     path('gaze', views.gaze),
-    path('gaze-process', views.processGaze),
-    path('pose', views.pose),
-    path('charts', views.charts),
-    path('forgot-password', views.forget_password),
-    path('webcam', views.webcam),
     path('template', views.template),
-    path('base', views.base),
-    path('child', views.child),
-    # extractor path
-    path('extract', views.extractor),
+
     # emotion path
     path('emotion', views.emotion_view),
     # video results
@@ -49,9 +52,6 @@ urlpatterns = [
     # this is used for activity
     path('activity', views.activity),
 
-    # tables view
-    path('tables', views.tables),
-
     # test view (delete later)
     path('test', views.test),
 
@@ -59,21 +59,6 @@ urlpatterns = [
     # user direct view
     path('user-direct', views.userDirect),
 
-    url(r'^register', views.RegisterViewSet),
-    # re_path('video/?video_name<str:video_name>', views.video),
-    url(r'^teachers/', views.teachersList.as_view()),
-    url(r'^video/', views.video, name='video'),
-
-    url(r'^createImage', api.ImageViewSet.as_view()),
-    # for gaze estimation
-    url(r'^estimateGaze', api.GazeEstimationViewSet.as_view()),
-    # for video extraction (POST)
-    url(r'^videoExtract', api.VideoExtractionViewSet.as_view()),
-    # for video extraction (GET)
-    url(r'^videoExtract/(?P<folder_name>\D+)', api.VideoExtractionViewSet.as_view()),
-
-    # testing the lecture emotions in the API
-    url(r'^lecture_emotions', api.LectureEmotionViewSet.as_view()),
 
     # testing the lecture in the API
     url(r'^lectures', api.LectureViewSet.as_view()),
@@ -101,8 +86,9 @@ urlpatterns = [
     # lecture video API (to retrieve a lecture)
     url(r'^get-lecture-video/$', api.GetLectureVideoViewSet.as_view()),
 
-    # lecture video API (to retrieve a lecture)
+    # lecture video API (to retrieve a lecture video in the lecturer home page)
     url(r'^get-lecture-video-for-home/$', api.GetLectureVideoViewSetForHome.as_view()),
+
 
     ##### ACTIVITIES API #####
 

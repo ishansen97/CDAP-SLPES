@@ -1,3 +1,18 @@
+"""
+this file is responsible for creating the API classes so that
+frontend could communicate with the backend, through JSON-based communication
+
+each class is extended by djangorestframework APIVIEW class
+
+each class contains methods to represent the HTTP methods received through the requests
+in this case the GET method was mostly used.
+
+each method will return an HttpResponse that allows its data to be rendered into
+arbitrary media types.
+
+"""
+
+
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 
@@ -5,9 +20,6 @@ from MonitorLecturerApp.models import LectureRecordedVideo, LecturerVideoMetaDat
 from MonitorLecturerApp.serializers import LectureRecordedVideoSerializer, LecturerVideoMetaDataSerializer
 from .MongoModels import *
 from rest_framework.views import *
-from .ImageOperations import saveImage
-from .logic import head_pose_estimation
-from .logic import video_extraction
 from .logic import activity_recognition as ar
 from .logic import posenet_calculation as pc
 from . import emotion_detector as ed
@@ -20,55 +32,6 @@ from .MongoModels import *
 from .serializers import *
 
 import datetime
-
-
-# to create images
-class ImageViewSet(APIView):
-
-    def post(self, request):
-        saveImage(request.data)
-        return Response({"response": "successful"})
-
-
-# to perform pose estimation on images
-class GazeEstimationViewSet(APIView):
-
-    def post(self, request):
-        response = head_pose_estimation.estimatePose(request.data)
-        return Response({"response": response})
-
-
-# to perform video extraction
-class VideoExtractionViewSet(APIView):
-
-    def get(self, request):
-        response = video_extraction.getExtractedFrames(request.query_params)
-        return Response({"response": response})
-
-    def post(self, request):
-        response = video_extraction.VideoExtractor(request.data)
-        return Response({"response": response})
-
-
-# lecture emotions view set
-class LectureEmotionViewSet(APIView):
-
-    def get(self, request):
-        emotions = LectureEmotionReport.objects.all().order_by('lecture_id')
-        serializer = LectureEmotionSerializer(emotions, many=True)
-        return Response({"response": serializer.data})
-
-    def post(self, request):
-        LectureEmotionReport(
-            lecture_id=request.data["lecture_id"],
-            happy_perct=request.data["happy_perct"],
-            sad_perct=request.data["sad_perct"],
-            angry_perct=request.data["angry_perct"],
-            surprise_perct=request.data["surprise_perct"],
-            disgust_perct=request.data["disgust_perct"],
-            neutral_perct=request.data["neutral_perct"]
-        ).save()
-        return Response({"response": request.data})
 
 
 class LectureViewSet(APIView):
@@ -191,20 +154,33 @@ class LectureVideoViewSet(APIView):
                         status=status.HTTP_400_BAD_REQUEST)
 
 
+# this API will retrieve a lecture video details
 class GetLectureVideoViewSet(APIView):
 
     def get(self, request):
+        # get the lecturer id from the request
         lecturer = request.query_params.get('lecturer')
+        # get the lecture date from the request
         date = request.query_params.get('date')
+        # get the item number from the request
         index = int(request.query_params.get('index'))
+
+        # retrieve the lecture video from the db
         lecturer_video = LectureVideo.objects.filter(lecturer_id=lecturer, date=date)
+        # serialize the object
         serializer = LectureVideoSerializer(lecturer_video, many=True)
 
+        # get the lecture video id
         lecture_video_id = serializer.data[0]['lecture_video_id']
         print('lecture video id: ', lecture_video_id)
+
+        # retrieve the lecture activties exist for the given video
         activities = LectureActivity.objects.filter(lecture_video_id__lecture_video_id=lecture_video_id)
+
+        # assign the whether there are found lecture activites or not
         isActivityFound = (len(activities) > 0)
 
+        # return the response
         return Response({
             "response": serializer.data[index],
             "isActivityFound": isActivityFound
@@ -225,21 +201,22 @@ class GetLectureVideoViewSetForHome(APIView):
 
         # to check whether there is only one lecture video for the query
 
+        # if there are more than one, send only the specified lecture video
         if len(serializer.data) > 1:
-            lecture_video_id = serializer.data[counter]['lecture_video_id']
             response = serializer.data[counter]
+        # else, send the only lecture video
         else:
-            lecture_video_id = serializer.data[0]['lecture_video_id']
             response = serializer.data[0]
 
-
+        # return the response
         return Response({
             "response": response
         })
 
 
 
-# ACTIVITY
+##### ACTIVITY section #####
+
 # API for lecture activities
 class LectureActivityViewSet(APIView):
 
@@ -276,7 +253,7 @@ class GetLectureActivityViewSet(APIView):
         })
 
 
-# API to process lecture activity
+# API to process lecture activity and save to DB
 class LectureActivityProcess(APIView):
 
     def get(self, request):
@@ -286,8 +263,6 @@ class LectureActivityProcess(APIView):
         self.activity(video_id, percentages)
         return Response({"response": True})
 
-    def post(self, request):
-        pass
 
     def activity(self, lec_video_id, percentages):
         # lec_video = LectureVideo.objects.filter(lecture_video_id=lec_video_id)
