@@ -1,7 +1,6 @@
-# from django.db import models
 from djongo import models
 
-# Create your models here.
+# Models used in Lecture Summarization Component
 from FirstApp.MongoModels import Lecturer, Subject
 
 
