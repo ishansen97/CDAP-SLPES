@@ -4,6 +4,7 @@ from FirstApp.serializers import LecturerSerializer, SubjectSerializer
 from . models import *
 
 
+#serializers used in Lecture Summarizing Component
 class LectureAudioSerializer(serializers.ModelSerializer):
 
     lecturer = LecturerSerializer()
@@ -23,7 +24,6 @@ class LectureAudioNoiseRemovedSerializer(serializers.ModelSerializer):
 
 
 class LectureSpeechToTextSerializer(serializers.ModelSerializer):
-    # lecture_speech_to_text_id = LectureAudioNoiseRemovedSerializer()
     lecture_audio_id = LectureAudioSerializer()
 
     class Meta:
@@ -32,7 +32,6 @@ class LectureSpeechToTextSerializer(serializers.ModelSerializer):
 
 
 class LectureAudioSummarySerializer(serializers.ModelSerializer):
-    # lecture_audio_noise_removed_id = LectureSpeechToTextSerializer()
     lecture_audio_id = LectureAudioSerializer()
 
     class Meta:
@@ -41,10 +40,8 @@ class LectureAudioSummarySerializer(serializers.ModelSerializer):
 
 
 class LectureNoticesSerializer(serializers.ModelSerializer):
-    # lecture_audio_noise_removed_id = LectureSpeechToTextSerializer()
     lecture_audio_id = LectureAudioSerializer()
 
     class Meta:
-        # model = LectureAudioSummary
         model = LectureNotices
         fields = '__all__'
