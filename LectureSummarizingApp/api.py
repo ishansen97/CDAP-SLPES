@@ -9,7 +9,7 @@ from LectureSummarizingApp.serializer import LectureAudioSerializer, LectureAudi
 from . import speech_to_text as stt
 
 
-# this API will retrieve lecture audio details
+# APIs used in Lecture Summarizing Component
 class LectureAudioAPI(APIView):
 
     def get(self, request):
