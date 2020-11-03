@@ -147,6 +147,12 @@ def head_pose_points(img, rotation_vector, translation_vector, camera_matrix):
 
 
 # this method will perform gaze estimation for a lecture
+# this method accepts:
+#     video_path: the lecture video name
+
+# returns:
+#     percentages: the gaze estimation percentages for the lecture video
+
 def process_gaze_estimation(video_path):
 
     # get the base directory
@@ -161,12 +167,15 @@ def process_gaze_estimation(video_path):
 
     # load the face detection model
     face_model = get_face_detector()
+
     # load the facial landamrk model
     landmark_model = get_landmark_model()
+
+    # capture the video
     cap = cv2.VideoCapture(VIDEO_PATH)
+
     ret, img = cap.read()
     size = img.shape
-    font = cv2.FONT_HERSHEY_SIMPLEX
     # 3D model points.
     model_points = np.array([
         (0.0, 0.0, 0.0),  # Nose tip
@@ -210,11 +219,9 @@ def process_gaze_estimation(video_path):
     # iterate the video frames
     while True:
         ret, img = cap.read()
+
         if ret == True:
             faces = find_faces(img, face_model)
-
-            # print('no of faces found: ', len(faces))
-            student_count = 0
 
             # iterate through each detected face
             for face in faces:
@@ -226,8 +233,6 @@ def process_gaze_estimation(video_path):
                 isLookingLeft = False
                 isLookingFront = False
 
-                # deriving the student name to display in the image
-                student_name = 'student-{}'.format(student_count)
 
                 # retrieving the facial landmarks and face bounding box coordinates
                 marks, facebox = detect_marks(img, landmark_model, face)
@@ -240,6 +245,7 @@ def process_gaze_estimation(video_path):
                     marks[48],  # Left Mouth corner
                     marks[54]  # Right mouth corner
                 ], dtype="double")
+
                 dist_coeffs = np.zeros((4, 1))  # Assuming no lens distortion
                 (success, rotation_vector, translation_vector) = cv2.solvePnP(model_points, image_points, camera_matrix,
                                                                               dist_coeffs, flags=cv2.SOLVEPNP_UPNP)
@@ -268,57 +274,36 @@ def process_gaze_estimation(video_path):
                 except:
                     ang2 = 90
 
-                # print('angle 1: {}, angle 2: {}'.format(ang1, ang2))
                 # checking for angle 1
                 if ang1 >= THRESHOLD:
-                    # cv2.putText(img, 'looking down', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     isLookingDown = True
                 elif ang1 <= -THRESHOLD:
-                    # cv2.putText(img, 'looking up', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     isLookingUp = True
                 else:
-                    # cv2.putText(img, 'looking front', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     isLookingFront = True
 
                 # checking for angle 2
                 if ang2 >= THRESHOLD:
-                    # cv2.putText(img, 'looking right', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     isLookingRight = True
                 elif ang2 <= -THRESHOLD:
-                    # cv2.putText(img, 'looking left', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     isLookingLeft = True
 
                 # checking for vertical and horizontal directions
                 if isLookingDown & isLookingRight:
-                    # cv2.putText(img, 'looking down and right', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     head_down_right_count += 1
                 elif isLookingDown & isLookingLeft:
-                    # cv2.putText(img, 'looking down and left', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     head_down_left_count += 1
                 elif isLookingUp & isLookingRight:
-                    # cv2.putText(img, 'looking up and right', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     head_up_right_count += 1
                 elif isLookingUp & isLookingLeft:
-                    # cv2.putText(img, 'looking up and left', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     head_up_left_count += 1
                 elif isLookingFront:
-                    # cv2.putText(img, 'Head front', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     head_front_count += 1
 
-                # indicate the student name
-                # cv2.putText(img, student_name, (facebox[2], facebox[3]), font, 2, (255, 255, 128), 3)
 
                 # increment the face count
                 face_count += 1
 
-            # naming the new image
-            # image_name = "frame-{}.png".format(frame_count)
-            #
-            # # new image path
-            # image_path = os.path.join(VIDEO_DIR, image_name)
-
-            # save the new image
-            # cv2.imwrite(image_path, img)
 
 
             # for testing purposes
@@ -330,10 +315,6 @@ def process_gaze_estimation(video_path):
         else:
             break
 
-
-    # after extracting the frames, save the changes to static content
-    # p = os.popen("python manage.py collectstatic", "w")
-    # p.write("yes")
 
     # calculate percentages
     head_up_right_perct = (Decimal(head_up_right_count) / Decimal(face_count)) * 100
@@ -361,27 +342,17 @@ def process_gaze_estimation(video_path):
     # return the dictionary
     return percentages
 
-# this method will retrieve extracted frames
-def getExtractedFrames(lecture_video_name):
-    image_list = []
 
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    EXTRACTED_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\gaze\\{}".format(lecture_video_name))
-
-    # listing all the images in the directory
-    for image_path in os.listdir(EXTRACTED_DIR):
-        image_list.append(image_path)
-
-    # checking for the number of frames
-    if (len(image_list) > 0):
-        image_list = custom_sort(image_list)
-        return image_list
-
-    else:
-        return "No extracted frames were found"
 
 
 # this method will retrieve lecture gaze estimation for each frame
+# this method accepts the following parameter
+#     video_name: the lecture video name that needs to be processed
+
+# returns:
+#     frame_detections: the list of detections containing each frame
+#     frame_rate: frame rate of the video
+
 def get_lecture_gaze_estimation_for_frames(video_name):
 
     # get the base directory
@@ -391,18 +362,22 @@ def get_lecture_gaze_estimation_for_frames(video_name):
     # play the video
     video = cv2.VideoCapture(VIDEO_PATH)
 
+    # get the frame rate
     frame_rate = video.get(cv2.CAP_PROP_FPS)
 
-
+    # this list will contain the frame detections
     frame_detections = []
 
-
+    # load the face model
     face_model = get_face_detector()
+
+    # load the face landmark model
     landmark_model = get_landmark_model()
+
+    # capture the video
     cap = cv2.VideoCapture(VIDEO_PATH)
     ret, img = cap.read()
     size = img.shape
-    font = cv2.FONT_HERSHEY_SIMPLEX
     # 3D model points.
     model_points = np.array([
         (0.0, 0.0, 0.0),  # Nose tip
@@ -454,7 +429,6 @@ def get_lecture_gaze_estimation_for_frames(video_name):
             # find the number of faces
             faces = find_faces(img, face_model)
 
-            student_count = 0
 
             # iterate through each detected face
             for face in faces:
@@ -466,8 +440,6 @@ def get_lecture_gaze_estimation_for_frames(video_name):
                 isLookingLeft = False
                 isLookingFront = False
 
-                # deriving the student name to display in the image
-                student_name = 'student-{}'.format(student_count)
 
                 # retrieving the facial landmarks and face bounding box coordinates
                 marks, facebox = detect_marks(img, landmark_model, face)
@@ -507,24 +479,18 @@ def get_lecture_gaze_estimation_for_frames(video_name):
                 except:
                     ang2 = 90
 
-                # print('angle 1: {}, angle 2: {}'.format(ang1, ang2))
                 # checking for angle 1
                 if ang1 >= THRESHOLD:
-                    # cv2.putText(img, 'looking down', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     isLookingDown = True
                 elif ang1 <= -THRESHOLD:
-                    # cv2.putText(img, 'looking up', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     isLookingUp = True
                 else:
-                    # cv2.putText(img, 'looking front', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     isLookingFront = True
 
                 # checking for angle 2
                 if ang2 >= THRESHOLD:
-                    # cv2.putText(img, 'looking right', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     isLookingRight = True
                 elif ang2 <= -THRESHOLD:
-                    # cv2.putText(img, 'looking left', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     isLookingLeft = True
 
                 # checking for vertical and horizontal directions
@@ -585,6 +551,14 @@ def get_lecture_gaze_estimation_for_frames(video_name):
 
 
 # this method will get the student gaze estimation summary for period
+# this method accepts the following parameter
+# gaze_estimation_data: the database records retrieved within the given time period
+
+# returns:
+#     percentages: average percentages for each gaze estimation label
+#     individual_lec_gaze_estimations: contain the lecture gaze estimation details for each individual lecture
+#     gaze_estimation_labels: the gaze estimation labels
+
 def get_student_gaze_estimation_summary_for_period(gaze_estimation_data):
 
     # declare variables to add percentage values
@@ -597,8 +571,10 @@ def get_student_gaze_estimation_summary_for_period(gaze_estimation_data):
     # get the number of activties to calculate average
     no_of_gaze_estimations = len(gaze_estimation_data)
 
+    # this list will contain the lecture gaze estimation details for each individual lecture
     individual_lec_gaze_estimations = []
 
+    # define the gaze estimation labels
     gaze_estimation_labels = ["looking_up_and_right_perct", "looking_up_and_left_perct", "looking_down_and_right_perct", "looking_down_and_left_perct", "looking_front_perct"]
 
     # iterate through the activities
@@ -633,21 +609,31 @@ def get_student_gaze_estimation_summary_for_period(gaze_estimation_data):
     percentages["looking_down_and_left_perct"] = looking_down_left_average_perct
     percentages["looking_front_perct"] = looking_front_average_perct
 
+    # return the values
     return percentages, individual_lec_gaze_estimations, gaze_estimation_labels
 
 
 # this method will get the lecture gaze estimation frame groupings
+# this method accepts:
+#     video_name: the lecture video name
+#     frame_landmarks: the specific frames in the extracted set of frames from the lecture video
+#     frame_group_dict: the dictionary which contains the frame groups and the relevant gaze estimation labels for each frame group
+
+# returns:
+#     frame_group_dict: the modified frame group dictionary
+#     labels: gaze estimation labels
+
 def gaze_estimation_frame_groupings(video_name, frame_landmarks, frame_group_dict):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    EXTRACTED_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\gaze\\{}".format(video_name))
     VIDEO_PATH = os.path.join(BASE_DIR, "assets\\FirstApp\\videos\\{}".format(video_name))
-
-    print('video path: ', VIDEO_PATH)
 
     # load the face detection model
     face_model = get_face_detector()
+
     # load the facial landamrk model
     landmark_model = get_landmark_model()
+
+    # capture the video
     cap = cv2.VideoCapture(VIDEO_PATH)
     ret, img = cap.read()
     size = img.shape
@@ -712,7 +698,6 @@ def gaze_estimation_frame_groupings(video_name, frame_landmarks, frame_group_dic
             head_up_left_count = 0
             head_down_right_count = 0
             head_down_left_count = 0
-            face_count = 0
             detection_count = 0
 
 
@@ -770,7 +755,6 @@ def gaze_estimation_frame_groupings(video_name, frame_landmarks, frame_group_dic
                 except:
                     ang2 = 90
 
-                # print('angle 1: {}, angle 2: {}'.format(ang1, ang2))
                 # checking for angle 1
                 if ang1 >= THRESHOLD:
                     isLookingDown = True
@@ -843,7 +827,6 @@ def gaze_estimation_frame_groupings(video_name, frame_landmarks, frame_group_dic
         frame_group_downleft_count = frame_group_details['downleft_count']
         frame_group_front_count = frame_group_details['front_count']
 
-        print('detection count: ', frame_group_details['detection_count'])
         group_detection_count = 1 if frame_group_details['detection_count'] == 0 else frame_group_details['detection_count']
 
 
@@ -881,7 +864,15 @@ def gaze_estimation_frame_groupings(video_name, frame_landmarks, frame_group_dic
     return frame_group_dict, labels
 
 
-# this section will handle some database operations
+##### THIS SECTON WILL HANDLE SOME DATABASE OPERATIONS #####
+
+# this method will save frame detections to the database
+# this method will accept
+#     video_name: lecture video name to be processed
+
+# returns
+#     frame_detections: the gaze estimation frame detections
+
 def save_frame_detections(video_name):
 
     # for testing purposes
@@ -932,7 +923,13 @@ def save_frame_detections(video_name):
     return frame_detections
 
 
+
 # this method will save gaze frame groupings to the database
+# this method accepts:
+#     video_name: the lecture video name
+#     frame_landmarks: the specific frames in the extracted set of frames from the lecture video
+#     frame_group_dict: the dictionary which contains the frame groups and the relevant gaze estimation labels for each frame group
+
 def save_frame_groupings(video_name, frame_landmarks, frame_group_dict):
 
     # for testing purposes
@@ -976,6 +973,13 @@ def save_frame_groupings(video_name, frame_landmarks, frame_group_dict):
 
 
 # this method will get gaze estimation correlations
+# this method accepts:
+#     individual_lec_gaze: the gaze estimation details for each individual lecture
+#     lec_recorded_activity_data: the lecturer posture recognition details
+
+# returns:
+#     correlations: the lecture gaze estimation and lecturer posture recognition correlations
+
 def get_gaze_correlations(individual_lec_gaze, lec_recorded_activity_data):
     # this variable will be used to store the correlations
     correlations = []
@@ -1024,8 +1028,6 @@ def get_gaze_correlations(individual_lec_gaze, lec_recorded_activity_data):
     # calculate the correlation
     pd_series = ut.get_top_abs_correlations(df, limit)
 
-    print('====correlated variables=====')
-    print(pd_series)
 
     for i in range(limit):
         # this dictionary will get the pandas.Series object's  indices and values separately

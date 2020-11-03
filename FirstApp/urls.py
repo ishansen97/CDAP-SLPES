@@ -101,25 +101,13 @@ urlpatterns = [
     # lecture activity API (to retrieve a lecture activity)
     url(r'^process-lecture-activity/$', api.LectureActivityProcess.as_view()),
 
-    # lecture activity detection API (to retrieve detections for a given lecture activity frame)
-    url(r'^get-lecture-activity-frame-detection/$', api.GetLectureActivityDetections.as_view()),
-
-    # lecture activity detection for label API (to retrieve detections for a certain label)
-    url(r'^get-lecture-activity-detection-for-label/$', api.GetLectureActvityDetectionsForLabel.as_view()),
-
-    # lecture activity detection for label API (to retrieve detections for a certain label)
-    url(r'^get-lecture-activity-student-evaluation/$', api.GetLectureActivityStudentEvaluation.as_view()),
-
     # lecture activity detection for frames API (to retrieve detections for each frame in lecture video)
     url(r'^get-lecture-activity-for-frame/$', api.GetLectureActivityRecognitionsForFrames.as_view()),
-
-    # lecture activity evaluation for individual students
-    url(r'^get-lecture-activity-individual-student-evaluation/$',
-        api.GetLectureActivityIndividualStudentEvaluation.as_view()),
 
     # lecture activity report generation
     url(r'^lecture-activity-report-generation/$',
         api.GenerateActivityReport.as_view()),
+
 
     ###### EMOTION Section #####
     # getting lecture emotion record availability
@@ -131,29 +119,9 @@ urlpatterns = [
     # process a lecture emotion record
     url(r'^process-lecture-emotion/$', api.LectureEmotionProcess.as_view()),
 
-    # lecture emotion evaluation for students
-    url(r'^get-lecture-emotion-student-evaluation/$', api.GetLectureEmotionStudentEvaluations.as_view()),
-
-    # lecture emotion evaluation for students
-    url(r'^get-lecture-emotion-individual-student-evaluation/$',
-        api.GetLectureEmotionIndividualStudentEvaluation.as_view()),
-
     # lecture emotion detection for frames API (to retrieve detections for each frame in lecture video)
     url(r'^get-lecture-emotion-for-frame/$', api.GetLectureEmotionRecognitionsForFrames.as_view()),
 
-
-    ###### POSE Section #####
-    # lecture video API (for Pose estimation)
-    url(r'^get-lecture-video-for-pose/$', api.GetLectureVideoForPose.as_view()),
-
-    # lecture video extracted frames API (for Pose estimation)
-    url(r'^get-lecture-video-extracted-frames/$', api.GetLectureVideoExtractedFrames.as_view()),
-
-    # lecture video individual student extracted frames API (for Pose estimation)
-    url(r'^get-lecture-video-individual-student-frames/$', api.GetLectureVideoIndividualStudentFrames.as_view()),
-
-    # lecture video individual student process pose estimation API (for Pose estimation)
-    url(r'^process-lecture-video-individual-pose-estimation', api.ProcessIndividualStudentPoseEstimation.as_view()),
 
 
     ##### GAZE Section #####
