@@ -192,7 +192,7 @@
                 //hiding the temporary text
                 $('#temporary_text').attr('hidden', true);
 
-                fetch('http://127.0.0.1:8000/get-lecture-activity/?lecture_video_id=' + global_lecture_video_id + '&lecture_video_name=' + global_video_name)
+                fetch('http://127.0.0.1:8000/get-lecture-activity/?lecture_video_id=' + global_lecture_video_id)
                     .then((res) => res.json())
                     .then((out) => {
                         {#let frames = createFrames(out);#}
