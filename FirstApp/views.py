@@ -29,20 +29,8 @@ from django.contrib.auth import (
     logout,
 )
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import viewsets
-from . models import Teachers, Video, VideoMeta, RegisterUser
-from . MongoModels import *
 from . serializers import *
-from . emotion_detector import detect_emotion
-from . ImageOperations import saveImage
-from . logic import head_pose_estimation
-from . logic import video_extraction
 from . forms import *
-import cv2
 import os
 from datetime import datetime
 

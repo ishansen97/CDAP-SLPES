@@ -13,22 +13,16 @@ arbitrary media types.
 """
 
 
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
-
 from MonitorLecturerApp.models import LectureRecordedVideo, LecturerVideoMetaData
 from MonitorLecturerApp.serializers import LectureRecordedVideoSerializer, LecturerVideoMetaDataSerializer
 from .MongoModels import *
 from rest_framework.views import *
 from .logic import activity_recognition as ar
-from .logic import posenet_calculation as pc
 from . import emotion_detector as ed
 from .logic import id_generator as ig
 from .logic import pdf_file_generator as pdf
 from .logic import head_gaze_estimation as hge
 from .logic import video_extraction as ve
-from .models import Teachers, Video, VideoMeta, RegisterUser
-from .MongoModels import *
 from .serializers import *
 
 import datetime
@@ -240,16 +234,11 @@ class GetLectureActivityViewSet(APIView):
 
     def get(self, request):
         lecture_video_id = request.query_params.get('lecture_video_id')
-        lecture_video_name = request.query_params.get('lecture_video_name')
-        # retrieve the extracted frames
-        extracted = ar.getExtractedFrames(lecture_video_name)
-
         lecture_activities = LectureActivity.objects.filter(lecture_video_id__lecture_video_id=lecture_video_id)
         serializer = LectureActivitySerializer(lecture_activities, many=True)
 
         return Response({
             "response": serializer.data,
-            "extracted": extracted
         })
 
 
@@ -294,60 +283,6 @@ class LectureActivityProcess(APIView):
 
         # then save the activity frame groupings
         ar.save_frame_groupings(video_name, frame_landmarks, frame_group_dict)
-
-
-
-
-class GetLectureActivityDetections(APIView):
-
-    def get(self, request):
-        video_name = request.query_params.get('video_name')
-        frame_name = request.query_params.get('frame_name')
-        detections = ar.get_detections(video_name, frame_name)
-
-        return Response({
-            "detections": detections
-        })
-
-
-# the API class for getting student detections for a label
-class GetLectureActvityDetectionsForLabel(APIView):
-
-    def get(self, request):
-        video_name = request.query_params.get('video_name')
-        label = request.query_params.get('label')
-        labelled_detections, detected_people = ar.get_detections_for_label(video_name, label)
-
-        return Response({
-            "response": labelled_detections,
-            "people": detected_people
-        })
-
-
-# the API class for getting students activity evaluations
-class GetLectureActivityStudentEvaluation(APIView):
-
-    def get(self, request):
-        video_name = request.query_params.get('video_name')
-        labelled_detections, detected_people = ar.get_student_activity_evaluation(video_name)
-
-        return Response({
-            "response": labelled_detections,
-            "people": detected_people
-        })
-
-
-# the API class to retrieve individual student evaluation (activity)
-class GetLectureActivityIndividualStudentEvaluation(APIView):
-
-    def get(self, request):
-        video_name = request.query_params.get('video_name')
-        student_name = request.query_params.get('student_name')
-        meta_data = ar.get_individual_student_evaluation(video_name, student_name)
-
-        return Response({
-            "response": meta_data
-        })
 
 
 # API to retrieve activity detections for frames
@@ -488,42 +423,13 @@ class GetLectureEmotionReportViewSet(APIView):
 
     def get(self, request):
         lecture_video_id = request.query_params.get('lecture_video_id')
-        lecture_video_name = request.query_params.get('lecture_video_name')
 
         lecture_emotions = LectureEmotionReport.objects.filter(lecture_video_id__lecture_video_id=lecture_video_id)
         serializer = LectureEmotionSerializer(lecture_emotions, many=True)
 
-        print(len(serializer.data))
 
         return Response({
             "response": serializer.data,
-        })
-
-
-# the API class for getting students activity evaluations (emotions)
-class GetLectureEmotionStudentEvaluations(APIView):
-
-    def get(self, request):
-        video_name = request.query_params.get('video_name')
-        labelled_detections, detected_people = ed.get_student_emotion_evaluations(video_name)
-
-        return Response({
-            "response": labelled_detections,
-            "people": detected_people
-        })
-
-
-# the API class to retrieve individual student evaluation (emotion)
-class GetLectureEmotionIndividualStudentEvaluation(APIView):
-
-    def get(self, request):
-        video_name = request.query_params.get('video_name')
-        student_name = request.query_params.get('student_name')
-        meta_data = ed.get_individual_student_evaluation(video_name, student_name)
-        serialized = VideoMetaSerializer(meta_data)
-
-        return Response({
-            "response": serialized.data
         })
 
 
@@ -557,73 +463,6 @@ class GetLectureEmotionRecognitionsForFrames(APIView):
             return Response({
                 "response": frame_detections
             })
-
-
-
-##### POSE #####
-class GetLectureVideoForPose(APIView):
-
-    def get(self, request):
-        lecturer = request.query_params.get('lecturer')
-        date = request.query_params.get('date')
-        index = int(request.query_params.get('index'))
-        lecturer_video = LectureVideo.objects.filter(lecturer_id=lecturer, date=date)
-        serializer = LectureVideoSerializer(lecturer_video, many=True)
-
-        return Response({
-            "response": serializer.data[index]
-        })
-
-
-# API to retrieve one lecture activity
-class GetLectureVideoExtractedFrames(APIView):
-
-    def get(self, request):
-        lecture_video_id = request.query_params.get('lecture_video_id')
-        lecture_video_name = request.query_params.get('lecture_video_name')
-        # retrieve the extracted frames
-        extracted = ar.getExtractedFrames(lecture_video_name)
-
-        # lecture_activities = LectureActivity.objects.filter(lecture_video_id__lecture_video_id=lecture_video_id)
-        # serializer = LectureActivitySerializer(lecture_activities, many=True)
-
-        return Response({
-            # "response": serializer.data,
-            "extracted": extracted
-        })
-
-
-# API to retrieve individual student detections
-class GetLectureVideoIndividualStudentFrames(APIView):
-
-    def get(self, request):
-        video_name = request.query_params.get('video_name')
-        labelled_detections, detected_people = pc.get_pose_estimations(video_name)
-
-        return Response({
-            "response": labelled_detections,
-            "people": detected_people
-        })
-
-
-# API to process pose estimation for an individual student
-class ProcessIndividualStudentPoseEstimation(APIView):
-    authentication_classes = [BasicAuthentication]
-    permission_classes = [IsAuthenticated, IsAdminUser]
-
-    def get(self):
-        pass
-
-    # POST method
-    def post(self, request):
-        video_name = request.data['video_name']
-        student = request.data['student']
-        poses = request.data['poses']
-
-        pc.calculate_pose_estimation_for_student(video_name, student, poses)
-        return Response({
-            "response": video_name
-        })
 
 
 ##### GAZE ESTIMATION SECTION #####
@@ -702,8 +541,6 @@ class GetLectureGazeEstimationViewSet(APIView):
 
     def get(self, request):
         lecture_video_id = request.query_params.get('lecture_video_id')
-        lecture_video_name = request.query_params.get('lecture_video_name')
-
         lecture_gaze_estimations = LectureGazeEstimation.objects.filter(
             lecture_video_id__lecture_video_id=lecture_video_id)
         serializer = LectureGazeEstimationSerializer(lecture_gaze_estimations, many=True)
@@ -1251,6 +1088,7 @@ class GetLectureGazeSummary(APIView):
 
 
 # =====OTHERS=====
+# this API will retrieve the respective lecturer video name
 class GetLecturerRecordedVideo(APIView):
 
     def get(self, request):
@@ -1263,10 +1101,12 @@ class GetLecturerRecordedVideo(APIView):
         lec_recorded_video_ser = LectureRecordedVideoSerializer(lec_recorded_video, many=True)
         lec_recorded_video_data = lec_recorded_video_ser.data[0]
 
+        # extract the lecturer video name
         video_name = lec_recorded_video_data['lecture_video_name']
 
         print('lecturer recorded video name: ', video_name)
 
+        # return the response
         return Response({
             "video_name": video_name
         })
@@ -1276,16 +1116,22 @@ class GetLecturerRecordedVideo(APIView):
 class GetLectureActivityCorrelations(APIView):
 
     def get(self, request):
+        # this variable defines the number of dates to be considered for activity correlations
         option = request.query_params.get('option')
+        # the lecturer id
         lecturer = request.query_params.get('lecturer')
         int_option = int(option)
 
+        # get the current date
         current_date = datetime.datetime.now().date()
         option_date = datetime.timedelta(days=int_option)
 
+        # subtract the current date by the time period given
         previous_date = current_date - option_date
 
+        # this list contains the student activities for each lecture
         individual_lec_activities = []
+        # this list will contain the student activity-lecturer posture activity correlations
         activity_correlations = []
 
         # retrieving lecture activities
