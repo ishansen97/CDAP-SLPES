@@ -17,7 +17,7 @@ urlpatterns = [
     path('student/', StudentAPIView.as_view()),
     path('student/<str:pk>', StudentDetails.as_view()),
     url(r'^upload/$', FileView.as_view(), name='file-upload'),
-
+    path('webcam_feed', views.webcam_feed, name='webcam_feed'),
     # this url will initiate the lecture
     url(r'^process-initiate-lecture/$', InitiateLecture.as_view())
 ]
