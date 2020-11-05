@@ -31,18 +31,18 @@
 </script>
 
 
-<script type="text/javascript">
-
-    $(document).ready(function() {
-        $('#initiate_btn').click(function() {
-
-            fetch('http://127.0.0.1:8000/attendance/process-initiate-lecture')
-            .then((res) => res.json())
-            .then((out) => alert(out.response))
-            .catch((err) => alert('error: ' + err))
-        });
-    })
-
+<script>
+function toggleLectureLive() {
+  var x = document.getElementById("liveStreamLecture");
+  var y = document.getElementById("liveStreamLectureStartButton");
+  if (x.style.display === "none") {
+    x.style.display = "block";
+    y.style.display = "block";
+  } else {
+    x.style.display = "none";
+    y.style.display = "none";
+  }
+}
 </script>
 
 {% endblock %}
@@ -55,11 +55,19 @@
             <div class="text-center">
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="card-title">Starting the lecture....</h4>
+                        <h4 class="card-title">Lecture Live</h4>
                     </div>
 
                     <div class="card-body">
-                        <button type="button" class="btn btn-success" id="initiate_btn">Initiate Lecture</button>
+                        <button type="button" class="btn btn-success" id="initiate_btn" onclick="toggleLectureLive()">Show Live Stream</button>
+                    </div>
+                    <div style="vertical-align: middle; border-style: none; background-color: #055270; height: 500px; width: 100%">
+                        <div class="row justify-content-center">
+                            <img id="liveStreamLecture" style="display: none; height: inherit; margin-bottom: -25px;" src="{% url 'webcam_feed' %}">
+                        </div>
+                        <div class="row justify-content-center">
+                            <button style="display: none; width: 70px; height: 70px;" id="liveStreamLectureStartButton" class="btn btn-warning btn-circle"><i class="fas fa-video"></i></button>
+                        </div>
                     </div>
                 </div>
             </div>

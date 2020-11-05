@@ -29,7 +29,7 @@ def read_file(file_name):
 #     less_noise = AudioEffectsChain().lowshelf(gain=-12.0, frequency=threshold_l, slope=0.5).highshelf(gain=-12.0, frequency=threshold_h, slope=0.5).limiter(gain=6.0)
 #     y_cleaned = less_noise(y)
 #     return y_cleaned
-
+#jijoijij
 
 
 '''MFCC'''
