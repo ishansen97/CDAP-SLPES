@@ -24,6 +24,7 @@ maskNet = load_model(os.path.join(settings.BASE_DIR,'face_detector/mask_detector
 class IPWebCam(object):
 	def __init__(self):
 		self.url = "http://192.168.8.100:8080/shot.jpg"
+		self._count = 0
 
 	def __del__(self):
 		cv2.destroyAllWindows()
@@ -44,9 +45,10 @@ class IPWebCam(object):
 		resize = cv2.resize(img, (640, 480), interpolation = cv2.INTER_LINEAR) 
 		frame_flip = cv2.flip(resize,1)
 		ret, jpeg = cv2.imencode('.jpg', frame_flip)
-		count = random.randint(0, 9)
+
 		# capture frame and save on a given time in order to run the face recognition
-		sleep(3); cv2.imwrite("lecture%d.jpg" % count, img)
+		sleep(3); cv2.imwrite("%d.jpg" % self._count, img)
+		self._count =+1
 		return jpeg.tobytes()
 
 
