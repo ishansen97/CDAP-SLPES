@@ -1,35 +1,25 @@
+"""
+
+This file is responsible for implementing the serializer classes for each model classes
+
+each serializer class extended by the djangorestframework's serializers class
+
+there should be an inner class named "Meta" that needs to implemented inside each serializer class
+
+there are two fields inside "Meta" class, as follows.
+    model: the relevant model class that needs to be serialized
+    fields: fields that need to be displayed when serializing the model class
+        ('__all__' indicates that all the fields are required to be displayed)
+
+"""
+
+
+
+
+
 from rest_framework import serializers
-from .models import Teachers, RegisterUser
 from .MongoModels import *
-from .logic import classes
 from . models import VideoMeta
-
-class TeachersSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Teachers
-        fields = ('firstName', 'lastName')
-# fields = __all__
-
-class RegisterUserSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = RegisterUser
-        fields = ('firstName', 'lastName', 'email', 'password')
-
-
-# image serializer
-class ImageSerializer(serializers.Serializer):
-
-    metaData = serializers.CharField()
-
-
-# image serializer
-class PoseSerializer(serializers.Serializer):
-
-    directory = serializers.CharField()
-    image_name = serializers.CharField()
-    text = serializers.CharField()
 
 
 # lecture serializer

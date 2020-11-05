@@ -1,22 +1,23 @@
-
-import spacy
-
 from spacy.lang.pt.stop_words import STOP_WORDS
 from sklearn.feature_extraction.text import CountVectorizer
 import pt_core_news_sm
 
+
+# Reading the file
 nlp = pt_core_news_sm.load()
 with open("audioToText01.txt", "r", encoding="utf-8") as f:
     text = " ".join(f.readlines())
 
 doc = nlp(text)
 
+#calculating the word frequency
 corpus = [sent.text.lower() for sent in doc.sents ]
 cv = CountVectorizer(stop_words=list(STOP_WORDS))
 cv_fit=cv.fit_transform(corpus)
 word_list = cv.get_feature_names()
 count_list = cv_fit.toarray().sum(axis=0)
 word_frequency = dict(zip(word_list,count_list))
+
 
 val=sorted(word_frequency.values())
 higher_word_frequencies = [word for word,freq in word_frequency.items() if freq in val[-3:]]
@@ -26,6 +27,7 @@ higher_frequency = val[-1]
 for word in word_frequency.keys():
     word_frequency[word] = (word_frequency[word]/higher_frequency)
 
+#calculating sentence rank and taking top ranked sentences for the summary
 sentence_rank={}
 for sent in doc.sents:
     for word in sent :

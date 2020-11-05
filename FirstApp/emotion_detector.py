@@ -1,7 +1,21 @@
+"""
+
+this file contain the relevant methods to implement the student emotion recognition logic
+
+main methods include
+    * the execution of emotion recognition model and saving the results into the database,
+    * retrieving the emotion recognition details for lectures within a given time period
+    * calculating the emotion recognition details for each frame, for a given lecture
+    * calculating the emotion recognition details for frame groups, for a given lecture
+    * calculating the emotion recognition correlations with the lecturer posture activities
+
+
+
+"""
+
+
 from tensorflow.keras.models import load_model
-from time import sleep
 from keras.preprocessing.image import img_to_array
-from keras.preprocessing import image
 import cv2
 import os
 import numpy as np
@@ -11,17 +25,27 @@ from . models import VideoMeta
 from . logic import custom_sorter as cs
 from .logic import id_generator as ig
 from .logic import activity_recognition as ar
-
-
-# emotion recognition method
+from .logic import utilities as ut
 from .serializers import LectureEmotionSerializer
 
+import pandas as pd
+
+# emotion recognition method
+# this method accepts:
+#     classifier: emotion recognition classifier (VGG model)
+#     face_classifier: face detection classifier (Haar-Cascade)
+#     image: image to be processed
+
+# returns:
+#     label: the emotion recognition label
 
 def emotion_recognition(classifier, face_classifier, image):
+    # this label will contain the recognized emotion label
     label = ""
     class_labels = ['Angry', 'Happy', 'Neutral', 'Sad', 'Surprise']
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # the detected faces in the image
     faces = face_classifier.detectMultiScale(gray, 1.3, 5)
 
     for (x, y, w, h) in faces:
@@ -41,6 +65,13 @@ def emotion_recognition(classifier, face_classifier, image):
 
     return label
 
+
+# this method will perform emotion recognition for a lecture
+# this method accepts:
+#     video_path: the lecture video name
+
+# returns:
+#     percentages: the student activity percentages for the lecture video
 
 def detect_emotion(video):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -120,135 +151,18 @@ def detect_emotion(video):
     # for testing purposes
     print('ending the emotion recognition process')
 
+    # return the data
     return meta_data
 
 
-# to retrieve student evaluation for emotions
-def get_student_emotion_evaluations(video_name):
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    # face_classifier = cv2.CascadeClassifier(
-    #     os.path.join(BASE_DIR, 'FirstApp\classifiers\haarcascade_frontalface_default.xml'))
-    # classifier_path = os.path.join(BASE_DIR, 'FirstApp\classifiers\Emotion_little_vgg.h5')
-    # classifier = load_model(classifier_path)
-    EXTRACTED_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\activity\\{}".format(video_name))
 
-    class_labels = ['Angry', 'Happy', 'Neutral', 'Sad', 'Surprise']
+# this method will recognize the student emotions for each frame
+# this method will accept:
+#     video_name: the lecture video name
 
-    detections = []
-    frames = []
+# returns:
+#     sorted_emotion_frame_recognitions: the list of sorted student emotion recognitions for each frame
 
-    for frame_folder in os.listdir(EXTRACTED_DIR):
-
-        FRAME_DIR = os.path.join(EXTRACTED_DIR, frame_folder)
-        frame_details = {}
-        frame_details['frame'] = frame_folder
-
-        # for each detection in the frame directory
-        detected_images = []
-        for detection in os.listdir(FRAME_DIR):
-
-            if "frame" not in detection:
-                DETECTION_PATH = os.path.join(FRAME_DIR, detection)
-
-                image = cv2.imread(DETECTION_PATH)
-
-                # label = emotion_recognition(classifier, face_classifier, image)
-
-                detected_images.append(detection)
-                detections.append(detection)
-
-        frame_details['detections'] = detected_images
-        frames.append(frame_details)
-
-    sorted_frames = cs.custom_object_sorter(frames)
-    set_detections = set(detections)
-    list_set_detections = list(set_detections)
-
-    sorted_list_set_detections = cs.custom_sort(list_set_detections)
-
-    return sorted_frames, sorted_list_set_detections
-
-
-# this method will retrieve individual student evaluations
-def get_individual_student_evaluation(video_name, student_name):
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    face_classifier = cv2.CascadeClassifier(
-        os.path.join(BASE_DIR, 'FirstApp\classifiers\haarcascade_frontalface_default.xml'))
-    classifier_path = os.path.join(BASE_DIR, 'FirstApp\classifiers\Emotion_little_vgg.h5')
-    classifier = load_model(classifier_path)
-    EXTRACTED_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\activity\\{}".format(video_name))
-
-    # the object of type 'VideoMeta'
-    meta_data = VideoMeta()
-
-    # the class labels
-    class_labels = ['Angry', 'Happy', 'Neutral', 'Sad', 'Surprise']
-
-    # taking a count on each label
-    count_frames = 0
-    count_angry = 0
-    count_happy = 0
-    count_sad = 0
-    count_neutral = 0
-    count_surprise = 0
-
-    for frame in os.listdir(EXTRACTED_DIR):
-        # getting the frame folder
-        FRAME_FOLDER = os.path.join(EXTRACTED_DIR, frame)
-
-        for detections in os.listdir(FRAME_FOLDER):
-
-            # only take the images with the student name
-            if detections == student_name:
-                # get the label for this image
-                IMAGE_PATH = os.path.join(FRAME_FOLDER, detections)
-                image = cv2.imread(IMAGE_PATH)
-
-                label = emotion_recognition(classifier, face_classifier, image)
-
-                # check for the label of the image
-                if (label == 'Anger'):
-                    count_angry += 1
-                    # path = os.path.join(BASE_DIR, 'static\\images\\Anger')
-                    # cv2.imwrite(os.path.join(path, 'Anger-{0}.jpg'.format(count)), frame)
-
-                elif (label == 'Happy'):
-                    count_happy += 1
-                    # path = os.path.join(BASE_DIR, 'static\\images\\Happy')
-                    # cv2.imwrite(os.path.join(path, 'Happy-{0}.jpg'.format(count)), frame)
-
-                elif (label == 'Neutral'):
-                    count_neutral += 1
-                    # path = os.path.join(BASE_DIR, 'static\\images\\Neutral')
-                    # cv2.imwrite(os.path.join(path, 'Neutral-{0}.jpg'.format(count)), frame)
-
-                elif (label == 'Sad'):
-                    count_sad += 1
-                    # path = os.path.join(BASE_DIR, 'static\\images\\Sad')
-                    # cv2.imwrite(os.path.join(path, 'Sad-{0}.jpg'.format(count)), frame)
-
-                elif (label == 'Surprise'):
-                    count_surprise += 1
-                    # path = os.path.join(BASE_DIR, 'static\\images\\Surprise')
-                    # cv2.imwrite(os.path.join(path, 'Surprise-{0}.jpg'.format(count)), frame)
-
-        # incrementing the frame_count
-        count_frames += 1
-    # setting up the counted values
-
-    meta_data.frame_count = count_frames
-    meta_data.happy_count = count_happy
-    meta_data.sad_count = count_sad
-    meta_data.angry_count = count_angry
-    meta_data.neutral_count = count_neutral
-    meta_data.surprise_count = count_surprise
-
-    # calculating the percentages
-    meta_data.calcPercentages()
-
-    return meta_data
-
-# this method will
 def get_frame_emotion_recognition(video_name):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     VIDEO_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\videos\\{}".format(video_name))
@@ -284,6 +198,7 @@ def get_frame_emotion_recognition(video_name):
     # for testing purposes
     print('starting the emotion frame recognition process')
 
+    # looping through the frames
     while (frame_count < no_of_frames):
 
         ret, image = cap.read()
@@ -359,17 +274,25 @@ def get_frame_emotion_recognition(video_name):
         frame_count += 1
 
     # sort the recognitions based on the frame number
-    sorted_activity_frame_recognitions = cs.custom_object_sorter(frame_emotion_recognitions)
+    sorted_emotion_frame_recognitions = cs.custom_object_sorter(frame_emotion_recognitions)
 
 
     # for testing purposes
     print('ending the emotion frame recognition process')
 
     # return the detected frame percentages
-    return sorted_activity_frame_recognitions
+    return sorted_emotion_frame_recognitions
 
 
-# this method will retrieve student activity summary for given time period
+# this method will get the student emotion  recognition summary for period
+# this method accepts the following parameter
+# emotions: the database records retrieved within the given time period
+
+# returns:
+#     percentages: average percentages for each student activity recognition label
+#     individual_lec_emotions: contain the lecture emotion recognition details for each individual lecture
+#     emotion_labels: the emotion labels
+
 def get_student_emotion_summary_for_period(emotions):
 
     # declare variables to add percentage values
@@ -383,8 +306,10 @@ def get_student_emotion_summary_for_period(emotions):
     # get the number of activties to calculate average
     no_of_emotions = len(emotions)
 
+    # this list will contain the emotion recognition details for each lecture
     individual_lec_emotions = []
 
+    # emotion labels
     emotion_labels = ["happy_perct", "sad_perct", "angry_perct", "disgust_perct", "surprise_perct", "neutral_perct"]
 
     # iterate through the activities
@@ -417,6 +342,7 @@ def get_student_emotion_summary_for_period(emotions):
     surprise_average_perct = round((surprise_perct_combined / no_of_emotions), 1)
     neutral_average_perct = round((neutral_perct_combined / no_of_emotions), 1)
 
+    # this dictionary will contain the student emotion average percentage values
     percentages = {}
     percentages["happy_perct"] = happy_average_perct
     percentages["sad_perct"] = sad_average_perct
@@ -425,12 +351,21 @@ def get_student_emotion_summary_for_period(emotions):
     percentages["surprise_perct"] = surprise_average_perct
     percentages["neutral_perct"] = neutral_average_perct
 
+    # return the values
     return percentages, individual_lec_emotions, emotion_labels
 
 
-# this method will retrieve activity frame groupings for a lecture
-def emotion_frame_groupings(video_name, frame_landmarks, frame_group_dict):
+# this method will get the lecture student emotion frame groupings
+# this method accepts:
+#     video_name: the lecture video name
+#     frame_landmarks: the specific frames in the extracted set of frames from the lecture video
+#     frame_group_dict: the dictionary which contains the frame groups and the relevant student emotion labels for each frame group
 
+# returns:
+#     frame_group_dict: the modified frame group dictionary
+#     emotion_labels: student emotion labels
+
+def emotion_frame_groupings(video_name, frame_landmarks, frame_group_dict):
 
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     VIDEO_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\videos\\{}".format(video_name))
@@ -447,11 +382,9 @@ def emotion_frame_groupings(video_name, frame_landmarks, frame_group_dict):
     print("[INFO] loading model...")
     net = cv2.dnn.readNetFromCaffe(config_file, model_file)
 
-
+    # capture the video
     cap = cv2.VideoCapture(VIDEO_DIR)
     no_of_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
-
 
 
     # initializing the count variables
@@ -558,15 +491,7 @@ def emotion_frame_groupings(video_name, frame_landmarks, frame_group_dict):
         frame_group_neutral_count = frame_group_details['neutral_count']
         group_detection_count = frame_group_details['detection_count']
 
-        # print('frame group phone count: ', frame_group_phone_count)
-        # print('frame group listen count: ', frame_group_listen_count)
-        # print('frame group note count: ', frame_group_note_count)
-        # print('frame group detection count: ', group_detection_count)
-
-        frame_diff = int(frame_group_diff[key])
-
-        # print('frame difference: ', frame_diff)
-
+        # calculate the frame group emotion percentages
         frame_group_happy_perct = float(frame_group_happy_count / group_detection_count) * 100
         frame_group_sad_perct = float(frame_group_sad_count / group_detection_count) * 100
         frame_group_angry_perct = float(frame_group_angry_count / group_detection_count) * 100
@@ -596,7 +521,15 @@ def emotion_frame_groupings(video_name, frame_landmarks, frame_group_dict):
     return frame_group_dict, emotion_labels
 
 
-# this section will handle some database operations
+# THIS SECTION WILL HANDLE SOME DATABASE OPERATIONS
+
+# this method will save frame detections to the database
+# this method will accept
+#     video_name: lecture video name to be processed
+
+# returns
+#     frame_detections: the student emotion frame detections
+
 def save_frame_recognitions(video_name):
 
     # for testing purposes
@@ -646,7 +579,12 @@ def save_frame_recognitions(video_name):
     return frame_detections
 
 
-# this method will save the emotion frame groupings to the database
+# this method will save gaze frame groupings to the database
+# this method accepts:
+#     video_name: the lecture video name
+#     frame_landmarks: the specific frames in the extracted set of frames from the lecture video
+#     frame_group_dict: the dictionary which contains the frame groups and the relevant student emotion labels for each frame group
+
 def save_frame_groupings(video_name, frame_landmarks, frame_group_dict):
 
     # for testing purposes
@@ -686,3 +624,87 @@ def save_frame_groupings(video_name, frame_landmarks, frame_group_dict):
 
     # save
     new_lec_emotion_frame_groupings.save()
+
+
+
+# this method will get student emotion correlations
+# this method accepts:
+#     individual_lec_emotions: the student emotion details for each individual lecture
+#     lec_recorded_activity_data: the lecturer posture recognition details
+
+# returns:
+#     correlations: the lecture student emotions and lecturer posture recognition correlations
+
+def get_emotion_correlations(individual_lec_emotions, lec_recorded_activity_data):
+    # this variable will be used to store the correlations
+    correlations = []
+
+    limit = 10
+
+    data_index = ['lecture-{}'.format(i + 1) for i in range(len(individual_lec_emotions))]
+
+    # student activity labels
+    student_emotion_labels = ['Happy', 'Sad', 'Angry', 'Surprise', 'Neutral']
+    lecturer_activity_labels = ['seated', 'standing', 'walking']
+
+    # lecturer recorded data list (lecturer)
+    sitting_perct_list = []
+    standing_perct_list = []
+    walking_perct_list = []
+
+    # lecture activity data list (student)
+    happy_perct_list = []
+    sad_perct_list = []
+    angry_perct_list = []
+    surprise_perct_list = []
+    neutral_perct_list = []
+
+
+    # loop through the lecturer recorded data (lecturer)
+    for data in lec_recorded_activity_data:
+        sitting_perct_list.append(int(data['seated_count']))
+        standing_perct_list.append(int(data['standing_count']))
+        walking_perct_list.append(int(data['walking_count']))
+
+    # loop through the lecturer recorded data (student)
+    for data in individual_lec_emotions:
+        happy_perct_list.append(int(data['happy_perct']))
+        sad_perct_list.append(int(data['sad_perct']))
+        angry_perct_list.append(int(data['angry_perct']))
+        surprise_perct_list.append(int(data['surprise_perct']))
+        neutral_perct_list.append(int(data['neutral_perct']))
+
+
+    corr_data = {'Happy': happy_perct_list, 'Sad': sad_perct_list, 'Angry': angry_perct_list, 'Surprise': surprise_perct_list, 'Neutral': neutral_perct_list,
+                 'seated': sitting_perct_list, 'standing': standing_perct_list, 'walking': walking_perct_list}
+
+    # create the dataframe
+    df = pd.DataFrame(corr_data, index=data_index)
+
+    # calculate the correlation
+    pd_series = ut.get_top_abs_correlations(df, limit)
+
+    print('====correlated variables=====')
+    print(pd_series)
+
+    for i in range(limit):
+        # this dictionary will get the pandas.Series object's  indices and values separately
+        corr_dict = {}
+
+        index = pd_series.index[i]
+
+        # check whether the first index is a student activity
+        isStudentEmotion = index[0] in student_emotion_labels
+        # check whether the second index is a lecturer activity
+        isLecturerAct = index[1] in lecturer_activity_labels
+
+        # if both are student and lecturer activities, add to the dictionary
+        if isStudentEmotion & isLecturerAct:
+            corr_dict['index'] = index
+            corr_dict['value'] = pd_series.values[i]
+
+            # append the dictionary to the 'correlations' list
+            correlations.append(corr_dict)
+
+    # return the list
+    return correlations

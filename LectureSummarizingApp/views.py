@@ -1,5 +1,3 @@
-from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -9,7 +7,7 @@ from .serializer import LectureAudioSerializer, LectureAudioNoiseRemovedSerializ
     LectureSpeechToTextSerializer, LectureNoticesSerializer
 
 
-# Create your views here.
+# Views used in Lecture Summarization
 
 def summarization(request):
 
