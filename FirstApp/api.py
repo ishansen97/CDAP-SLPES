@@ -1163,8 +1163,6 @@ class GetLectureActivityCorrelations(APIView):
             activity_correlations = ar.get_activity_correlations(individual_lec_activities, lec_recorded_activity_data)
 
 
-        print('activity correlations: ', activity_correlations)
-
         return Response({
             "correlations": activity_correlations
         })
