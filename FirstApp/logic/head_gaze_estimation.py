@@ -13,19 +13,14 @@ main methods include
 
 """
 from decimal import Decimal
-from . custom_sorter import *
-
 import cv2
 import numpy as np
-import math
 from . face_detector import get_face_detector, find_faces
 from . face_landmarks import get_landmark_model, detect_marks
 import os
-import shutil
 import math
 import pandas as pd
 
-from ..MongoModels import *
 from ..serializers import *
 from . import id_generator as ig
 from . import utilities as ut
