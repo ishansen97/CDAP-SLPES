@@ -9,18 +9,6 @@ router = routers.DefaultRouter()
 
 urlpatterns = [
     path('', views.hello),
-    path('login', views.login),
-    path('register', views.register),
-    path('404', views.view404),
-    path('blank', views.blank),
-    path('buttons', views.buttons),
-    path('cards', views.cards),
-    path('charts', views.charts),
-    path('forgot-password', views.forget_password),
-    # path('webcam', views.webcam),
-    path('template', views.template),
-    path('base', views.base),
-    path('child', views.child),
     path('lecture-video', views.lecVideo),
     # path('Video', views.hello)
 
