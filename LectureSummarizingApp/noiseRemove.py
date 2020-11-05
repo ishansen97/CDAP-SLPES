@@ -1,50 +1,57 @@
-import numpy as np
-import scipy as sp
+import numpy as nump
+import scipy as sip
 from scipy.io.wavfile import read
 from scipy.io.wavfile import write
 from scipy import signal
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as mplt
 #get_ipython().magic('matplotlib inline')
 
 (Frequency, array) = read('lectures/Lecture01.wav')
 
 len(array)
 
-plt.plot(array)
-plt.title('Original Signal Spectrum')
-plt.xlabel('Frequency(Hz)')
-plt.ylabel('Amplitude')
+mplt.plot(array)
+mplt.title('Original Signal Spectrum')
+mplt.xlabel('Frequency(Hz)')
+mplt.ylabel('Amplitude')
 
-FourierTransformation = sp.fft(array)
+fourierTransformation = sip.fft(array)
 
-scale = sp.linspace(0, Frequency, len(array))
+scale = sip.linspace(0, Frequency, len(array))
 
-plt.stem(scale[0:5000], np.abs(FourierTransformation[0:5000]), 'r')
-plt.title('Signal spectrum after FFT')
-plt.xlabel('Frequency(Hz)')
-plt.ylabel('Amplitude')
-
-
-GuassianNoise = np.random.rand(len(FourierTransformation))
+mplt.stem(scale[0:5000], nump.abs(fourierTransformation[0:5000]), 'r')
+mplt.title('Signal spectrum after FFT')
+mplt.xlabel('Frequency(Hz)')
+mplt.ylabel('Amplitude')
 
 
-NewSound = GuassianNoise + array
+guassianNoise = nump.random.rand(len(fourierTransformation))
+
+
+NewSound = guassianNoise + array
 
 write("New-Sound-Added-With-Guassian-Noise.wav", Frequency, NewSound)
 
-b,a = signal.butter(5, 1000/(Frequency/2), btype='highpass')
+u,v = signal.butter(5, 1000/(Frequency/2), btype='highpass')
 
-filteredSignal = signal.lfilter(b,a,NewSound)
-plt.plot(filteredSignal) # plotting the signal.
-plt.title('Highpass Filter')
-plt.xlabel('Frequency(Hz)')
-plt.ylabel('Amplitude')
+filteredSignal = signal.lfilter(u,v,NewSound)
 
-c,d = signal.butter(5, 380/(Frequency/2), btype='lowpass') # ButterWorth low-filter
-newFilteredSignal = signal.lfilter(c,d,filteredSignal) # Applying the filter to the signal
-plt.plot(newFilteredSignal) # plotting the signal.
-plt.title('Lowpass Filter')
-plt.xlabel('Frequency(Hz)')
-plt.ylabel('Amplitude')
+# plotting the signal.
+mplt.plot(filteredSignal)
+mplt.title('Highpass Filter')
+mplt.xlabel('Frequency(Hz)')
+mplt.ylabel('Amplitude')
 
-write("file.wav", Frequency, np.int16(newFilteredSignal/np.max(np.abs(newFilteredSignal)) * 32767))
+# ButterWorth low-filter
+x,y = signal.butter(5, 380/(Frequency/2), btype='lowpass')
+
+# Applying the filter to the signal
+newFilteredSignal = signal.lfilter(x,y,filteredSignal)
+
+# plotting the signal.
+mplt.plot(newFilteredSignal)
+mplt.title('Lowpass Filter')
+mplt.xlabel('Frequency(Hz)')
+mplt.ylabel('Amplitude')
+
+write("removed.wav", Frequency, nump.int16(newFilteredSignal/nump.max(nump.abs(newFilteredSignal)) * 32767))
