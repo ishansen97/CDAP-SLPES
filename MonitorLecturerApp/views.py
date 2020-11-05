@@ -121,41 +121,6 @@ def hello(request):
         return redirect('/500')
 
 
-def view404(request):
-    return render(request, 'MonitorLecturerApp/404.html')
-
-def blank(request):
-    return render(request, 'MonitorLecturerApp/blank.html')
-
-def buttons(request):
-    return render(request, 'MonitorLecturerApp/buttons.html')
-
-def cards(request):
-    return render(request, 'MonitorLecturerApp/cards.html')
-
-def charts(request):
-    return render(request, 'MonitorLecturerApp/charts.html')
-
-def forget_password(request):
-    return render(request, 'MonitorLecturerApp/forgot-password.html')
-
-def login(request):
-    return render(request, 'MonitorLecturerApp/login.html')
-
-def register(request):
-    return render(request, 'MonitorLecturerApp/register.html')
-
-
-def template(request):
-    obj = {'Message': 'Student and Lecturer Performance Enhancement System'}
-    return render(request, 'MonitorLecturerApp/template.html', {'template_name': 'MonitorLecturerApp/template.html', 'object': obj})
-
-def base(request):
-    return render(request, 'MonitorLecturerApp/base.html')
-
-def child(request):
-    return render(request, 'MonitorLecturerApp/child.html', {'template_name': 'MonitorLecturerApp/base.html'})
-
 def lecVideo(request):
     video = "poses.mp4"
     obj = {'Message': 'Student and Lecturer Performance Enhancement System'}
@@ -186,7 +151,3 @@ def lecVideo(request):
 
     # for  audioPath in audiopaths:
     #     audio = tAudio()
-
-
-def testFrameRecognitions(request):
-    return render(request, "MonitorLecturerApp/test_frame_recognitions.html")
