@@ -12,9 +12,6 @@ urlpatterns = [
     path('lecture-video', views.lecVideo),
     # path('Video', views.hello)
 
-    # delete this path later
-    path('test-frame-recognitions', views.testFrameRecognitions),
-
     ##### LECTURER ACTIVITY SECTION #####
     # API to retrieve activity recognition
     url(r'^activities/$', api.ActivityRecognitionAPI.as_view()),
