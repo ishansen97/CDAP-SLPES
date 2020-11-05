@@ -1,11 +1,7 @@
 import librosa
 from pysndfx import AudioEffectsChain
-import numpy as np
-import math
 import python_speech_features
-import scipy as sp
-from scipy import signal
-import soundfile
+
 
 
 def read_file(file_name):
@@ -17,19 +13,6 @@ def read_file(file_name):
     y, sr = librosa.load(sample_path)
 
     return y, sr
-
-
-# '''CENTROID'''
-#
-# def reduce_noise_centroid_s(y, sr):
-#
-#     cent = librosa.feature.spectral_centroid(y=y, sr=sr)
-#     threshold_h = np.max(cent)
-#     threshold_l = np.min(cent)
-#     less_noise = AudioEffectsChain().lowshelf(gain=-12.0, frequency=threshold_l, slope=0.5).highshelf(gain=-12.0, frequency=threshold_h, slope=0.5).limiter(gain=6.0)
-#     y_cleaned = less_noise(y)
-#     return y_cleaned
-#jijoijij
 
 
 '''MFCC'''
