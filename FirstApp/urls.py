@@ -173,6 +173,19 @@ urlpatterns = [
     url(r'^get-lecture-recorded-video-name/$', api.GetLecturerRecordedVideo.as_view()),
 
 
+    ##### BATCH PROCESS #####
+    # perform batch process for student behavior
+    url(r'^student-behavior-batch-process/$', api.BatchProcess.as_view()),
+
+    # check availability for student behavior components
+    url(r'^check-availability/$', api.CheckStudentBehaviorAvailability.as_view()),
+
+    # perform random task (delete later)
+    url(r'^get-random_number/$', api.TestRandom.as_view()),
+
+
+
+
     # routers
     # path('', include(router.urls)),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
