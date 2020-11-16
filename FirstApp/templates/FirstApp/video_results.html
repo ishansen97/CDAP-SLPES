@@ -40,6 +40,10 @@
         $(document).ready(function () {
             let folder = '';
 
+            $('#activity_loader').attr('hidden', false);
+            {#$('#emotion_loader').attr('hidden', false);#}
+            {#$('#gaze_loader').attr('hidden', false);#}
+
             //select a particular subject
             //select a particular subject
             $('input[type=radio]').click(function () {
@@ -134,7 +138,6 @@
                                     .catch((error) => alert('an error occurred: ' + error));
 
 
-
                             }
                         });
                     });
@@ -198,19 +201,19 @@
                 let classname = $('#step_1').attr('class');
 
                 setTimeout(() => {
-                   $('#step_1').attr('class', class1)
+                    $('#step_1').attr('class', class1)
                 }, 2000);
 
                 setTimeout(() => {
-                   $('#step_2').attr('class', class1)
+                    $('#step_2').attr('class', class1)
                 }, 4000);
 
                 setTimeout(() => {
-                   $('#step_3').attr('class', class1)
+                    $('#step_3').attr('class', class1)
                 }, 6000);
 
                 setTimeout(() => {
-                   $('#step_4').attr('class', class1)
+                    $('#step_4').attr('class', class1)
                 }, 8000);
 
 
@@ -226,7 +229,6 @@
 
                 global_lecture_video_id = video_id;
                 global_video_name = video_name;
-
 
 
                 //perform activity recognition
@@ -251,7 +253,7 @@
                     //display the emotion loader
                     $('#emotion_loader').attr('hidden', false);
 
-                     //sending the request to process the lecture emotions
+                    //sending the request to process the lecture emotions
                     fetch('http://127.0.0.1:8000/process-lecture-emotion/?lecture_video_name=' + global_video_name + '&lecture_video_id=' + global_lecture_video_id)
                         .then((res) => res.json())
                         .then((out) => handleEmotionResponse(out.response))
@@ -292,14 +294,67 @@
                     //hide the activity loader
                     $('#gaze_loader').hide();
 
-                    alert('good');
                 }
             }
 
+            //this is a test function (delete later)
+
+            let interval = setInterval(() => {
+
+                {#let url = 'http://127.0.0.1:8000/get-random_number';#}
+                let url = 'http://127.0.0.1:8000/check-availability';
+
+                fetch(url)
+                    .then((res) => res.json())
+                    .then((out) => displayProcess(out))
+                    .catch((err) => alert('error: ' + err))
+
+            }, 10000);
 
 
+            //this function will handle the displaying loaders and status in the workflow
+            function displayProcess(response) {
+
+                //if the lecture activity has completed processing
+                if (response.isActivityExist) {
+
+                    $('#step_1').attr("class", class1);
+                    $('#activity_loader').hide();
+                    $('#emotion_loader').attr('hidden', false);
+
+                }
+
+                //if the lecture emotion has completed processing
+                if (response.isEmotionExist) {
+
+                    $('#step_2').attr("class", class1);
+                    $('#emotion_loader').hide();
+                    $('#gaze_loader').attr('hidden', false);
+
+                }
+
+                //if the lecture gaze has completed processing
+                if (response.isGazeExist) {
+
+                    $('#step_3').attr("class", class1);
+                    $('#gaze_loader').hide();
+                }
+
+                //if all the processes are completed
+                if (response.isActivityExist && response.isEmotionExist && response.isGazeExist) {
+
+                    var x = document.getElementById("snackbar");
+                    x.className = "show";
+                    setTimeout(function () {
+                        x.className = x.className.replace("show", "");
+                    }, 3000);
+
+                    //clear the setInterval function
+                    clearInterval(interval);
+                }
 
 
+            }
 
 
         });
@@ -326,6 +381,7 @@
                     <!-- Page Heading -->
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <h1 class="h3 mb-0 text-gray-800">Lecture Video Results</h1>
+                        <h2><span id="time_display"></span></h2>
                     </div>
 
                     <!--first row -->
@@ -370,19 +426,23 @@
                                         </tr>
                                         </thead>
                                         <tbody id="timetable_body">
-                                            {% for lecture in due_lectures %}
-                                                <tr>
-                                                    <td class="font-weight-bolder">{{ lecture.date }}</td>
-{#                                                    <td>{{ lecture.subject }}</td>#}
-                                                    <td class="font-weight-bolder">{{ lecture.subject_name }}</td>
-                                                    <td class="font-weight-bolder">{{ lecture.start_time }}</td>
-                                                    <td class="font-weight-bolder">{{ lecture.end_time }}</td>
-                                                    <td>
-                                                        <button type="button" class="btn btn-success batch_process" data-video-id="{{ lecture.video_id }}" data-video-name="{{ lecture.video_name }}" id="{{ lecture.subject }}">Process</button>
-{#                                                        <span class="font-italic font-weight-bolder text-success">Processing</span>#}
-                                                    </td>
-                                                </tr>
-                                            {% endfor %}
+                                        {% for lecture in due_lectures %}
+                                            <tr>
+                                                <td class="font-weight-bolder">{{ lecture.date }}</td>
+                                                {#                                                    <td>{{ lecture.subject }}</td>#}
+                                                <td class="font-weight-bolder">{{ lecture.subject_name }}</td>
+                                                <td class="font-weight-bolder">{{ lecture.start_time }}</td>
+                                                <td class="font-weight-bolder">{{ lecture.end_time }}</td>
+                                                <td>
+                                                    <button type="button" class="btn btn-success batch_process"
+                                                            data-video-id="{{ lecture.video_id }}"
+                                                            data-video-name="{{ lecture.video_name }}"
+                                                            id="{{ lecture.subject }}">Process
+                                                    </button>
+                                                    {#                                                        <span class="font-italic font-weight-bolder text-success">Processing</span>#}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
                                         </tbody>
                                     </table>
 
@@ -417,27 +477,29 @@
                                                     <div class="progress-bar"></div>
                                                 </div>
                                                 <a class="smpl-step-icon text-center"><i class="fa fa-chart-line"
-                                                                             style="font-size: 40px; padding-top: 10px; color: white"></i></a>
+                                                                                         style="font-size: 40px; padding-top: 10px; color: white"></i></a>
                                                 <div class="smpl-step-info text-center">
                                                     <span class="font-italic font-weight-bolder">Perform Activity Recognition</span>
-                                                    <br />
-                                                    <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="Loader" class="mt-2" id="activity_loader" hidden>
+                                                    <br/>
+                                                    <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
+                                                         alt="Loader" class="mt-2" id="activity_loader" hidden>
                                                 </div>
                                             </div>
                                             <!-- end of step 1 -->
 
                                             <!-- step 2 -->
                                             <div class="col-4 smpl-step-step disabled" id="step_2">
-                                                <div class="text-center smpl-step-num font-weight-bolder">Step 3</div>
+                                                <div class="text-center smpl-step-num font-weight-bolder">Step 2</div>
                                                 <div class="progress">
                                                     <div class="progress-bar"></div>
                                                 </div>
                                                 <a class="smpl-step-icon text-center"><i class="fa fa-user"
-                                                                             style="font-size: 50px; padding-top: 10px; color: white"></i></a>
+                                                                                         style="font-size: 50px; padding-top: 10px; color: white"></i></a>
                                                 <div class="smpl-step-info text-center">
                                                     <span class="font-italic font-weight-bolder">Study Student Emotions</span>
-                                                    <br />
-                                                    <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="Loader" class="mt-2" id="emotion_loader" hidden>
+                                                    <br/>
+                                                    <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
+                                                         alt="Loader" class="mt-2" id="emotion_loader" hidden>
                                                 </div>
                                             </div>
                                             <!-- end of step 2 -->
@@ -454,18 +516,18 @@
                                                 </a>
                                                 <div class="smpl-step-info text-center">
                                                     <span class="font-italic font-weight-bolder">See students' Gazes</span>
-                                                    <br />
-                                                    <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="Loader" class="mt-2" id="gaze_loader" hidden>
+                                                    <br/>
+                                                    <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
+                                                         alt="Loader" class="mt-2" id="gaze_loader" hidden>
                                                 </div>
                                             </div>
                                             <!-- end of step 3 -->
 
                                         </div>
+                                        <!-- end of progress row -->
 
-{#                                        <!-- simulation button row -->#}
-{#                                        <div class="row">#}
-{#                                            <button type="button" class="btn btn-outline-danger" id="simulate_process">Simulate</button>#}
-{#                                        </div>#}
+
+
                                     </div>
                                     <!-- end of container -->
 
@@ -477,6 +539,10 @@
 
                     </div>
                     <!-- end of progress row -->
+
+                <!-- snackbar -->
+                <div id="snackbar">The lecture is completely processed..</div>
+                <!-- end of snackbar -->
 
                 </div>
             {% endblock %}

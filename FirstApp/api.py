@@ -11,7 +11,7 @@ each method will return an HttpResponse that allows its data to be rendered into
 arbitrary media types.
 
 """
-
+from random import Random
 
 from MonitorLecturerApp.models import LectureRecordedVideo, LecturerVideoMetaData
 from MonitorLecturerApp.serializers import LectureRecordedVideoSerializer, LecturerVideoMetaDataSerializer
@@ -24,6 +24,7 @@ from .logic import pdf_file_generator as pdf
 from .logic import head_gaze_estimation as hge
 from .logic import video_extraction as ve
 from .serializers import *
+from braces.views import CsrfExemptMixin
 
 import datetime
 
@@ -113,7 +114,8 @@ class LecturerSubjectViewSet(APIView):
 
 
 # API for timetables
-class FacultyTimetableViewSet(APIView):
+class FacultyTimetableViewSet(CsrfExemptMixin, APIView):
+    # authentication_classes = []
 
     def get(self, request):
         timetable = FacultyTimetable.objects.all().filter()
@@ -1266,4 +1268,55 @@ class GetLectureGazeCorrelations(APIView):
 
         return Response({
             "correlations": gaze_correlations
+        })
+
+
+##### BATCH PROCESS SECTION #####
+
+# perform the student behavior analysis as a batch process
+class BatchProcess(APIView):
+
+    def get(self, request):
+        video_name = request.query_params.get('video_name')
+        video_id = request.query_params.get('video_id')
+
+        return Response({
+            "response": True
+        })
+
+
+# this API will check whether the lecture activity frame groupings exist
+class CheckStudentBehaviorAvailability(APIView):
+
+    def get(self, request):
+        video_name = request.query_params.get('video_name')
+        #
+        # isActivityExist = LectureActivityFrameGroupings.objects.filter(
+        #     lecture_activity_id__lecture_video_id__video_name=video_name).exists()
+        #
+        # isEmotionExist = LectureEmotionFrameGroupings.objects.filter(
+        #     lecture_emotion_id__lecture_video_id__video_name=video_name).exists()
+        #
+        # isGazeExist = LectureGazeFrameGroupings.objects.filter(
+        #     lecture_gaze_id__lecture_video_id__video_name=video_name).exists()
+
+        isActivityExist = bool(Random().randint(0,2))
+        isEmotionExist = bool(Random().randint(0,2))
+        isGazeExist = bool(Random().randint(0,2))
+
+        return Response({
+            "isActivityExist": isActivityExist,
+            "isEmotionExist": isEmotionExist,
+            "isGazeExist": isGazeExist
+        })
+
+# this API will perform some random task (delete later)
+class TestRandom(APIView):
+
+    def get(self, request):
+
+        random = Random().randint(0, 100)
+
+        return Response({
+            "response": random
         })
