@@ -15,7 +15,6 @@ from random import Random
 
 from MonitorLecturerApp.models import LectureRecordedVideo, LecturerVideoMetaData
 from MonitorLecturerApp.serializers import LectureRecordedVideoSerializer, LecturerVideoMetaDataSerializer
-from .MongoModels import *
 from rest_framework.views import *
 from .logic import activity_recognition as ar
 from . import emotion_detector as ed
@@ -23,6 +22,7 @@ from .logic import id_generator as ig
 from .logic import pdf_file_generator as pdf
 from .logic import head_gaze_estimation as hge
 from .logic import video_extraction as ve
+from . logic import student_behavior_process as sbp
 from .serializers import *
 from braces.views import CsrfExemptMixin
 
@@ -114,8 +114,7 @@ class LecturerSubjectViewSet(APIView):
 
 
 # API for timetables
-class FacultyTimetableViewSet(CsrfExemptMixin, APIView):
-    # authentication_classes = []
+class FacultyTimetableViewSet(APIView):
 
     def get(self, request):
         timetable = FacultyTimetable.objects.all().filter()
@@ -1271,6 +1270,208 @@ class GetLectureGazeCorrelations(APIView):
         })
 
 
+# this class will handle the student activity-emotion correlations
+class GetStudentActivityEmotionCorrelations(APIView):
+
+    def get(self, request):
+        # get the day option
+        option = request.query_params.get('option')
+        # get the lecturer id
+        lecturer = request.query_params.get('lecturer')
+        int_option = int(option)
+        # initialize the student behavior count
+        student_behavior_count = 0
+
+
+        current_date = datetime.datetime.now().date()
+        option_date = datetime.timedelta(days=int_option)
+
+        # get the actual date
+        previous_date = current_date - option_date
+
+        # initialize the lists
+        individual_lec_activities = []
+        individual_lec_emotions = []
+        activity_emotion_correlations = []
+
+        # retrieving lecture activities
+        lec_activity = LectureActivity.objects.filter(
+            lecture_video_id__date__gte=previous_date,
+            lecture_video_id__date__lte=current_date,
+            lecture_video_id__lecturer=lecturer
+        )
+
+        # retrieving lecture emotions
+        lec_emotion = LectureEmotionReport.objects.filter(
+            lecture_video_id__date__gte=previous_date,
+            lecture_video_id__date__lte=current_date,
+            lecture_video_id__lecturer=lecturer
+        )
+
+
+        # if there are lecture activities
+        if len(lec_activity) > 0:
+            student_behavior_count += 1
+            activity_serializer = LectureActivitySerializer(lec_activity, many=True)
+            activity_data = activity_serializer.data
+            _, individual_lec_activities, _ = ar.get_student_activity_summary_for_period(activity_data)
+
+        # if there are lecture emotions
+        if len(lec_emotion) > 0:
+            student_behavior_count += 1
+            emotion_serializer = LectureEmotionSerializer(lec_emotion, many=True)
+            emotion_data = emotion_serializer.data
+            _, individual_lec_emotions, _ = ed.get_student_emotion_summary_for_period(emotion_data)
+
+
+        # if both student activity, emotion are available
+        if student_behavior_count == 2:
+
+            # find the correlations between student activity and gaze estimations
+            activity_emotion_correlations = sbp.calculate_student_activity_emotion_correlations(individual_lec_activities, individual_lec_emotions)
+
+
+        return Response({
+            "correlations": activity_emotion_correlations
+        })
+
+
+# this class will handle the student activity-emotion correlations
+class GetStudentActivityGazeCorrelations(APIView):
+
+    def get(self, request):
+        # get the day option
+        option = request.query_params.get('option')
+        # get the lecturer id
+        lecturer = request.query_params.get('lecturer')
+        int_option = int(option)
+        # initialize the student behavior count
+        student_behavior_count = 0
+
+
+        current_date = datetime.datetime.now().date()
+        option_date = datetime.timedelta(days=int_option)
+
+        # get the actual date
+        previous_date = current_date - option_date
+
+        # initialize the lists
+        individual_lec_activities = []
+        individual_lec_gaze = []
+        activity_gaze_correlations = []
+
+
+        # retrieving lecture gaze estimations
+        lec_gaze = LectureGazeEstimation.objects.filter(
+            lecture_video_id__date__gte=previous_date,
+            lecture_video_id__date__lte=current_date,
+            lecture_video_id__lecturer=lecturer
+        )
+
+
+        # retrieving lecture activities
+        lec_activity = LectureActivity.objects.filter(
+            lecture_video_id__date__gte=previous_date,
+            lecture_video_id__date__lte=current_date,
+            lecture_video_id__lecturer=lecturer
+        )
+
+
+        # if there are lecture activities
+        if len(lec_activity) > 0:
+            student_behavior_count += 1
+            activity_serializer = LectureActivitySerializer(lec_activity, many=True)
+            activity_data = activity_serializer.data
+            _, individual_lec_activities, _ = ar.get_student_activity_summary_for_period(activity_data)
+
+
+        # if there are gaze estimations
+        if len(lec_gaze) > 0:
+            student_behavior_count += 1
+            gaze_serializer = LectureGazeEstimationSerializer(lec_gaze, many=True)
+            gaze_data = gaze_serializer.data
+            _, individual_lec_gaze, _ = hge.get_student_gaze_estimation_summary_for_period(gaze_data)
+
+
+        # if there are any recorded lectures
+        if student_behavior_count == 2:
+
+            # find the correlations between student activity and gaze estimations
+            activity_gaze_correlations = sbp.calculate_student_activity_gaze_correlations(individual_lec_activities, individual_lec_gaze)
+
+
+        return Response({
+            "correlations": activity_gaze_correlations
+        })
+
+
+# this class will handle the student emotion-gaze correlations
+class GetStudentEmotionGazeCorrelations(APIView):
+
+    def get(self, request):
+        # get the day option
+        option = request.query_params.get('option')
+        # get the lecturer id
+        lecturer = request.query_params.get('lecturer')
+        int_option = int(option)
+        # initialize the student behavior count
+        student_behavior_count = 0
+
+
+        current_date = datetime.datetime.now().date()
+        option_date = datetime.timedelta(days=int_option)
+
+        # get the actual date
+        previous_date = current_date - option_date
+
+        # initialize the lists
+        individual_lec_emotions = []
+        individual_lec_gaze = []
+        emotion_gaze_correlations = []
+
+
+        # retrieving lecture gaze estimations
+        lec_gaze = LectureGazeEstimation.objects.filter(
+            lecture_video_id__date__gte=previous_date,
+            lecture_video_id__date__lte=current_date,
+            lecture_video_id__lecturer=lecturer
+        )
+
+        # retrieving lecture emotions
+        lec_emotion = LectureEmotionReport.objects.filter(
+            lecture_video_id__date__gte=previous_date,
+            lecture_video_id__date__lte=current_date,
+            lecture_video_id__lecturer=lecturer
+        )
+
+        # if there are lecture emotions
+        if len(lec_emotion) > 0:
+            student_behavior_count += 1
+            emotion_serializer = LectureEmotionSerializer(lec_emotion, many=True)
+            emotion_data = emotion_serializer.data
+            _, individual_lec_emotions, _ = ed.get_student_emotion_summary_for_period(emotion_data)
+
+        # if there are gaze estimations
+        if len(lec_gaze) > 0:
+            student_behavior_count += 1
+            gaze_serializer = LectureGazeEstimationSerializer(lec_gaze, many=True)
+            gaze_data = gaze_serializer.data
+            _, individual_lec_gaze, _ = hge.get_student_gaze_estimation_summary_for_period(gaze_data)
+
+
+
+        # if there are any recorded lectures
+        if student_behavior_count == 2:
+
+            # find the correlations between student activity and gaze estimations
+            emotion_gaze_correlations = sbp.calculate_student_emotion_gaze_correlations(individual_lec_emotions, individual_lec_gaze)
+
+
+        return Response({
+            "correlations": emotion_gaze_correlations
+        })
+
+
 ##### BATCH PROCESS SECTION #####
 
 # perform the student behavior analysis as a batch process
@@ -1320,3 +1521,4 @@ class TestRandom(APIView):
         return Response({
             "response": random
         })
+
