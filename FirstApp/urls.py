@@ -151,20 +151,29 @@ urlpatterns = [
     # retrieves lecture activity summary
     url(r'^get-lecture-activity-summary/$', api.GetLectureActivitySummary.as_view()),
 
-    # retrieves lecture activity summary
+    # retrieves lecture emotion summary
     url(r'^get-lecture-emotion-summary/$', api.GetLectureEmotionSummary.as_view()),
 
-    # retrieves lecture activity summary
+    # retrieves lecture gaze estimation summary
     url(r'^get-lecture-gaze-summary/$', api.GetLectureGazeSummary.as_view()),
 
-    # retrieves lecture activity summary
+    # retrieves student activity correlations with lecturer activity
     url(r'^get-activity-correlations/$', api.GetLectureActivityCorrelations.as_view()),
 
-    # retrieves lecture activity summary
+    # retrieves student emotion correlations with lecturer activity
     url(r'^get-emotion-correlations/$', api.GetLectureEmotionCorrelations.as_view()),
 
-    # retrieves lecture activity summary
+    # retrieves student gaze estimation correlations with lecturer activity
     url(r'^get-gaze-correlations/$', api.GetLectureGazeCorrelations.as_view()),
+
+    # retrieves student activity-emotion correlations
+    url(r'^get-student-activity-emotion-correlations/$', api.GetStudentActivityEmotionCorrelations.as_view()),
+
+    # retrieves student activity-gaze correlations
+    url(r'^get-student-activity-gaze-correlations/$', api.GetStudentActivityGazeCorrelations.as_view()),
+
+    # retrieves student emotion-gaze correlations
+    url(r'^get-student-emotion-gaze-correlations/$', api.GetStudentEmotionGazeCorrelations.as_view()),
 
 
     ##### OTHERS #####
