@@ -216,18 +216,19 @@ def get_frame_emotion_recognition(video_name):
         surprise_count = 0
 
         # get the detections
-        detections = ar.person_detection(image, net)
+        detections, persons = ar.person_detection(image, net)
 
         # to count the extracted detections for a frame
         detection_count = 0
 
         # if there are detections
         if (len(detections) > 0):
+
             # loop through the detections
-            for detection in detections:
+            for person in persons:
 
 
-                label = emotion_recognition(classifier, face_classifier, detection)
+                label = emotion_recognition(classifier, face_classifier, person)
 
                 # checking for the label
                 if label == class_labels[0]:
@@ -422,17 +423,17 @@ def emotion_frame_groupings(video_name, frame_landmarks, frame_group_dict):
         neutral_count = 0
         detection_count = 0
 
-        detections = ar.person_detection(image, net)
+        detections, persons = ar.person_detection(image, net)
 
         # if there are detections
         if (len(detections) > 0):
 
             # looping through the detections in each frame
-            for detection in detections:
+            for person in persons:
 
 
                 # run the model and get the emotion label
-                label = emotion_recognition(classifier, face_classifier, detection)
+                label = emotion_recognition(classifier, face_classifier, person)
 
                 # increment the count based on the label
                 if label == class_labels[0]:
