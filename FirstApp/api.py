@@ -375,17 +375,19 @@ class LectureEmotionProcess(APIView):
 
     def get(self, request):
         video_name = request.query_params.get('lecture_video_name')
-        video_id = request.query_params.get('lecture_video_id')
+        # video_id = request.query_params.get('lecture_video_id')
+        int_video_id = int(request.query_params.get('lecture_video_id'))
         percentages = ed.detect_emotion(video_name)
         percentages.calcPercentages()
-        self.save_emotion_report(video_id, percentages)
+        self.save_emotion_report(int_video_id, percentages)
         return Response({"response": True})
 
     def post(self, request):
         pass
 
     def save_emotion_report(self, lec_video_id, percentages):
-        lec_video = LectureVideo.objects.filter(lecture_video_id=lec_video_id)
+        # lec_video = LectureVideo.objects.filter(lecture_video_id=lec_video_id)
+        lec_video = LectureVideo.objects.filter(id=lec_video_id)
         lec_video_serializer = LectureVideoSerializer(lec_video, many=True)
         lec_video_data = lec_video_serializer.data[0]
         last_lec_emotion = LectureEmotionReport.objects.order_by('lecture_emotion_id').last()
@@ -500,7 +502,8 @@ class ProcessLectureGazeEstimation(APIView):
         pass
 
     def estimate_gaze(self, lec_video_id, percentages):
-        lec_video = LectureVideo.objects.filter(lecture_video_id=lec_video_id)
+        # lec_video = LectureVideo.objects.filter(lecture_video_id=lec_video_id)
+        lec_video = LectureVideo.objects.filter(id=lec_video_id)
         last_lec_gaze = LectureGazeEstimation.objects.order_by('lecture_gaze_id').last()
         lec_video_serializer = LectureVideoSerializer(lec_video, many=True)
         lec_video_data = lec_video_serializer.data[0]
@@ -921,65 +924,65 @@ class GetLectureEmotionSummary(APIView):
                 "emotion_labels": class_labels
             })
 
-        # else:
-        #
-        #     frame_landmarks = []
-        #
-        #     # retrieve frame landmarks from db
-        #     lec_video_frame_landmarks = LectureVideoFrameLandmarks.objects.filter(
-        #         lecture_video_id__video_name=video_name)
-        #     lec_video_frame_landmarks_ser = LectureVideoFrameLandmarksSerializer(lec_video_frame_landmarks, many=True)
-        #     lec_video_frame_landmarks_data = lec_video_frame_landmarks_ser.data[0]
-        #
-        #     retrieved_frame_landmarks = lec_video_frame_landmarks_data["frame_landmarks"]
-        #
-        #     # creating a new list to display in the frontend
-        #     for landmark in retrieved_frame_landmarks:
-        #         frame_landmarks.append(int(landmark['landmark']))
-        #
-        #
-        #     l, frame_group_dict = ve.getFrameLandmarks(video_name, "Emotion")
-        #     frame_group_percentages, emotion_labels = ed.emotion_frame_groupings(video_name, frame_landmarks, frame_group_dict)
-        #
-        #
-        #
-        #     # save the frame group details into db (temp method)
-        #
-        #     last_lec_emotion_frame_grouping = LectureEmotionFrameGroupings.objects.order_by('lecture_emotion_frame_groupings_id').last()
-        #     new_lecture_emotion_frame_grouping_id = "LEFG00001" if (last_lec_emotion_frame_grouping is None) else \
-        #         ig.generate_new_id(last_lec_emotion_frame_grouping.lecture_emotion_frame_groupings_id)
-        #
-        #     # retrieve the lecture emotion id
-        #     lec_emotion = LectureEmotionReport.objects.filter(lecture_video_id__video_name=video_name)
-        #     lec_emotion_ser = LectureEmotionSerializer(lec_emotion, many=True)
-        #     lec_emotion_id = lec_emotion_ser.data[0]['id']
-        #
-        #     # create the frame group details
-        #     frame_group_details = []
-        #
-        #     for key in frame_group_percentages.keys():
-        #         # create an object of type 'LectureActivityFrameGroupDetails'
-        #         lec_emotion_frame_group_details = LectureEmotionFrameGroupDetails()
-        #         lec_emotion_frame_group_details.frame_group = key
-        #         lec_emotion_frame_group_details.frame_group_percentages = frame_group_percentages[key]
-        #
-        #         frame_group_details.append(lec_emotion_frame_group_details)
-        #
-        #
-        #     new_lec_emotion_frame_groupings = LectureEmotionFrameGroupings()
-        #     new_lec_emotion_frame_groupings.lecture_emotion_frame_groupings_id = new_lecture_emotion_frame_grouping_id
-        #     new_lec_emotion_frame_groupings.lecture_emotion_id_id = lec_emotion_id
-        #     new_lec_emotion_frame_groupings.frame_group_details = frame_group_details
-        #
-        #     # save
-        #     new_lec_emotion_frame_groupings.save()
-        #
-        #
-        #     return Response({
-        #         "frame_landmarks": frame_landmarks,
-        #         "frame_group_percentages": frame_group_percentages,
-        #         "emotion_labels": emotion_labels
-        #     })
+        else:
+
+            frame_landmarks = []
+
+            # retrieve frame landmarks from db
+            lec_video_frame_landmarks = LectureVideoFrameLandmarks.objects.filter(
+                lecture_video_id__video_name=video_name)
+            lec_video_frame_landmarks_ser = LectureVideoFrameLandmarksSerializer(lec_video_frame_landmarks, many=True)
+            lec_video_frame_landmarks_data = lec_video_frame_landmarks_ser.data[0]
+
+            retrieved_frame_landmarks = lec_video_frame_landmarks_data["frame_landmarks"]
+
+            # creating a new list to display in the frontend
+            for landmark in retrieved_frame_landmarks:
+                frame_landmarks.append(int(landmark['landmark']))
+
+
+            l, frame_group_dict = ve.getFrameLandmarks(video_name, "Emotion")
+            frame_group_percentages, emotion_labels = ed.emotion_frame_groupings(video_name, frame_landmarks, frame_group_dict)
+
+
+
+            # save the frame group details into db (temp method)
+
+            last_lec_emotion_frame_grouping = LectureEmotionFrameGroupings.objects.order_by('lecture_emotion_frame_groupings_id').last()
+            new_lecture_emotion_frame_grouping_id = "LEFG00001" if (last_lec_emotion_frame_grouping is None) else \
+                ig.generate_new_id(last_lec_emotion_frame_grouping.lecture_emotion_frame_groupings_id)
+
+            # retrieve the lecture emotion id
+            lec_emotion = LectureEmotionReport.objects.filter(lecture_video_id__video_name=video_name)
+            lec_emotion_ser = LectureEmotionSerializer(lec_emotion, many=True)
+            lec_emotion_id = lec_emotion_ser.data[0]['id']
+
+            # create the frame group details
+            frame_group_details = []
+
+            for key in frame_group_percentages.keys():
+                # create an object of type 'LectureActivityFrameGroupDetails'
+                lec_emotion_frame_group_details = LectureEmotionFrameGroupDetails()
+                lec_emotion_frame_group_details.frame_group = key
+                lec_emotion_frame_group_details.frame_group_percentages = frame_group_percentages[key]
+
+                frame_group_details.append(lec_emotion_frame_group_details)
+
+
+            new_lec_emotion_frame_groupings = LectureEmotionFrameGroupings()
+            new_lec_emotion_frame_groupings.lecture_emotion_frame_groupings_id = new_lecture_emotion_frame_grouping_id
+            new_lec_emotion_frame_groupings.lecture_emotion_id_id = lec_emotion_id
+            new_lec_emotion_frame_groupings.frame_group_details = frame_group_details
+
+            # save
+            new_lec_emotion_frame_groupings.save()
+
+
+            return Response({
+                "frame_landmarks": frame_landmarks,
+                "frame_group_percentages": frame_group_percentages,
+                "emotion_labels": emotion_labels
+            })
 
 
 # this API will retrieve lecture gaze summary

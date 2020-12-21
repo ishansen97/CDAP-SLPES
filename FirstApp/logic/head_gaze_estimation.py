@@ -171,6 +171,7 @@ def process_gaze_estimation(video_path):
 
     ret, img = cap.read()
     size = img.shape
+    font = cv2.FONT_HERSHEY_SIMPLEX
     # 3D model points.
     model_points = np.array([
         (0.0, 0.0, 0.0),  # Nose tip
@@ -210,6 +211,18 @@ def process_gaze_estimation(video_path):
 
     # for testing purposes
     print('starting the gaze estimation process')
+
+    # get the frame sizes
+    frame_width = int(cap.get(3))
+    frame_height = int(cap.get(4))
+
+    frame_size = (frame_width, frame_height)
+    # this is the annotated video path
+    ANNOTATED_VIDEO_PATH = os.path.join(GAZE_DIR, video_path)
+
+    # initiailizing the video writer
+    vid_cod = cv2.VideoWriter_fourcc(*'XVID')
+    output = cv2.VideoWriter(ANNOTATED_VIDEO_PATH, vid_cod, 30.0, frame_size)
 
     # iterate the video frames
     while True:
@@ -285,14 +298,19 @@ def process_gaze_estimation(video_path):
 
                 # checking for vertical and horizontal directions
                 if isLookingDown & isLookingRight:
+                    cv2.putText(img, 'looking down and right', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     head_down_right_count += 1
                 elif isLookingDown & isLookingLeft:
+                    cv2.putText(img, 'looking down and left', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     head_down_left_count += 1
                 elif isLookingUp & isLookingRight:
+                    cv2.putText(img, 'looking up and right', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     head_up_right_count += 1
                 elif isLookingUp & isLookingLeft:
+                    cv2.putText(img, 'looking up and left', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     head_up_left_count += 1
                 elif isLookingFront:
+                    cv2.putText(img, 'looking front', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     head_front_count += 1
 
 
@@ -303,6 +321,9 @@ def process_gaze_estimation(video_path):
 
             # for testing purposes
             print('gaze estimation count: ', frame_count)
+
+            # write to the video writer
+            output.write(img)
 
             # increment the frame count
             frame_count += 1
@@ -330,6 +351,12 @@ def process_gaze_estimation(video_path):
 
     cv2.destroyAllWindows()
     cap.release()
+    output.release()
+
+
+    # after saving the video, save the changes to static content
+    p = os.popen("python manage.py collectstatic", "w")
+    p.write("yes")
 
     # for testing purposes
     print('ending the gaze estimation process')
@@ -535,6 +562,7 @@ def get_lecture_gaze_estimation_for_frames(video_name):
 
         else:
             break
+
 
 
 

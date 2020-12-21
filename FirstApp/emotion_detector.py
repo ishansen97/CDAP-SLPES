@@ -52,6 +52,8 @@ def emotion_recognition(classifier, face_classifier, image):
         roi_gray = gray[y:y + h, x:x + w]
         roi_gray = cv2.resize(roi_gray, (48, 48), interpolation=cv2.INTER_AREA)
         # rect,face,image = face_detector(frame)
+        # draw a rectangle
+        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
         if np.sum([roi_gray]) != 0:
             roi = roi_gray.astype('float') / 255.0
@@ -62,6 +64,9 @@ def emotion_recognition(classifier, face_classifier, image):
 
             preds = classifier.predict(roi)[0]
             label = class_labels[preds.argmax()]
+
+            # put the emotion label
+            cv2.putText(image, label, (x, y), cv2.FONT_HERSHEY_COMPLEX, 2, (0, 255, 0), 3)
 
     return label
 
@@ -79,6 +84,7 @@ def detect_emotion(video):
     face_classifier = cv2.CascadeClassifier(os.path.join(BASE_DIR, 'FirstApp\classifiers\haarcascade_frontalface_default.xml'))
     classifier_path = os.path.join(BASE_DIR, 'FirstApp\classifiers\Emotion_little_vgg.h5')
     classifier = load_model(classifier_path)
+    EMOTION_DIR = os.path.join(BASE_DIR, "static\\FirstApp\\emotion")
     meta_data = VideoMeta()
 
     class_labels = ['Angry', 'Happy', 'Neutral', 'Sad', 'Surprise']
@@ -98,6 +104,20 @@ def detect_emotion(video):
 
     # for testing purposes
     print('starting the emotion recognition process')
+
+    # get width and height of the video frames
+    frame_width = int(cap.get(3))
+    frame_height = int(cap.get(4))
+
+    # get the video frame size
+    size = (frame_width, frame_height)
+
+    # this is the annotated video path
+    ANNOTATED_VIDEO_PATH = os.path.join(EMOTION_DIR, video)
+
+    # initiailizing the video writer
+    vid_cod = cv2.VideoWriter_fourcc(*'XVID')
+    output = cv2.VideoWriter(ANNOTATED_VIDEO_PATH, vid_cod, 30.0, size)
 
     while (count_frames < frame_count):
         # Grab a single frame of video
@@ -135,6 +155,9 @@ def detect_emotion(video):
         # for testing purposes
         print('emotion frame count: ', count_frames)
 
+        # write the video frame to the video writer
+        output.write(frame)
+
         count_frames += 1
 
     # setting up the counted values
@@ -146,7 +169,12 @@ def detect_emotion(video):
     meta_data.surprise_count = count_surprise
 
     cap.release()
+    output.release()
     cv2.destroyAllWindows()
+
+    # after saving the video, save the changes to static content
+    p = os.popen("python manage.py collectstatic", "w")
+    p.write("yes")
 
     # for testing purposes
     print('ending the emotion recognition process')
@@ -197,6 +225,8 @@ def get_frame_emotion_recognition(video_name):
 
     # for testing purposes
     print('starting the emotion frame recognition process')
+
+
 
     # looping through the frames
     while (frame_count < no_of_frames):

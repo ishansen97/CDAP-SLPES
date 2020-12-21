@@ -40,7 +40,7 @@ def activity_recognition(video_path):
     # CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_03.h5")
     # CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_04.h5")
     CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_06.h5")
-    # ACTIVITY_DIR = os.path.join(BASE_DIR, "static\\FirstApp\\activity")
+    ACTIVITY_DIR = os.path.join(BASE_DIR, "static\\FirstApp\\activity")
 
     # files required for person detection
     config_file = os.path.join(BASE_DIR, "FirstApp\\classifiers\\MobileNetSSD_deploy.prototxt.txt")
@@ -83,10 +83,13 @@ def activity_recognition(video_path):
 
     # for testing purposes
     print('starting the activity recognition process')
+    
+    # this is the annotated video path
+    ANNOTATED_VIDEO_PATH = os.path.join(ACTIVITY_DIR, video_path)
 
     # initiailizing the video writer
     vid_cod = cv2.VideoWriter_fourcc(*'XVID')
-    output = cv2.VideoWriter("videos/cam_video.mp4", vid_cod, 30.0, size)
+    output = cv2.VideoWriter(ANNOTATED_VIDEO_PATH, vid_cod, 30.0, size)
 
     # looping through the frames
     while (frame_count < no_of_frames):
@@ -140,11 +143,23 @@ def activity_recognition(video_path):
 
                 # counting the detections under each label
                 if (label == class_labels[0]):
+                    label = "Phone checking"
                     phone_checking_count += 1
                 elif (label == class_labels[1]):
                     listening_count += 1
                 elif (label == class_labels[2]):
+                    label = "Writing"
                     note_taking_count += 1
+
+                # vertical_pos = startY + int(endY / 2)
+                vertical_pos = int(endY / 2)
+
+                # put the identified label above the detected person
+                # cv2.putText(image, label, (startX, vertical_pos), cv2.FONT_HERSHEY_COMPLEX, 0.5, (0, 255, 0), 2)
+                cv2.putText(image, label, (startX, vertical_pos), cv2.FONT_HERSHEY_COMPLEX, 4, (0, 255, 0), 10)
+
+                # increment the no.of persons
+                no_of_persons += 1
 
                 # increment the detection count
                 detection_count += 1
@@ -165,6 +180,10 @@ def activity_recognition(video_path):
     percentages["phone_perct"] = phone_perct
     percentages["writing_perct"] = note_perct
     percentages["listening_perct"] = listening_perct
+
+    # after saving the video, save the changes to static content
+    p = os.popen("python manage.py collectstatic", "w")
+    p.write("yes")
 
     # for testing purposes
     print('activity recognition process is over')
