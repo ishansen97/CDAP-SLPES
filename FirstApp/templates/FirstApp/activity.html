@@ -241,7 +241,8 @@
             //to handle the 'integrate' modal
             $('#integrate_activity').click(function () {
                 //define the student video src
-                let video_src = "{% static '' %}FirstApp/videos/" + global_video_name;
+                {#let video_src = "{% static '' %}FirstApp/videos/" + global_video_name;#}
+                let video_src = "{% static '' %}FirstApp/activity/" + global_video_name;
 
                 //assign the video src
                 $('#student_video').attr('src', video_src);

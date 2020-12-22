@@ -167,6 +167,9 @@ def activity_recognition(video_path):
         # increment the frame count
         frame_count += 1
 
+        # resize the image
+        image = cv2.resize(image, (224, 224))
+
         # write the frame to the video writer
         output.write(image)
 
