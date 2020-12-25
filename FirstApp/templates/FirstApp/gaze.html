@@ -142,7 +142,8 @@
                 $('#video_name').text(video.video_name);
                 $('#video_duration').text(video.video_length);
                 $('#video_date').text(video.date);
-                global_lecture_video_id = video.lecture_video_id;
+                {#global_lecture_video_id = video.lecture_video_id;#}
+                global_lecture_video_id = video.id;
                 global_video_name = video.video_name;
 
 

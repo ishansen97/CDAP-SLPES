@@ -189,6 +189,8 @@ def video_result(request):
 
         data = serializer.data
 
+        print('data length: ', len(data))
+
         # iterate through the existing lecture videos for the lecturer
         for video in data:
             video_id = video['id']
@@ -196,6 +198,8 @@ def video_result(request):
             subject = video['subject']['id']
             # check whether the video id exist in the Activity Recognition table
             lec_activity = LectureActivity.objects.filter(lecture_video_id_id=video_id).exists()
+
+            print('lecture activity existence: ', lec_activity)
 
             if lec_activity == False:
                 to_do_lecture_list.append({
@@ -227,10 +231,14 @@ def video_result(request):
                 # loop through the to-do lecture list
                 for item in to_do_lecture_list:
                     isDate = item['date'] == str(day_timetable['date'])
+
+                    print('item date: ', item['date'])
+                    print('timetable date: ', str(day_timetable['date']))
                     # isLecturer = item['lecturer'] ==
                     # check for the particular lecture on the day
                     if isDate:
                         slots = day_timetable['time_slots']
+
 
                         # loop through the slots
                         for slot in slots:
@@ -259,6 +267,8 @@ def video_result(request):
     except Exception as exc:
         print('what is wrong?: ', exc)
         return redirect('/500')
+
+    print('due lectures: ', due_lecture_list)
 
     return render(request, "FirstApp/video_results.html",
                   {"lecturer": lecturer, "due_lectures": due_lecture_list})
