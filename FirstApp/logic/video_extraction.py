@@ -307,3 +307,8 @@ def get_frame_landmarks(video_name):
 
     # now return the frame landmarks
     return frame_landmarks
+
+
+# this method will save leture video (student)
+def save_lecture_student_video():
+    pass

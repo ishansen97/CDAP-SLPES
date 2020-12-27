@@ -240,21 +240,16 @@
                 //define the student video src
                 let video_src = "{% static '' %}FirstApp/videos/" + global_video_name;
 
-                {#global_lecturer_video_name = "Test_1.mp4";#}
-                {#global_lecturer_video_name = "Test_2.mp4";#}
-                global_lecturer_video_name = "Test_3.mp4";
-
-                //define the lecturer video src
-                let lecturer_video_src = "{% static '' %}FirstApp/lecturer_videos/" + global_lecturer_video_name;
-
-
                 //assign the video src
                 $('#student_video').attr('src', video_src);
 
-                //assign the video src
-                $('#lecturer_video').attr('src', lecturer_video_src);
+                //fetch the lecture recorded video name
+                fetch('http://127.0.0.1:8000/get-lecture-recorded-video-name/?lecturer=' + global_lecturer + '&subject=' + global_subject + '&date=' + global_lecture_date)
+                .then((res) => res.json())
+                .then((out) => assignLecturerRecordedVideoName(out))
+                .catch((err) => alert('error: ' + err));
 
-                $('#integrate_modal').modal();
+
 
                 //fetch data from the API
                 fetch('http://127.0.0.1:8000/get-lecture-gaze-estimation-for-frame/?video_name=' + global_video_name)
@@ -263,6 +258,23 @@
                     .catch((err) => alert('error: ' + err));
 
             });
+
+
+            //assign the lecturer recorded video name
+            function assignLecturerRecordedVideoName(res) {
+
+                global_lecturer_video_name = res.video_name;
+
+                //define the lecturer video src
+                let lecturer_video_src = "{% static '' %}FirstApp/lecturer_videos/" + global_lecturer_video_name;
+
+                alert('hello');
+
+                //assign the video src
+                $('#lecturer_video').attr('src', lecturer_video_src);
+
+                $('#integrate_modal').modal();
+            }
 
 
             //this function will load the activity recognition for frames

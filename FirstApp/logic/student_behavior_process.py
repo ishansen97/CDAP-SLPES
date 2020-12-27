@@ -380,3 +380,36 @@ def calculate_student_emotion_gaze_correlations(lec_emotions, lec_gaze):
 
     # return the list
     return correlations
+
+
+# this method will provide comments on the student behavior
+def generate_student_behavior_comments(category, **kwargs):
+
+    # declare the comments list
+    comments = []
+
+    if category == "Activity":
+        float_phone_perct = float(kwargs.get('phone_perct'))
+        float_listen_perct = float(kwargs.get('listen_perct'))
+        float_note_perct = float(kwargs.get('note_perct'))
+
+        # set the threshold value list
+        THRESHOLDS = [40, 20, 30]
+
+
+        if int(float_phone_perct) >= THRESHOLDS[0]:
+            comments.append("Special Attention needs to be given to reduce student phone checking")
+        if int(float_listen_perct) < THRESHOLDS[1]:
+            comments.append("Consider taking steps to increase student attention")
+        if int(float_note_perct) < THRESHOLDS[2]:
+            comments.append("Try to pursue students to take important notes during the lecture")
+
+
+    elif category == "Emotion":
+        print('Emotion')
+    elif category == "Gaze":
+        print('Gaze')
+
+
+    # return the comment list
+    return comments

@@ -257,8 +257,13 @@
                 //change the innerHTML of the clicked button
                 e.target.innerHTML = "<span class='font-italic'>Processing</span>";
 
+                let phone_perct = $('#phone_perct').text().split("%")[0];
+                let listen_perct = $('#listening_perct').text().split("%")[0];
+                let note_perct = $('#writing_perct').text().split("%")[0];
+
+
                 //fetch the activity summary details
-                fetch('http://127.0.0.1:8000/get-lecture-activity-summary/?video_name=' + global_video_name)
+                fetch('http://127.0.0.1:8000/get-lecture-activity-summary/?video_name=' + global_video_name + '&phone_perct=' + phone_perct + '&note_perct=' + note_perct + '&listen_perct=' + listen_perct)
                     .then((res) => res.json())
                     .then((out) => activityFrameGroupPercentages(out, e))
                     .catch((err) => alert('error: ' + err));
@@ -295,15 +300,29 @@
 
             //this function will handle the retrieved activity frame group percentages
             function activityFrameGroupPercentages(response, e) {
+                //remove the previous comments
+                $('#student_activity_comments').empty();
 
                 lecture_activity_frame_group_percentages = response.frame_group_percentages;
                 let frame_landmarks = response.frame_landmarks;
                 {#let frame_group_dict = response.frame_group_dict;#}
                 let activity_labels = response.activity_labels;
+                let comment_list = response.comments;
 
+                //define a html string
+                let htmlString = "";
+
+                for (let i = 0; i < comment_list.length; i++) {
+                    htmlString += "<p class='font-italic font-weight-bold'>";
+                    htmlString += comment_list[i];
+                    htmlString += "</p>";
+                }
 
                 //change the button back to original
                 e.target.innerHTML = "Summary";
+
+                //append the html string to the comments list
+                $('#student_activity_comments').append(htmlString);
 
                 //open the modal
                 $('#ActivitySummaryModal').modal();
@@ -2278,6 +2297,21 @@
                 </div>
                 <div class="modal-body">
                     <div id="ActivityChartContainer" style="height: 370px; max-width: 920px; margin: 0px auto;"></div>
+
+
+                    <!-- Notes header -->
+                    <div class="modal-header mt-4">
+                        <h3>Notes</h3>
+                    </div>
+                    <!-- End of Notes header -->
+
+                    <!-- Comments row -->
+                    <div class="row mt-3">
+                        <div class="col-lg-6" id="student_activity_comments">
+
+                        </div>
+                    </div>
+                    <!-- End of Comments row -->
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
