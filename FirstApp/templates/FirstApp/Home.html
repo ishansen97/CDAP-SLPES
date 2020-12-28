@@ -257,8 +257,13 @@
                 //change the innerHTML of the clicked button
                 e.target.innerHTML = "<span class='font-italic'>Processing</span>";
 
+                let phone_perct = $('#phone_perct').text().split("%")[0];
+                let listen_perct = $('#listening_perct').text().split("%")[0];
+                let note_perct = $('#writing_perct').text().split("%")[0];
+
+
                 //fetch the activity summary details
-                fetch('http://127.0.0.1:8000/get-lecture-activity-summary/?video_name=' + global_video_name)
+                fetch('http://127.0.0.1:8000/get-lecture-activity-summary/?video_name=' + global_video_name + '&phone_perct=' + phone_perct + '&note_perct=' + note_perct + '&listen_perct=' + listen_perct)
                     .then((res) => res.json())
                     .then((out) => activityFrameGroupPercentages(out, e))
                     .catch((err) => alert('error: ' + err));
@@ -295,15 +300,29 @@
 
             //this function will handle the retrieved activity frame group percentages
             function activityFrameGroupPercentages(response, e) {
+                //remove the previous comments
+                $('#student_activity_comments').empty();
 
                 lecture_activity_frame_group_percentages = response.frame_group_percentages;
                 let frame_landmarks = response.frame_landmarks;
                 {#let frame_group_dict = response.frame_group_dict;#}
                 let activity_labels = response.activity_labels;
+                let comment_list = response.comments;
 
+                //define a html string
+                let htmlString = "";
+
+                for (let i = 0; i < comment_list.length; i++) {
+                    htmlString += "<p class='font-italic font-weight-bold'>";
+                    htmlString += comment_list[i];
+                    htmlString += "</p>";
+                }
 
                 //change the button back to original
                 e.target.innerHTML = "Summary";
+
+                //append the html string to the comments list
+                $('#student_activity_comments').append(htmlString);
 
                 //open the modal
                 $('#ActivitySummaryModal').modal();
@@ -1240,41 +1259,49 @@
             function displayActivityEmotionCorrelations(correlations) {
 
                 let htmlString = "";
+                if (correlations.length !== 0) {
+                    //create the html content for the activity correlation table
+                    for (let i = 0; i < correlations.length; i++) {
+                        let corr = correlations[i];
 
-                //create the html content for the activity correlation table
-                for (let i = 0; i < correlations.length; i++) {
-                    let corr = correlations[i];
+                        let indices = corr.index;
+                        let value = corr.value;
+                        value = Math.round(value * 100, 1);
 
-                    let indices = corr.index;
-                    let value = corr.value;
-                    value = Math.round(value * 100, 1);
+                        if (value <= 100 && value > 80) {
+                            htmlString += "<tr class='bg-success text-white'>";
+                        } else if (value <= 80 && value > 60) {
+                            htmlString += "<tr class='bg-primary text-white'>";
+                        } else if (value <= 60 && value > 40) {
+                            htmlString += "<tr class='bg-warning text-white'>";
+                        } else if (value <= 40 && value > 20) {
+                            htmlString += "<tr class='bg-danger text-white'>";
+                        } else if (value <= 20 && value > 0) {
+                            htmlString += "<tr class='bg-dark text-white'>";
+                        }
 
-                    if (value <= 100 && value > 80) {
-                        htmlString += "<tr class='bg-success text-white'>";
-                    } else if (value <= 80 && value > 60) {
-                        htmlString += "<tr class='bg-primary text-white'>";
-                    } else if (value <= 60 && value > 40) {
-                        htmlString += "<tr class='bg-warning text-white'>";
-                    } else if (value <= 40 && value > 20) {
-                        htmlString += "<tr class='bg-danger text-white'>";
-                    } else if (value <= 20 && value > 0) {
-                        htmlString += "<tr class='bg-dark text-white'>";
+                        //create a <tr> to be inserted
+                        htmlString += "<td>";
+                        htmlString += indices[0];
+                        htmlString += "</td>";
+                        htmlString += "<td>";
+                        htmlString += indices[1];
+                        htmlString += "</td>";
+                        htmlString += "<td>";
+                        htmlString += value;
+                        htmlString += "</td>";
+
+                        htmlString += "</tr>";
+
                     }
-
-                    //create a <tr> to be inserted
-                    htmlString += "<td>";
-                    htmlString += indices[0];
+                } else {
+                    htmlString += "<tr>";
+                    htmlString += "<td colspan='3'>";
+                    htmlString += "<span class='font-italic'>No correlations were found</span>";
                     htmlString += "</td>";
-                    htmlString += "<td>";
-                    htmlString += indices[1];
-                    htmlString += "</td>";
-                    htmlString += "<td>";
-                    htmlString += value;
-                    htmlString += "</td>";
-
                     htmlString += "</tr>";
-
                 }
+
 
                 //append to the <tbody>
                 $('#student_activity_emotion_corr_tbody').append(htmlString);
@@ -1293,39 +1320,47 @@
 
                 let htmlString = "";
 
-                //create the html content for the activity correlation table
-                for (let i = 0; i < correlations.length; i++) {
-                    let corr = correlations[i];
+                if (correlations.length !== 0) {
+                    //create the html content for the activity correlation table
+                    for (let i = 0; i < correlations.length; i++) {
+                        let corr = correlations[i];
 
-                    let indices = corr.index;
-                    let value = corr.value;
-                    value = Math.round(value * 100, 1);
+                        let indices = corr.index;
+                        let value = corr.value;
+                        value = Math.round(value * 100, 1);
 
-                    if (value <= 100 && value > 80) {
-                        htmlString += "<tr class='bg-success text-white'>";
-                    } else if (value <= 80 && value > 60) {
-                        htmlString += "<tr class='bg-primary text-white'>";
-                    } else if (value <= 60 && value > 40) {
-                        htmlString += "<tr class='bg-warning text-white'>";
-                    } else if (value <= 40 && value > 20) {
-                        htmlString += "<tr class='bg-danger text-white'>";
-                    } else if (value <= 20 && value > 0) {
-                        htmlString += "<tr class='bg-dark text-white'>";
+                        if (value <= 100 && value > 80) {
+                            htmlString += "<tr class='bg-success text-white'>";
+                        } else if (value <= 80 && value > 60) {
+                            htmlString += "<tr class='bg-primary text-white'>";
+                        } else if (value <= 60 && value > 40) {
+                            htmlString += "<tr class='bg-warning text-white'>";
+                        } else if (value <= 40 && value > 20) {
+                            htmlString += "<tr class='bg-danger text-white'>";
+                        } else if (value <= 20 && value > 0) {
+                            htmlString += "<tr class='bg-dark text-white'>";
+                        }
+
+                        //create a <tr> to be inserted
+                        htmlString += "<td>";
+                        htmlString += indices[0];
+                        htmlString += "</td>";
+                        htmlString += "<td>";
+                        htmlString += indices[1];
+                        htmlString += "</td>";
+                        htmlString += "<td>";
+                        htmlString += value;
+                        htmlString += "</td>";
+
+                        htmlString += "</tr>";
+
                     }
-
-                    //create a <tr> to be inserted
-                    htmlString += "<td>";
-                    htmlString += indices[0];
+                } else {
+                    htmlString += "<tr>";
+                    htmlString += "<td colspan='3'>";
+                    htmlString += "<span class='font-italic'>No correlations were found</span>";
                     htmlString += "</td>";
-                    htmlString += "<td>";
-                    htmlString += indices[1];
-                    htmlString += "</td>";
-                    htmlString += "<td>";
-                    htmlString += value;
-                    htmlString += "</td>";
-
                     htmlString += "</tr>";
-
                 }
 
                 //append to the <tbody>
@@ -1346,40 +1381,49 @@
 
                 let htmlString = "";
 
-                //create the html content for the activity correlation table
-                for (let i = 0; i < correlations.length; i++) {
-                    let corr = correlations[i];
+                if (correlations.length !== 0) {
+                    //create the html content for the activity correlation table
+                    for (let i = 0; i < correlations.length; i++) {
+                        let corr = correlations[i];
 
-                    let indices = corr.index;
-                    let value = corr.value;
-                    value = Math.round(value * 100, 1);
+                        let indices = corr.index;
+                        let value = corr.value;
+                        value = Math.round(value * 100, 1);
 
-                    if (value <= 100 && value > 80) {
-                        htmlString += "<tr class='bg-success text-white'>";
-                    } else if (value <= 80 && value > 60) {
-                        htmlString += "<tr class='bg-primary text-white'>";
-                    } else if (value <= 60 && value > 40) {
-                        htmlString += "<tr class='bg-warning text-white'>";
-                    } else if (value <= 40 && value > 20) {
-                        htmlString += "<tr class='bg-danger text-white'>";
-                    } else if (value <= 20 && value > 0) {
-                        htmlString += "<tr class='bg-dark text-white'>";
+                        if (value <= 100 && value > 80) {
+                            htmlString += "<tr class='bg-success text-white'>";
+                        } else if (value <= 80 && value > 60) {
+                            htmlString += "<tr class='bg-primary text-white'>";
+                        } else if (value <= 60 && value > 40) {
+                            htmlString += "<tr class='bg-warning text-white'>";
+                        } else if (value <= 40 && value > 20) {
+                            htmlString += "<tr class='bg-danger text-white'>";
+                        } else if (value <= 20 && value > 0) {
+                            htmlString += "<tr class='bg-dark text-white'>";
+                        }
+
+                        //create a <tr> to be inserted
+                        htmlString += "<td>";
+                        htmlString += indices[0];
+                        htmlString += "</td>";
+                        htmlString += "<td>";
+                        htmlString += indices[1];
+                        htmlString += "</td>";
+                        htmlString += "<td>";
+                        htmlString += value;
+                        htmlString += "</td>";
+
+                        htmlString += "</tr>";
+
                     }
-
-                    //create a <tr> to be inserted
-                    htmlString += "<td>";
-                    htmlString += indices[0];
+                } else {
+                    htmlString += "<tr>";
+                    htmlString += "<td colspan='3'>";
+                    htmlString += "<span class='font-italic'>No correlations were found</span>";
                     htmlString += "</td>";
-                    htmlString += "<td>";
-                    htmlString += indices[1];
-                    htmlString += "</td>";
-                    htmlString += "<td>";
-                    htmlString += value;
-                    htmlString += "</td>";
-
                     htmlString += "</tr>";
-
                 }
+
 
                 //append to the <tbody>
                 $('#student_emotion_gaze_corr_tbody').append(htmlString);
@@ -2253,6 +2297,21 @@
                 </div>
                 <div class="modal-body">
                     <div id="ActivityChartContainer" style="height: 370px; max-width: 920px; margin: 0px auto;"></div>
+
+
+                    <!-- Notes header -->
+                    <div class="modal-header mt-4">
+                        <h3>Notes</h3>
+                    </div>
+                    <!-- End of Notes header -->
+
+                    <!-- Comments row -->
+                    <div class="row mt-3">
+                        <div class="col-lg-6" id="student_activity_comments">
+
+                        </div>
+                    </div>
+                    <!-- End of Comments row -->
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>

@@ -761,6 +761,9 @@ class GetLectureActivitySummary(APIView):
 
     def get(self, request):
         video_name = request.query_params.get('video_name')
+        phone_perct = request.query_params.get('phone_perct')
+        listen_perct = request.query_params.get('listen_perct')
+        note_perct = request.query_params.get('note_perct')
 
         # checking the existence of lecture activity frame grouping records in the db
         isExist = LectureActivityFrameGroupings.objects.filter(lecture_activity_id__lecture_video_id__video_name=video_name).exists()
@@ -796,10 +799,14 @@ class GetLectureActivitySummary(APIView):
 
             class_labels = ['phone_perct', 'listen_perct', 'note_perct']
 
+            # get the comments list
+            comments = sbp.generate_student_behavior_comments("Activity", phone_perct=phone_perct, listen_perct=listen_perct, note_perct=note_perct)
+
             return Response({
                 "frame_landmarks": frame_landmarks,
                 "frame_group_percentages": frame_group_percentages,
-                "activity_labels": class_labels
+                "activity_labels": class_labels,
+                "comments": comments
             })
 
         # else:
@@ -1165,6 +1172,7 @@ class GetLectureActivityCorrelations(APIView):
 
 
             activity_correlations = ar.get_activity_correlations(individual_lec_activities, lec_recorded_activity_data)
+
 
 
         return Response({

@@ -15,3 +15,10 @@ def batch_process(video_id, video_name):
 
 
     pass
+
+
+# this method will save the lecture video
+def save_student_lecture_video(student_video):
+
+    # call the API
+    student_video_save_resp = requests.post('http://127.0.0.1:8000/lecture-video', student_video)
