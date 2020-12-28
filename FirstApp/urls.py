@@ -190,7 +190,7 @@ urlpatterns = [
     url(r'^check-availability/$', api.CheckStudentBehaviorAvailability.as_view()),
 
     # perform random task (delete later)
-    url(r'^get-random_number/$', api.TestRandom.as_view()),
+    url(r'^get-random-number/$', api.TestRandom.as_view()),
 
 
 

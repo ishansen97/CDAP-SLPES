@@ -301,7 +301,8 @@
             /*
             let interval = setInterval(() => {
 
-                {#let url = 'http://127.0.0.1:8000/get-random_number';#}
+
+            {#let url = 'http://127.0.0.1:8000/get-random_number';#}
                 let url = 'http://127.0.0.1:8000/check-availability';
 
                 fetch(url)
@@ -401,7 +402,7 @@
                                 <div class="card-body">
 
                                     <!--loading gif -->
-                                    {% if due_lectures.count == 0 %}
+                                    {% if due_lectures|length == 0 %}
                                         <div class="text-center" id="no_subject_selected">
                                             <span class="font-italic">No lecture is to be processed</span>
                                         </div>
@@ -414,38 +415,43 @@
                                     <div class="text-center" id="no_timetable_content" hidden>
                                         <span class="font-italic">Not included in the timetable</span>
                                     </div>
-                                    <!--displaying the timetable -->
-                                    <table class="table table-striped" id="timetable">
-                                        {#                                    <caption id="timetable_caption"></caption>#}
-                                        <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Subject</th>
-                                            <th>start time</th>
-                                            <th>end time</th>
-                                            <th></th>
-                                        </tr>
-                                        </thead>
-                                        <tbody id="timetable_body">
-                                        {% for lecture in due_lectures %}
+
+                                    <!-- if there are due lectures, display the table -->
+                                    {% if due_lectures %}
+
+                                        <!--displaying the timetable -->
+                                        <table class="table table-striped" id="timetable">
+                                            {#                                    <caption id="timetable_caption"></caption>#}
+                                            <thead>
                                             <tr>
-                                                <td class="font-weight-bolder">{{ lecture.date }}</td>
-                                                {#                                                    <td>{{ lecture.subject }}</td>#}
-                                                <td class="font-weight-bolder">{{ lecture.subject_name }}</td>
-                                                <td class="font-weight-bolder">{{ lecture.start_time }}</td>
-                                                <td class="font-weight-bolder">{{ lecture.end_time }}</td>
-                                                <td>
-                                                    <button type="button" class="btn btn-success batch_process"
-                                                            data-video-id="{{ lecture.video_id }}"
-                                                            data-video-name="{{ lecture.video_name }}"
-                                                            id="{{ lecture.subject }}">Process
-                                                    </button>
-                                                    {#                                                        <span class="font-italic font-weight-bolder text-success">Processing</span>#}
-                                                </td>
+                                                <th>Date</th>
+                                                <th>Subject</th>
+                                                <th>start time</th>
+                                                <th>end time</th>
+                                                <th></th>
                                             </tr>
-                                        {% endfor %}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody id="timetable_body">
+                                            {% for lecture in due_lectures %}
+                                                <tr>
+                                                    <td class="font-weight-bolder">{{ lecture.date }}</td>
+                                                    {#                                                    <td>{{ lecture.subject }}</td>#}
+                                                    <td class="font-weight-bolder">{{ lecture.subject_name }}</td>
+                                                    <td class="font-weight-bolder">{{ lecture.start_time }}</td>
+                                                    <td class="font-weight-bolder">{{ lecture.end_time }}</td>
+                                                    <td>
+                                                        <button type="button" class="btn btn-success batch_process"
+                                                                data-video-id="{{ lecture.video_id }}"
+                                                                data-video-name="{{ lecture.video_name }}"
+                                                                id="{{ lecture.subject }}">Process
+                                                        </button>
+                                                        {#                                                        <span class="font-italic font-weight-bolder text-success">Processing</span>#}
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    {% endif %}
 
 
                                 </div>
@@ -528,7 +534,6 @@
                                         <!-- end of progress row -->
 
 
-
                                     </div>
                                     <!-- end of container -->
 
@@ -541,9 +546,9 @@
                     </div>
                     <!-- end of progress row -->
 
-                <!-- snackbar -->
-                <div id="snackbar">The lecture is completely processed..</div>
-                <!-- end of snackbar -->
+                    <!-- snackbar -->
+                    <div id="snackbar">The lecture is completely processed..</div>
+                    <!-- end of snackbar -->
 
                 </div>
             {% endblock %}

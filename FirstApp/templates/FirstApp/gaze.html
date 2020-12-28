@@ -74,6 +74,8 @@
                 real_class = '.' + real_class;
 
                 let date = e.target.parentNode.parentNode.firstChild.innerHTML;
+                //assign the date
+                global_lecture_date = date;
 
                 fetch('http://127.0.0.1:8000/get-lecture-video-gaze-estimation-availability/?lecturer=' + global_lecturer + '&date=' + date + '&index=' + global_lecturer_subject_index)
                     .then((res) => res.json())
@@ -249,6 +251,18 @@
                 .then((out) => assignLecturerRecordedVideoName(out))
                 .catch((err) => alert('error: ' + err));
 
+                {#global_lecturer_video_name = "Test_1.mp4";#}
+                {#global_lecturer_video_name = "Test_2.mp4";#}
+                {#global_lecturer_video_name = "Test_3.mp4";#}
+                {#global_lecturer_video_name = "Lecturer_Video_4.mp4";#}
+                {##}
+                {#//define the lecturer video src#}
+                {#let lecturer_video_src = "{% static '' %}FirstApp/lecturer_videos/" + global_lecturer_video_name;#}
+                {##}
+                {#//assign the video src#}
+                {#$('#lecturer_video').attr('src', lecturer_video_src);#}
+                {##}
+                {#$('#integrate_modal').modal();#}
 
 
                 //fetch data from the API

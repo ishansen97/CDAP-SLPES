@@ -752,9 +752,13 @@ def get_activity_correlations(individual_lec_activities, lec_recorded_activity_d
     # this variable will be used to store the correlations
     correlations = []
 
-    limit = 10
+    # limit = 10
+    limit = len(individual_lec_activities)
 
     data_index = ['lecture-{}'.format(i+1)  for i in range(len(individual_lec_activities))]
+
+    # declare the correlation data dictionary
+    corr_data = {}
 
     # student activity labels
     student_activity_labels = ['phone checking', 'listening', 'note taking']
@@ -772,28 +776,62 @@ def get_activity_correlations(individual_lec_activities, lec_recorded_activity_d
 
     # loop through the lecturer recorded data (lecturer)
     for data in lec_recorded_activity_data:
-        sitting_perct_list.append(int(data['seated_count']))
-        standing_perct_list.append(int(data['standing_count']))
-        walking_perct_list.append(int(data['walking_count']))
+        value = int(data['seated_count'])
+        value1 = int(data['standing_count'])
+        value2 = int(data['walking_count'])
+
+        if value != 0:
+            sitting_perct_list.append(int(data['seated_count']))
+        if value1 != 0:
+            standing_perct_list.append(int(data['standing_count']))
+        if value2 != 0:
+            walking_perct_list.append(int(data['walking_count']))
 
    # loop through the lecturer recorded data (student)
     for data in individual_lec_activities:
-        phone_perct_list.append(int(data['phone_perct']))
-        listen_perct_list.append(int(data['listening_perct']))
-        note_perct_list.append(int(data['writing_perct']))
+        value = int(data['phone_perct'])
+        value1 = int(data['listening_perct'])
+        value2 = int(data['writing_perct'])
+
+        if value != 0:
+            phone_perct_list.append(int(data['phone_perct']))
+        if value1 != 0:
+            listen_perct_list.append(int(data['listening_perct']))
+        if value2 != 0:
+            note_perct_list.append(int(data['writing_perct']))
 
 
-    corr_data = {'phone checking': phone_perct_list, 'listening': listen_perct_list, 'note taking': note_perct_list,
-                         'seated': sitting_perct_list, 'standing': standing_perct_list, 'walking': walking_perct_list}
+    if (len(phone_perct_list)) == len(individual_lec_activities):
+        corr_data[student_activity_labels[0]] = phone_perct_list
+    if (len(listen_perct_list)) == len(individual_lec_activities):
+        corr_data[student_activity_labels[1]] = listen_perct_list
+    if (len(note_perct_list)) == len(individual_lec_activities):
+        corr_data[student_activity_labels[2]] = note_perct_list
+    if (len(sitting_perct_list)) == len(individual_lec_activities):
+        corr_data[lecturer_activity_labels[0]] = sitting_perct_list
+    if (len(standing_perct_list)) == len(individual_lec_activities):
+        corr_data[lecturer_activity_labels[1]] = standing_perct_list
+    if (len(walking_perct_list)) == len(individual_lec_activities):
+        corr_data[lecturer_activity_labels[2]] = walking_perct_list
+
+
+
+    # corr_data = {'phone checking': phone_perct_list, 'listening': listen_perct_list, 'note taking': note_perct_list,
+    #                      'seated': sitting_perct_list, 'standing': standing_perct_list, 'walking': walking_perct_list}
 
     # create the dataframe
     df = pd.DataFrame(corr_data, index=data_index)
+
+    print(df)
 
     # calculate the correlation
     pd_series = ut.get_top_abs_correlations(df, limit)
 
     print('====correlated variables=====')
     print(pd_series)
+
+    # assign a new value to the 'limit' variable
+    limit = len(pd_series) if len(pd_series) < limit else limit
 
     for i in range(limit):
         # this dictionary will get the pandas.Series object's  indices and values separately
