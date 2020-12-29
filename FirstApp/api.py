@@ -140,13 +140,41 @@ class LectureVideoViewSet(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = LectureVideoSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=ValueError):
-            serializer.create(validated_data=request.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        return Response(serializer.error_messages,
-                        status=status.HTTP_400_BAD_REQUEST)
+        # get the request data
+        # data = request.data
+        #
+        # # retrieve the last lecture video details
+        # last_lec_video = LectureVideo.objects.order_by('lecture_video_id').last()
+        # # create the next lecture video id
+        # new_lecture_video_id = ig.generate_new_id(last_lec_video.lecture_video_id)
+        #
+        # # create the new lecture video
+        # LectureVideo(
+        #     lecture_video_id=new_lecture_video_id,
+        #     lecturer_id=data['lecturer_id'],
+        #     subject_id=data['subject_id'],
+        #     video_name=data['video_name'],
+        #     video_length=data['video_length'],
+        #     date=data['date']
+        # ).save()
+        #
+        # # return the successful response
+        # return Response({
+        #     "response": "Successfully created",
+        #
+        # }, status=status.HTTP_201_CREATED)
+
+        serializer = LectureVideoSerializer(data=request.data)
+        serializer.create(validated_data=request.data)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        # if serializer.is_valid(raise_exception=ValueError):
+        #     serializer.create(validated_data=request.data)
+
+        # return Response(serializer.error_messages,
+        #                 status=status.HTTP_400_BAD_REQUEST)
 
 
 # this API will retrieve a lecture video details

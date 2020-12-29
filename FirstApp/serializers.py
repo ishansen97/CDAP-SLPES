@@ -18,8 +18,12 @@ there are two fields inside "Meta" class, as follows.
 
 
 from rest_framework import serializers
+from djongo import models
 from .MongoModels import *
 from . models import VideoMeta
+from .logic import id_generator as ig
+# from datetime import datetime as dt
+import datetime
 
 
 # lecture serializer
@@ -189,6 +193,67 @@ class LectureVideoSerializer(serializers.ModelSerializer):
     class Meta:
         model = LectureVideo
         fields = '__all__'
+
+
+
+    # this method will override the 'create' method
+    def create(self, validated_data):
+
+        lecturer = None
+        subject = None
+
+        lecturer_data = validated_data.pop('lecturer')
+        subject_data = validated_data.pop('subject')
+
+        # serialize the lecturer data
+        lecturer = Lecturer.objects.filter(id=lecturer_data)
+        subject = Subject.objects.filter(id=subject_data)
+
+
+        # retrieve the last lecture video details
+        last_lec_video = LectureVideo.objects.order_by('lecture_video_id').last()
+        # create the next lecture video id
+        new_lecture_video_id = ig.generate_new_id(last_lec_video.lecture_video_id)
+
+
+        # if both subject and lecturer details are available
+        if len(lecturer) == 1 & len(subject) == 1:
+
+            str_video_length = validated_data.pop('video_length')
+            video_length_parts = str_video_length.split(':')
+            video_length = datetime.timedelta(minutes=int(video_length_parts[0]), seconds=int(video_length_parts[1]), milliseconds=int(video_length_parts[2]))
+
+            lecture_video, created = LectureVideo.objects.update_or_create(
+                lecture_video_id=new_lecture_video_id,
+                lecturer=lecturer[0],
+                subject=subject[0],
+                date=validated_data.pop('date'),
+                video_name=validated_data.pop('video_name'),
+                video_length=video_length
+            )
+
+        # faculty_data = validated_data.pop('faculty')
+        # serialized_faculty = FacultySerializer(data=faculty_data)
+        #
+        # if (serialized_faculty.is_valid()):
+        #     # faculty, faculty_created = Faculty.objects.get_or_create(defaults={}, faculty_id=serialized_faculty.data['faculty_id'])
+        #     faculty = Faculty.objects.filter(faculty_id=serialized_faculty.data['faculty_id'])
+        #
+        #     if (len(faculty) == 1):
+        #         lecturer, created = Lecturer.objects.update_or_create(
+        #             faculty=faculty[0],
+        #             lecturer_id=validated_data.pop('lecturer_id'),
+        #             fname=validated_data.pop('fname'),
+        #             lname=validated_data.pop('lname'),
+        #             email=validated_data.pop('email'),
+        #             telephone=validated_data('telephone')
+        #         )
+        #
+        #         return lecturer
+        #
+            return lecture_video
+
+        return None
 
 
 # lecture video time landmarks serializer
