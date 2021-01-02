@@ -49,15 +49,21 @@
 {#            <div class="sidebar-brand-icon rotate-n-15">#}
 {#                <i class="fas fa-laugh-wink"></i>#}
 {#            </div>#}
-            <div class="sidebar-brand-icon">
-                <i class="fas fa-chalkboard-teacher"></i>
-            </div>
+{#            <div class="sidebar-brand-icon">#}
+{#                <i class="fas fa-chalkboard-teacher"></i>#}
+{#            </div>#}
 
             {% if request.session.user_type == "Lecturer" %}
+                <div class="sidebar-brand-icon">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
                 <div class="sidebar-brand-text mx-3">SLPES Lecturer</div>
             {% endif %}
 
             {% if request.session.user_type == "Admin" %}
+                <div class="sidebar-brand-icon">
+                    <i class="fa fa-user" aria-hidden="true"></i>
+                </div>
                 <div class="sidebar-brand-text mx-3">SLPES Admin</div>
             {% endif %}
         </a>
