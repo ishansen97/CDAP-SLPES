@@ -194,6 +194,47 @@ class LectureVideoSerializer(serializers.ModelSerializer):
         model = LectureVideo
         fields = '__all__'
 
+    # this method will validate the input data
+    def to_internal_value(self, data):
+
+        lecturer = None
+        subject = None
+
+        lecturer_data = data.get('lecturer')
+        subject_data = data.get('subject')
+
+        # serialize the lecturer data
+        lecturer = Lecturer.objects.filter(id=lecturer_data)
+        subject = Subject.objects.filter(id=subject_data)
+
+        lecturer_ser_data = LecturerSerializer(lecturer, many=True).data[0]
+        subject_ser_data = SubjectSerializer(subject, many=True).data[0]
+
+        # retrieve the last lecture video details
+        last_lec_video = LectureVideo.objects.order_by('lecture_video_id').last()
+        # create the next lecture video id
+        new_lecture_video_id = ig.generate_new_id(last_lec_video.lecture_video_id)
+
+        # if both subject and lecturer details are available
+        if len(lecturer) == 1 & len(subject) == 1:
+            str_video_length = data.get('video_length')
+            video_length_parts = str_video_length.split(':')
+            video_length = datetime.timedelta(minutes=int(video_length_parts[0]), seconds=int(video_length_parts[1]),
+                                              milliseconds=int(video_length_parts[2]))
+
+        # this data will be passed as validated data
+        validated_data = {
+            'lecture_video_id': new_lecture_video_id,
+            'lecturer': lecturer_ser_data,
+            'subject': subject_ser_data,
+            'date': data.get('date'),
+            'video_name': data.get('video_name'),
+            'video_length': video_length
+        }
+
+        return super(LectureVideoSerializer, self).to_internal_value(validated_data)
+
+
 
 
     # this method will override the 'create' method
@@ -201,6 +242,8 @@ class LectureVideoSerializer(serializers.ModelSerializer):
 
         lecturer = None
         subject = None
+
+
 
         lecturer_data = validated_data.pop('lecturer')
         subject_data = validated_data.pop('subject')

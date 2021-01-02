@@ -1007,6 +1007,7 @@ def get_gaze_correlations(individual_lec_gaze, lec_recorded_activity_data):
     # this variable will be used to store the correlations
     correlations = []
 
+
     # limit = 10
     limit = len(individual_lec_gaze)
 

@@ -165,13 +165,17 @@ class LectureVideoViewSet(APIView):
         #
         # }, status=status.HTTP_201_CREATED)
 
+        # serializer = LectureVideoSerializer(data=request.data, many=True)
         serializer = LectureVideoSerializer(data=request.data)
-        serializer.create(validated_data=request.data)
+        # serializer.create(validated_data=request.data)
+
+
+        if serializer.is_valid(raise_exception=ValueError):
+            print('valid')
+            serializer.create(validated_data=request.data)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        # if serializer.is_valid(raise_exception=ValueError):
-        #     serializer.create(validated_data=request.data)
 
         # return Response(serializer.error_messages,
         #                 status=status.HTTP_400_BAD_REQUEST)
