@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 
 from . import record
+from . import test as t
 
 from rest_framework.views import *
 
@@ -171,3 +172,29 @@ class InitiateLecture(APIView):
         return Response({
             "response": "success"
         })
+
+class stopRecording(APIView):
+    def get(self, request):
+        t.isStop = 1
+        return Response({
+            "response": "stopped"
+        })
+    def post(self, request):
+        pass
+
+# test method (delete later)
+class TestAPI(APIView):
+
+    def get(self, request):
+        t.isStop = 0
+        param = request.query_params.get('param')
+
+        # t.test()
+        t.IPWebcamTest()
+
+        return Response({
+            "response": "started"
+        })
+
+    def post(self, request):
+        pass

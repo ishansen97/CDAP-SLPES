@@ -171,6 +171,7 @@ def process_gaze_estimation(video_path):
 
     ret, img = cap.read()
     size = img.shape
+    font = cv2.FONT_HERSHEY_SIMPLEX
     # 3D model points.
     model_points = np.array([
         (0.0, 0.0, 0.0),  # Nose tip
@@ -210,6 +211,18 @@ def process_gaze_estimation(video_path):
 
     # for testing purposes
     print('starting the gaze estimation process')
+
+    # get the frame sizes
+    frame_width = int(cap.get(3))
+    frame_height = int(cap.get(4))
+
+    frame_size = (frame_width, frame_height)
+    # this is the annotated video path
+    ANNOTATED_VIDEO_PATH = os.path.join(GAZE_DIR, video_path)
+
+    # initiailizing the video writer
+    vid_cod = cv2.VideoWriter_fourcc(*'XVID')
+    output = cv2.VideoWriter(ANNOTATED_VIDEO_PATH, vid_cod, 30.0, frame_size)
 
     # iterate the video frames
     while True:
@@ -285,14 +298,19 @@ def process_gaze_estimation(video_path):
 
                 # checking for vertical and horizontal directions
                 if isLookingDown & isLookingRight:
+                    cv2.putText(img, 'looking down and right', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     head_down_right_count += 1
                 elif isLookingDown & isLookingLeft:
+                    cv2.putText(img, 'looking down and left', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     head_down_left_count += 1
                 elif isLookingUp & isLookingRight:
+                    cv2.putText(img, 'looking up and right', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     head_up_right_count += 1
                 elif isLookingUp & isLookingLeft:
+                    cv2.putText(img, 'looking up and left', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     head_up_left_count += 1
                 elif isLookingFront:
+                    cv2.putText(img, 'looking front', (facebox[0], facebox[1]), font, 2, (255, 255, 128), 3)
                     head_front_count += 1
 
 
@@ -303,6 +321,9 @@ def process_gaze_estimation(video_path):
 
             # for testing purposes
             print('gaze estimation count: ', frame_count)
+
+            # write to the video writer
+            output.write(img)
 
             # increment the frame count
             frame_count += 1
@@ -330,6 +351,12 @@ def process_gaze_estimation(video_path):
 
     cv2.destroyAllWindows()
     cap.release()
+    output.release()
+
+
+    # after saving the video, save the changes to static content
+    p = os.popen("python manage.py collectstatic", "w")
+    p.write("yes")
 
     # for testing purposes
     print('ending the gaze estimation process')
@@ -535,6 +562,7 @@ def get_lecture_gaze_estimation_for_frames(video_name):
 
         else:
             break
+
 
 
 
@@ -979,9 +1007,14 @@ def get_gaze_correlations(individual_lec_gaze, lec_recorded_activity_data):
     # this variable will be used to store the correlations
     correlations = []
 
-    limit = 10
+
+    # limit = 10
+    limit = len(individual_lec_gaze)
 
     data_index = ['lecture-{}'.format(i + 1) for i in range(len(individual_lec_gaze))]
+
+    # declare the correlation data dictionary
+    corr_data = {}
 
     # student gaze labels
     student_gaze_labels = ['Up and Right', 'Up and Left', 'Down and Right', 'Down and Left', 'Front']
@@ -1001,28 +1034,72 @@ def get_gaze_correlations(individual_lec_gaze, lec_recorded_activity_data):
 
     # loop through the lecturer recorded data (lecturer)
     for data in lec_recorded_activity_data:
-        sitting_perct_list.append(int(data['seated_count']))
-        standing_perct_list.append(int(data['standing_count']))
-        walking_perct_list.append(int(data['walking_count']))
+        value = int(data['seated_count'])
+        value1 = int(data['standing_count'])
+        value2 = int(data['walking_count'])
+
+        if value != 0:
+            sitting_perct_list.append(int(data['seated_count']))
+        if value1 != 0:
+            standing_perct_list.append(int(data['standing_count']))
+        if value2 != 0:
+            walking_perct_list.append(int(data['walking_count']))
 
     # loop through the lecturer recorded data (student)
     for data in individual_lec_gaze:
-        upright_perct_list.append(int(data['looking_up_and_right_perct']))
-        upleft_perct_list.append(int(data['looking_up_and_left_perct']))
-        downright_perct_list.append(int(data['looking_down_and_right_perct']))
-        downleft_perct_list.append(int(data['looking_down_and_left_perct']))
-        front_perct_list.append(int(data['looking_front_perct']))
+        value = int(data['looking_up_and_right_perct'])
+        value1 = int(data['looking_up_and_left_perct'])
+        value2 = int(data['looking_down_and_right_perct'])
+        value3 = int(data['looking_down_and_left_perct'])
+        value4 = int(data['looking_front_perct'])
 
-    corr_data = {'Up and Right': upright_perct_list, 'Up and Left': upleft_perct_list, 'Down and Right': downright_perct_list,
-                 'Down and Left': downleft_perct_list, 'Front': front_perct_list,
-                 'seated': sitting_perct_list, 'standing': standing_perct_list, 'walking': walking_perct_list}
+        if value != 0:
+            upright_perct_list.append(int(data['looking_up_and_right_perct']))
+        if value1 != 0:
+            upleft_perct_list.append(int(data['looking_up_and_left_perct']))
+        if value2 != 0:
+            downright_perct_list.append(int(data['looking_down_and_right_perct']))
+        if value3 != 0:
+            downleft_perct_list.append(int(data['looking_down_and_left_perct']))
+        if value4 != 0:
+            front_perct_list.append(int(data['looking_front_perct']))
+
+
+    if (len(upright_perct_list)) == len(individual_lec_gaze):
+        corr_data[student_gaze_labels[0]] = upright_perct_list
+    if (len(upleft_perct_list)) == len(individual_lec_gaze):
+        corr_data[student_gaze_labels[1]] = upleft_perct_list
+    if (len(downright_perct_list)) == len(individual_lec_gaze):
+        corr_data[student_gaze_labels[2]] = downright_perct_list
+    if (len(downleft_perct_list)) == len(individual_lec_gaze):
+        corr_data[student_gaze_labels[3]] = downleft_perct_list
+    if (len(front_perct_list)) == len(individual_lec_gaze):
+        corr_data[student_gaze_labels[4]] = front_perct_list
+    if (len(sitting_perct_list)) == len(individual_lec_gaze):
+        corr_data[lecturer_activity_labels[0]] = sitting_perct_list
+    if (len(standing_perct_list)) == len(individual_lec_gaze):
+        corr_data[lecturer_activity_labels[1]] = standing_perct_list
+    if (len(walking_perct_list)) == len(individual_lec_gaze):
+        corr_data[lecturer_activity_labels[2]] = walking_perct_list
+
+
+    # corr_data = {'Up and Right': upright_perct_list, 'Up and Left': upleft_perct_list, 'Down and Right': downright_perct_list,
+    #              'Down and Left': downleft_perct_list, 'Front': front_perct_list,
+    #              'seated': sitting_perct_list, 'standing': standing_perct_list, 'walking': walking_perct_list}
 
     # create the dataframe
     df = pd.DataFrame(corr_data, index=data_index)
 
+    print(df)
+
     # calculate the correlation
     pd_series = ut.get_top_abs_correlations(df, limit)
 
+    print('====correlated variables=====')
+    print(pd_series)
+
+    # assign a new value to the 'limit' variable
+    limit = len(pd_series) if len(pd_series) < limit else limit
 
     for i in range(limit):
         # this dictionary will get the pandas.Series object's  indices and values separately

@@ -1,4 +1,5 @@
 
+# this method will remove the redundant pairs in pandas dataframe
 def get_redundant_pairs(df):
     '''Get diagonal and lower triangular pairs of correlation matrix'''
     pairs_to_drop = set()
@@ -8,6 +9,7 @@ def get_redundant_pairs(df):
             pairs_to_drop.add((cols[i], cols[j]))
     return pairs_to_drop
 
+# this method will return the top specified correlations
 def get_top_abs_correlations(df, n):
     au_corr = df.corr().abs().unstack()
     labels_to_drop = get_redundant_pairs(df)

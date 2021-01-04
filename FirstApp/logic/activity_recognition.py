@@ -38,7 +38,8 @@ def activity_recognition(video_path):
     VIDEO_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\videos\\{}".format(video_path))
     # CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_02.h5")
     # CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_03.h5")
-    CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_04.h5")
+    # CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_04.h5")
+    CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_06.h5")
     ACTIVITY_DIR = os.path.join(BASE_DIR, "static\\FirstApp\\activity")
 
     # files required for person detection
@@ -55,7 +56,9 @@ def activity_recognition(video_path):
     np.set_printoptions(suppress=True)
 
     # define the student activity labels
-    class_labels = ['Phone checking', 'Listening', 'Note taking']
+    # class_labels = ['Phone checking', 'Listening', 'Note taking']
+    class_labels = ['Phone checki...', 'Listening', 'Note taking']
+
 
     # load the model
     model = tensorflow.keras.models.load_model(CLASSIFIER_DIR)
@@ -80,14 +83,21 @@ def activity_recognition(video_path):
 
     # for testing purposes
     print('starting the activity recognition process')
+    
+    # this is the annotated video path
+    ANNOTATED_VIDEO_PATH = os.path.join(ACTIVITY_DIR, video_path)
+
+    # initiailizing the video writer
+    vid_cod = cv2.VideoWriter_fourcc(*'XVID')
+    output = cv2.VideoWriter(ANNOTATED_VIDEO_PATH, vid_cod, 30.0, size)
 
     # looping through the frames
     while (frame_count < no_of_frames):
         ret, image = video.read()
 
-        image = cv2.resize(image, size)
+        # image = cv2.resize(image, size)
         # perform person detection on the extracted image
-        detections = person_detection(image, net)
+        detections, persons = person_detection(image, net)
 
         # this is for testing purposes
         print('frame count: ', frame_count)
@@ -102,13 +112,26 @@ def activity_recognition(video_path):
             # initialize the detection count
             detection_count = 0
 
+            # to iterate each person
+            no_of_persons = 0
+
             # looping through the person detections of the frame
             for detection in detections:
 
-                detection = cv2.resize(detection, size)
+                # get the coordinates for the detection
+                startX = detection['startX']
+                startY = detection['startY']
+                endX = detection['endX']
+                endY = detection['endY']
 
-                image_array = np.asarray(detection)
-                normalized_image_array = (detection.astype(np.float32) / 127.0) - 1
+                # detection = cv2.resize(detection, size)
+                # draw the coordinates of the persons' identified
+                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 255, 0), 5)
+
+                image_array = np.asarray(persons[no_of_persons])
+                image_array_resized = cv2.resize(image_array, size)
+                # normalized_image_array = (detection.astype(np.float32) / 127.0) - 1
+                normalized_image_array = (image_array_resized.astype(np.float32) / 127.0) - 1
 
                 # Load the image into the array
                 data[0] = normalized_image_array
@@ -120,17 +143,35 @@ def activity_recognition(video_path):
 
                 # counting the detections under each label
                 if (label == class_labels[0]):
+                    label = "Phone checking"
                     phone_checking_count += 1
                 elif (label == class_labels[1]):
                     listening_count += 1
                 elif (label == class_labels[2]):
+                    label = "Writing"
                     note_taking_count += 1
+
+                # vertical_pos = startY + int(endY / 2)
+                vertical_pos = int(endY / 2)
+
+                # put the identified label above the detected person
+                # cv2.putText(image, label, (startX, vertical_pos), cv2.FONT_HERSHEY_COMPLEX, 0.5, (0, 255, 0), 2)
+                cv2.putText(image, label, (startX, vertical_pos), cv2.FONT_HERSHEY_COMPLEX, 4, (0, 255, 0), 10)
+
+                # increment the no.of persons
+                no_of_persons += 1
 
                 # increment the detection count
                 detection_count += 1
 
         # increment the frame count
         frame_count += 1
+
+        # resize the image
+        image = cv2.resize(image, (224, 224))
+
+        # write the frame to the video writer
+        output.write(image)
 
 
     # calculating the percentages for each label
@@ -142,6 +183,10 @@ def activity_recognition(video_path):
     percentages["phone_perct"] = phone_perct
     percentages["writing_perct"] = note_perct
     percentages["listening_perct"] = listening_perct
+
+    # after saving the video, save the changes to static content
+    p = os.popen("python manage.py collectstatic", "w")
+    p.write("yes")
 
     # for testing purposes
     print('activity recognition process is over')
@@ -163,6 +208,7 @@ def person_detection(image, net):
     # set the threshold balue
     threshold = 0.2
     detected_person = []
+    persons = []
 
     # initialize the list of class labels MobileNet SSD was trained to
     # detect, then generate a set of bounding box colors for each class
@@ -211,14 +257,22 @@ def person_detection(image, net):
                 startX = 0 if startX < 0 else startX
                 startY = 0 if startY < 0 else startY
 
-                # extract the person
+                # this dictionary will contain the bounding box coordinates
+                coordinates = {}
+
                 person = image[startY:startY + endY, startX:startX + endX]
-                detected_person.append(person)
+                coordinates['startX'] = startX
+                coordinates['startY'] = startY
+                coordinates['endX'] = endX
+                coordinates['endY'] = endY
+
+                persons.append(person)
+                detected_person.append(coordinates)
 
                 person_count += 1
 
     # return the detection person list
-    return detected_person
+    return detected_person, persons
 
 
 # this method will recognize the activity for each frame
@@ -233,7 +287,8 @@ def get_frame_activity_recognition(video_name):
     VIDEO_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\videos\\{}".format(video_name))
     # CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_02.h5")
     # CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_03.h5")
-    CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_04.h5")
+    # CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_04.h5")
+    CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_06.h5")
 
     # files required for person detection
     config_file = os.path.join(BASE_DIR, "FirstApp\\classifiers\\MobileNetSSD_deploy.prototxt.txt")
@@ -247,7 +302,9 @@ def get_frame_activity_recognition(video_name):
     np.set_printoptions(suppress=True)
 
     # class labels
-    class_labels = ['Phone checking', 'Listening', 'Note taking']
+    # class_labels = ['Phone checking', 'Listening', 'Note taking']
+    class_labels = ['Phone checki...', 'Listening', 'Note taking']
+
 
     # load the activity recogntion model
     model = tensorflow.keras.models.load_model(CLASSIFIER_DIR)
@@ -295,19 +352,27 @@ def get_frame_activity_recognition(video_name):
         detection_count = 0
         detected_percentages = []
 
-        detections = person_detection(image, net)
+        detections, persons = person_detection(image, net)
 
 
         # if there are detections
         if (len(detections) > 0):
 
+            no_of_persons = 0
+
             # loop through each detection in the frame
             for detection in detections:
 
-                detection = cv2.resize(detection, size)
+                # get the coordinates for the detection
+                startX = detection['startX']
+                startY = detection['startY']
+                endX = detection['endX']
+                endY = detection['endY']
 
-                image_array = np.asarray(detection)
-                normalized_image_array = (image_array.astype(np.float32) / 127.0) - 1
+                image_array = np.asarray(persons[no_of_persons])
+                image_array_resized = cv2.resize(image_array, size)
+                # normalized_image_array = (detection.astype(np.float32) / 127.0) - 1
+                normalized_image_array = (image_array_resized.astype(np.float32) / 127.0) - 1
 
                 # Load the image into the array
                 data[0] = normalized_image_array
@@ -427,10 +492,21 @@ def get_student_activity_summary_for_period(activities):
 def activity_frame_groupings(video_name, frame_landmarks, frame_group_dict):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     EXTRACTED_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\activity\\{}".format(video_name))
+    VIDEO_DIR = os.path.join(BASE_DIR, "assets\\FirstApp\\videos\\{}".format(video_name))
     # CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_03.h5")
     # CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_02.h5")
     # CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_04.h5")
-    CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_05.h5")
+    # CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_05.h5")
+    CLASSIFIER_DIR = os.path.join(BASE_DIR, "FirstApp\\classifiers\\student_activity_version_06.h5")
+
+    # files required for person detection
+    config_file = os.path.join(BASE_DIR, "FirstApp\\classifiers\\MobileNetSSD_deploy.prototxt.txt")
+    model_file = os.path.join(BASE_DIR, "FirstApp\\classifiers\\MobileNetSSD_deploy.caffemodel")
+
+    # load our serialized person detection model from disk
+    print("[INFO] loading model...")
+    net = cv2.dnn.readNetFromCaffe(config_file, model_file)
+
 
     np.set_printoptions(suppress=True)
 
@@ -443,11 +519,16 @@ def activity_frame_groupings(video_name, frame_landmarks, frame_group_dict):
     data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32)
     size = (224, 224)
 
-    # initializing the count variables
+    # class labels
+    # class_labels = ['Phone checking', 'Listening', 'Note taking']
+    class_labels = ['Phone checki...', 'Listening', 'Note taking']
+
+
+    # iteration
+    video = cv2.VideoCapture(VIDEO_DIR)
+    no_of_frames = video.get(cv2.CAP_PROP_FRAME_COUNT)
     frame_count = 0
 
-    # class labels
-    class_labels = ['Phone checking', 'Listening', 'Note taking']
 
     # get the frame differences for each frame group
     frame_group_diff = {}
@@ -463,9 +544,8 @@ def activity_frame_groupings(video_name, frame_landmarks, frame_group_dict):
         frame_group_diff[key] = diff if diff > 0 else 1
 
     # looping through the frames
-    for frame in os.listdir(EXTRACTED_DIR):
-        # getting the frame folder
-        FRAME_FOLDER = os.path.join(EXTRACTED_DIR, frame)
+    # for frame in os.listdir(EXTRACTED_DIR):
+    while (frame_count < no_of_frames):
 
         # initializing the variables
         phone_count = 0
@@ -473,57 +553,55 @@ def activity_frame_groupings(video_name, frame_landmarks, frame_group_dict):
         listen_count = 0
         detection_count = 0
 
+        ret, image = video.read()
+
+        detections, persons = person_detection(image, net)
+
         # looping through the detections in each frame
-        for detections in os.listdir(FRAME_FOLDER):
+        for person in persons:
 
-            # checking whether the image contains only one person
-            if "frame" not in detections:
-                # get the label for this image
-                IMAGE_PATH = os.path.join(FRAME_FOLDER, detections)
-                image = cv2.imread(IMAGE_PATH)
+            image = cv2.resize(person, size)
 
-                image = cv2.resize(image, size)
+            image_array = np.asarray(image)
+            normalized_image_array = (image_array.astype(np.float32) / 127.0) - 1
 
-                image_array = np.asarray(image)
-                normalized_image_array = (image_array.astype(np.float32) / 127.0) - 1
+            # Load the image into the array
+            data[0] = normalized_image_array
 
-                # Load the image into the array
-                data[0] = normalized_image_array
+            # run the inference
+            prediction = model.predict(data)
 
-                # run the inference
-                prediction = model.predict(data)
+            # get the predicted label
+            label = class_labels[prediction.argmax()]
 
-                # get the predicted label
-                label = class_labels[prediction.argmax()]
+            # increment the count based on the label
+            if label == class_labels[0]:
+                phone_count += 1
+            elif label == class_labels[1]:
+                listen_count += 1
+            elif label == class_labels[2]:
+                note_count += 1
 
-                # increment the count based on the label
-                if label == class_labels[0]:
-                    phone_count += 1
-                elif label == class_labels[1]:
-                    listen_count += 1
-                elif label == class_labels[2]:
-                    note_count += 1
+            # increment the detection count
+            detection_count += 1
 
-                # increment the detection count
-                detection_count += 1
+            # finding the time landmark that the current frame is in
+            for i in frame_landmarks:
+                index = frame_landmarks.index(i)
+                j = index + 1
 
-                # finding the time landmark that the current frame is in
-                for i in frame_landmarks:
-                    index = frame_landmarks.index(i)
-                    j = index + 1
+                # checking whether the next index is within the range
+                if j < len(frame_landmarks):
+                    next_value = frame_landmarks[j]
 
-                    # checking whether the next index is within the range
-                    if j < len(frame_landmarks):
-                        next_value = frame_landmarks[j]
+                    # checking the correct time landmark range
+                    if (frame_count >= i) & (frame_count < next_value):
+                        frame_name = "{}-{}".format(i, next_value)
 
-                        # checking the correct time landmark range
-                        if (frame_count >= i) & (frame_count < next_value):
-                            frame_name = "{}-{}".format(i, next_value)
-
-                            frame_group_dict[frame_name]['phone_count'] += phone_count
-                            frame_group_dict[frame_name]['listen_count'] += listen_count
-                            frame_group_dict[frame_name]['note_count'] += note_count
-                            frame_group_dict[frame_name]['detection_count'] += detection_count
+                        frame_group_dict[frame_name]['phone_count'] += phone_count
+                        frame_group_dict[frame_name]['listen_count'] += listen_count
+                        frame_group_dict[frame_name]['note_count'] += note_count
+                        frame_group_dict[frame_name]['detection_count'] += detection_count
 
         # increment the frame count
         frame_count += 1
@@ -674,9 +752,13 @@ def get_activity_correlations(individual_lec_activities, lec_recorded_activity_d
     # this variable will be used to store the correlations
     correlations = []
 
-    limit = 10
+    # limit = 10
+    limit = len(individual_lec_activities)
 
     data_index = ['lecture-{}'.format(i+1)  for i in range(len(individual_lec_activities))]
+
+    # declare the correlation data dictionary
+    corr_data = {}
 
     # student activity labels
     student_activity_labels = ['phone checking', 'listening', 'note taking']
@@ -694,28 +776,62 @@ def get_activity_correlations(individual_lec_activities, lec_recorded_activity_d
 
     # loop through the lecturer recorded data (lecturer)
     for data in lec_recorded_activity_data:
-        sitting_perct_list.append(int(data['seated_count']))
-        standing_perct_list.append(int(data['standing_count']))
-        walking_perct_list.append(int(data['walking_count']))
+        value = int(data['seated_count'])
+        value1 = int(data['standing_count'])
+        value2 = int(data['walking_count'])
+
+        if value != 0:
+            sitting_perct_list.append(int(data['seated_count']))
+        if value1 != 0:
+            standing_perct_list.append(int(data['standing_count']))
+        if value2 != 0:
+            walking_perct_list.append(int(data['walking_count']))
 
    # loop through the lecturer recorded data (student)
     for data in individual_lec_activities:
-        phone_perct_list.append(int(data['phone_perct']))
-        listen_perct_list.append(int(data['listening_perct']))
-        note_perct_list.append(int(data['writing_perct']))
+        value = int(data['phone_perct'])
+        value1 = int(data['listening_perct'])
+        value2 = int(data['writing_perct'])
+
+        if value != 0:
+            phone_perct_list.append(int(data['phone_perct']))
+        if value1 != 0:
+            listen_perct_list.append(int(data['listening_perct']))
+        if value2 != 0:
+            note_perct_list.append(int(data['writing_perct']))
 
 
-    corr_data = {'phone checking': phone_perct_list, 'listening': listen_perct_list, 'note taking': note_perct_list,
-                         'seated': sitting_perct_list, 'standing': standing_perct_list, 'walking': walking_perct_list}
+    if (len(phone_perct_list)) == len(individual_lec_activities):
+        corr_data[student_activity_labels[0]] = phone_perct_list
+    if (len(listen_perct_list)) == len(individual_lec_activities):
+        corr_data[student_activity_labels[1]] = listen_perct_list
+    if (len(note_perct_list)) == len(individual_lec_activities):
+        corr_data[student_activity_labels[2]] = note_perct_list
+    if (len(sitting_perct_list)) == len(individual_lec_activities):
+        corr_data[lecturer_activity_labels[0]] = sitting_perct_list
+    if (len(standing_perct_list)) == len(individual_lec_activities):
+        corr_data[lecturer_activity_labels[1]] = standing_perct_list
+    if (len(walking_perct_list)) == len(individual_lec_activities):
+        corr_data[lecturer_activity_labels[2]] = walking_perct_list
+
+
+
+    # corr_data = {'phone checking': phone_perct_list, 'listening': listen_perct_list, 'note taking': note_perct_list,
+    #                      'seated': sitting_perct_list, 'standing': standing_perct_list, 'walking': walking_perct_list}
 
     # create the dataframe
     df = pd.DataFrame(corr_data, index=data_index)
+
+    print(df)
 
     # calculate the correlation
     pd_series = ut.get_top_abs_correlations(df, limit)
 
     print('====correlated variables=====')
     print(pd_series)
+
+    # assign a new value to the 'limit' variable
+    limit = len(pd_series) if len(pd_series) < limit else limit
 
     for i in range(limit):
         # this dictionary will get the pandas.Series object's  indices and values separately

@@ -2,7 +2,7 @@ from django.urls import path
 from .api import student_list, student_detail, subject_list, subject_detail, attendance_list, StudentAPIView, \
     StudentDetails
 from django.conf.urls import url
-from .api import FileView, InitiateLecture
+from .api import *
 from . import views
 
 urlpatterns = [
@@ -19,5 +19,10 @@ urlpatterns = [
     url(r'^upload/$', FileView.as_view(), name='file-upload'),
     path('webcam_feed', views.webcam_feed, name='webcam_feed'),
     # this url will initiate the lecture
-    url(r'^process-initiate-lecture/$', InitiateLecture.as_view())
+    url(r'^process-initiate-lecture/$', InitiateLecture.as_view()),
+
+    # this url will be used for testing
+    url(r'^test-api/$', TestAPI.as_view()),
+    url(r'^stop-api/$', stopRecording.as_view())
+
 ]

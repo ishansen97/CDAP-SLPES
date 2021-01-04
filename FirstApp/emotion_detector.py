@@ -52,6 +52,8 @@ def emotion_recognition(classifier, face_classifier, image):
         roi_gray = gray[y:y + h, x:x + w]
         roi_gray = cv2.resize(roi_gray, (48, 48), interpolation=cv2.INTER_AREA)
         # rect,face,image = face_detector(frame)
+        # draw a rectangle
+        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
         if np.sum([roi_gray]) != 0:
             roi = roi_gray.astype('float') / 255.0
@@ -62,6 +64,9 @@ def emotion_recognition(classifier, face_classifier, image):
 
             preds = classifier.predict(roi)[0]
             label = class_labels[preds.argmax()]
+
+            # put the emotion label
+            cv2.putText(image, label, (x, y), cv2.FONT_HERSHEY_COMPLEX, 2, (0, 255, 0), 3)
 
     return label
 
@@ -79,6 +84,7 @@ def detect_emotion(video):
     face_classifier = cv2.CascadeClassifier(os.path.join(BASE_DIR, 'FirstApp\classifiers\haarcascade_frontalface_default.xml'))
     classifier_path = os.path.join(BASE_DIR, 'FirstApp\classifiers\Emotion_little_vgg.h5')
     classifier = load_model(classifier_path)
+    EMOTION_DIR = os.path.join(BASE_DIR, "static\\FirstApp\\emotion")
     meta_data = VideoMeta()
 
     class_labels = ['Angry', 'Happy', 'Neutral', 'Sad', 'Surprise']
@@ -98,6 +104,20 @@ def detect_emotion(video):
 
     # for testing purposes
     print('starting the emotion recognition process')
+
+    # get width and height of the video frames
+    frame_width = int(cap.get(3))
+    frame_height = int(cap.get(4))
+
+    # get the video frame size
+    size = (frame_width, frame_height)
+
+    # this is the annotated video path
+    ANNOTATED_VIDEO_PATH = os.path.join(EMOTION_DIR, video)
+
+    # initiailizing the video writer
+    vid_cod = cv2.VideoWriter_fourcc(*'XVID')
+    output = cv2.VideoWriter(ANNOTATED_VIDEO_PATH, vid_cod, 30.0, size)
 
     while (count_frames < frame_count):
         # Grab a single frame of video
@@ -135,6 +155,9 @@ def detect_emotion(video):
         # for testing purposes
         print('emotion frame count: ', count_frames)
 
+        # write the video frame to the video writer
+        output.write(frame)
+
         count_frames += 1
 
     # setting up the counted values
@@ -146,7 +169,12 @@ def detect_emotion(video):
     meta_data.surprise_count = count_surprise
 
     cap.release()
+    output.release()
     cv2.destroyAllWindows()
+
+    # after saving the video, save the changes to static content
+    p = os.popen("python manage.py collectstatic", "w")
+    p.write("yes")
 
     # for testing purposes
     print('ending the emotion recognition process')
@@ -198,6 +226,8 @@ def get_frame_emotion_recognition(video_name):
     # for testing purposes
     print('starting the emotion frame recognition process')
 
+
+
     # looping through the frames
     while (frame_count < no_of_frames):
 
@@ -216,18 +246,19 @@ def get_frame_emotion_recognition(video_name):
         surprise_count = 0
 
         # get the detections
-        detections = ar.person_detection(image, net)
+        detections, persons = ar.person_detection(image, net)
 
         # to count the extracted detections for a frame
         detection_count = 0
 
         # if there are detections
         if (len(detections) > 0):
+
             # loop through the detections
-            for detection in detections:
+            for person in persons:
 
 
-                label = emotion_recognition(classifier, face_classifier, detection)
+                label = emotion_recognition(classifier, face_classifier, person)
 
                 # checking for the label
                 if label == class_labels[0]:
@@ -422,17 +453,17 @@ def emotion_frame_groupings(video_name, frame_landmarks, frame_group_dict):
         neutral_count = 0
         detection_count = 0
 
-        detections = ar.person_detection(image, net)
+        detections, persons = ar.person_detection(image, net)
 
         # if there are detections
         if (len(detections) > 0):
 
             # looping through the detections in each frame
-            for detection in detections:
+            for person in persons:
 
 
                 # run the model and get the emotion label
-                label = emotion_recognition(classifier, face_classifier, detection)
+                label = emotion_recognition(classifier, face_classifier, person)
 
                 # increment the count based on the label
                 if label == class_labels[0]:
@@ -639,9 +670,13 @@ def get_emotion_correlations(individual_lec_emotions, lec_recorded_activity_data
     # this variable will be used to store the correlations
     correlations = []
 
-    limit = 10
+    # limit = 10
+    limit = len(individual_lec_emotions)
 
     data_index = ['lecture-{}'.format(i + 1) for i in range(len(individual_lec_emotions))]
+
+    # declare the correlation data dictionary
+    corr_data = {}
 
     # student activity labels
     student_emotion_labels = ['Happy', 'Sad', 'Angry', 'Surprise', 'Neutral']
@@ -662,30 +697,71 @@ def get_emotion_correlations(individual_lec_emotions, lec_recorded_activity_data
 
     # loop through the lecturer recorded data (lecturer)
     for data in lec_recorded_activity_data:
-        sitting_perct_list.append(int(data['seated_count']))
-        standing_perct_list.append(int(data['standing_count']))
-        walking_perct_list.append(int(data['walking_count']))
+        value = int(data['seated_count'])
+        value1 = int(data['standing_count'])
+        value2 = int(data['walking_count'])
+
+        if value != 0:
+            sitting_perct_list.append(int(data['seated_count']))
+        if value1 != 0:
+            standing_perct_list.append(int(data['standing_count']))
+        if value2 != 0:
+            walking_perct_list.append(int(data['walking_count']))
 
     # loop through the lecturer recorded data (student)
     for data in individual_lec_emotions:
-        happy_perct_list.append(int(data['happy_perct']))
-        sad_perct_list.append(int(data['sad_perct']))
-        angry_perct_list.append(int(data['angry_perct']))
-        surprise_perct_list.append(int(data['surprise_perct']))
-        neutral_perct_list.append(int(data['neutral_perct']))
+        value = int(data['happy_perct'])
+        value1 = int(data['sad_perct'])
+        value2 = int(data['angry_perct'])
+        value3 = int(data['surprise_perct'])
+        value4 = int(data['neutral_perct'])
+
+        if value != 0:
+            happy_perct_list.append(int(data['happy_perct']))
+        if value1 != 0:
+            sad_perct_list.append(int(data['sad_perct']))
+        if value2 != 0:
+            angry_perct_list.append(int(data['angry_perct']))
+        if value3 != 0:
+            surprise_perct_list.append(int(data['surprise_perct']))
+        if value4 != 0:
+            neutral_perct_list.append(int(data['neutral_perct']))
 
 
-    corr_data = {'Happy': happy_perct_list, 'Sad': sad_perct_list, 'Angry': angry_perct_list, 'Surprise': surprise_perct_list, 'Neutral': neutral_perct_list,
-                 'seated': sitting_perct_list, 'standing': standing_perct_list, 'walking': walking_perct_list}
+    if len(happy_perct_list) == len(individual_lec_emotions):
+        corr_data[student_emotion_labels[0]] = happy_perct_list
+    if len(sad_perct_list) == len(individual_lec_emotions):
+        corr_data[student_emotion_labels[1]] = sad_perct_list
+    if len(angry_perct_list) == len(individual_lec_emotions):
+        corr_data[student_emotion_labels[2]] = angry_perct_list
+    if len(surprise_perct_list) == len(individual_lec_emotions):
+        corr_data[student_emotion_labels[3]] = surprise_perct_list
+    if len(neutral_perct_list) == len(individual_lec_emotions):
+        corr_data[student_emotion_labels[4]] = neutral_perct_list
+    if (len(sitting_perct_list)) == len(individual_lec_emotions):
+        corr_data[lecturer_activity_labels[0]] = sitting_perct_list
+    if (len(standing_perct_list)) == len(individual_lec_emotions):
+        corr_data[lecturer_activity_labels[1]] = standing_perct_list
+    if (len(walking_perct_list)) == len(individual_lec_emotions):
+        corr_data[lecturer_activity_labels[2]] = walking_perct_list
+
+
+    # corr_data = {'Happy': happy_perct_list, 'Sad': sad_perct_list, 'Angry': angry_perct_list, 'Surprise': surprise_perct_list, 'Neutral': neutral_perct_list,
+    #              'seated': sitting_perct_list, 'standing': standing_perct_list, 'walking': walking_perct_list}
 
     # create the dataframe
     df = pd.DataFrame(corr_data, index=data_index)
+
+    print(df)
 
     # calculate the correlation
     pd_series = ut.get_top_abs_correlations(df, limit)
 
     print('====correlated variables=====')
     print(pd_series)
+
+    # assign a new value to the 'limit' variable
+    limit = len(pd_series) if len(pd_series) < limit else limit
 
     for i in range(limit):
         # this dictionary will get the pandas.Series object's  indices and values separately

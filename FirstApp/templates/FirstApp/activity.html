@@ -241,7 +241,13 @@
             //to handle the 'integrate' modal
             $('#integrate_activity').click(function () {
                 //define the student video src
+                {#global_video_name = "Video_test_9.mp4";#}
+                {#global_video_name = "Video_test_9_annotated.mp4";#}
                 let video_src = "{% static '' %}FirstApp/videos/" + global_video_name;
+                {#let video_src = "{% static '' %}FirstApp/video/" + global_video_name;#}
+                {#let video_src = "{% static '' %}/FirstApp/activity/" + global_video_name;#}
+                {#let video_src = "{% static '' %}FirstApp/emotion/" + global_video_name;#}
+
 
                 //assign the video src
                 $('#student_video').attr('src', video_src);
@@ -1078,6 +1084,11 @@
                                                 type="video/mp4">
                                         Your browser does not support the video tag.
                                     </video>
+{#                                    <video width="500" height="300" id="student_video" controls>#}
+{#                                        <source src="{% static 'FirstApp/videos/Video_test_2.mp4' %}"#}
+{#                                                type="video/mp4">#}
+{#                                        Your browser does not support the video tag.#}
+{#                                    </video>#}
                                 </div>
                                 <!--end of student video section -->
 

@@ -11,11 +11,10 @@ each method will return an HttpResponse that allows its data to be rendered into
 arbitrary media types.
 
 """
-
+from random import Random
 
 from MonitorLecturerApp.models import LectureRecordedVideo, LecturerVideoMetaData
 from MonitorLecturerApp.serializers import LectureRecordedVideoSerializer, LecturerVideoMetaDataSerializer
-from .MongoModels import *
 from rest_framework.views import *
 from .logic import activity_recognition as ar
 from . import emotion_detector as ed
@@ -23,7 +22,9 @@ from .logic import id_generator as ig
 from .logic import pdf_file_generator as pdf
 from .logic import head_gaze_estimation as hge
 from .logic import video_extraction as ve
+from . logic import student_behavior_process as sbp
 from .serializers import *
+from braces.views import CsrfExemptMixin
 
 import datetime
 
@@ -139,13 +140,45 @@ class LectureVideoViewSet(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = LectureVideoSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=ValueError):
-            serializer.create(validated_data=request.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        return Response(serializer.error_messages,
-                        status=status.HTTP_400_BAD_REQUEST)
+        # get the request data
+        # data = request.data
+        #
+        # # retrieve the last lecture video details
+        # last_lec_video = LectureVideo.objects.order_by('lecture_video_id').last()
+        # # create the next lecture video id
+        # new_lecture_video_id = ig.generate_new_id(last_lec_video.lecture_video_id)
+        #
+        # # create the new lecture video
+        # LectureVideo(
+        #     lecture_video_id=new_lecture_video_id,
+        #     lecturer_id=data['lecturer_id'],
+        #     subject_id=data['subject_id'],
+        #     video_name=data['video_name'],
+        #     video_length=data['video_length'],
+        #     date=data['date']
+        # ).save()
+        #
+        # # return the successful response
+        # return Response({
+        #     "response": "Successfully created",
+        #
+        # }, status=status.HTTP_201_CREATED)
+
+        # serializer = LectureVideoSerializer(data=request.data, many=True)
+        serializer = LectureVideoSerializer(data=request.data)
+        # serializer.create(validated_data=request.data)
+
+
+        if serializer.is_valid(raise_exception=ValueError):
+            print('valid')
+            serializer.create(validated_data=request.data)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+        # return Response(serializer.error_messages,
+        #                 status=status.HTTP_400_BAD_REQUEST)
 
 
 # this API will retrieve a lecture video details
@@ -374,17 +407,19 @@ class LectureEmotionProcess(APIView):
 
     def get(self, request):
         video_name = request.query_params.get('lecture_video_name')
-        video_id = request.query_params.get('lecture_video_id')
+        # video_id = request.query_params.get('lecture_video_id')
+        int_video_id = int(request.query_params.get('lecture_video_id'))
         percentages = ed.detect_emotion(video_name)
         percentages.calcPercentages()
-        self.save_emotion_report(video_id, percentages)
+        self.save_emotion_report(int_video_id, percentages)
         return Response({"response": True})
 
     def post(self, request):
         pass
 
     def save_emotion_report(self, lec_video_id, percentages):
-        lec_video = LectureVideo.objects.filter(lecture_video_id=lec_video_id)
+        # lec_video = LectureVideo.objects.filter(lecture_video_id=lec_video_id)
+        lec_video = LectureVideo.objects.filter(id=lec_video_id)
         lec_video_serializer = LectureVideoSerializer(lec_video, many=True)
         lec_video_data = lec_video_serializer.data[0]
         last_lec_emotion = LectureEmotionReport.objects.order_by('lecture_emotion_id').last()
@@ -499,7 +534,8 @@ class ProcessLectureGazeEstimation(APIView):
         pass
 
     def estimate_gaze(self, lec_video_id, percentages):
-        lec_video = LectureVideo.objects.filter(lecture_video_id=lec_video_id)
+        # lec_video = LectureVideo.objects.filter(lecture_video_id=lec_video_id)
+        lec_video = LectureVideo.objects.filter(id=lec_video_id)
         last_lec_gaze = LectureGazeEstimation.objects.order_by('lecture_gaze_id').last()
         lec_video_serializer = LectureVideoSerializer(lec_video, many=True)
         lec_video_data = lec_video_serializer.data[0]
@@ -757,6 +793,9 @@ class GetLectureActivitySummary(APIView):
 
     def get(self, request):
         video_name = request.query_params.get('video_name')
+        phone_perct = request.query_params.get('phone_perct')
+        listen_perct = request.query_params.get('listen_perct')
+        note_perct = request.query_params.get('note_perct')
 
         # checking the existence of lecture activity frame grouping records in the db
         isExist = LectureActivityFrameGroupings.objects.filter(lecture_activity_id__lecture_video_id__video_name=video_name).exists()
@@ -792,10 +831,14 @@ class GetLectureActivitySummary(APIView):
 
             class_labels = ['phone_perct', 'listen_perct', 'note_perct']
 
+            # get the comments list
+            comments = sbp.generate_student_behavior_comments("Activity", phone_perct=phone_perct, listen_perct=listen_perct, note_perct=note_perct)
+
             return Response({
                 "frame_landmarks": frame_landmarks,
                 "frame_group_percentages": frame_group_percentages,
-                "activity_labels": class_labels
+                "activity_labels": class_labels,
+                "comments": comments
             })
 
         # else:
@@ -920,65 +963,65 @@ class GetLectureEmotionSummary(APIView):
                 "emotion_labels": class_labels
             })
 
-        # else:
-        #
-        #     frame_landmarks = []
-        #
-        #     # retrieve frame landmarks from db
-        #     lec_video_frame_landmarks = LectureVideoFrameLandmarks.objects.filter(
-        #         lecture_video_id__video_name=video_name)
-        #     lec_video_frame_landmarks_ser = LectureVideoFrameLandmarksSerializer(lec_video_frame_landmarks, many=True)
-        #     lec_video_frame_landmarks_data = lec_video_frame_landmarks_ser.data[0]
-        #
-        #     retrieved_frame_landmarks = lec_video_frame_landmarks_data["frame_landmarks"]
-        #
-        #     # creating a new list to display in the frontend
-        #     for landmark in retrieved_frame_landmarks:
-        #         frame_landmarks.append(int(landmark['landmark']))
-        #
-        #
-        #     l, frame_group_dict = ve.getFrameLandmarks(video_name, "Emotion")
-        #     frame_group_percentages, emotion_labels = ed.emotion_frame_groupings(video_name, frame_landmarks, frame_group_dict)
-        #
-        #
-        #
-        #     # save the frame group details into db (temp method)
-        #
-        #     last_lec_emotion_frame_grouping = LectureEmotionFrameGroupings.objects.order_by('lecture_emotion_frame_groupings_id').last()
-        #     new_lecture_emotion_frame_grouping_id = "LEFG00001" if (last_lec_emotion_frame_grouping is None) else \
-        #         ig.generate_new_id(last_lec_emotion_frame_grouping.lecture_emotion_frame_groupings_id)
-        #
-        #     # retrieve the lecture emotion id
-        #     lec_emotion = LectureEmotionReport.objects.filter(lecture_video_id__video_name=video_name)
-        #     lec_emotion_ser = LectureEmotionSerializer(lec_emotion, many=True)
-        #     lec_emotion_id = lec_emotion_ser.data[0]['id']
-        #
-        #     # create the frame group details
-        #     frame_group_details = []
-        #
-        #     for key in frame_group_percentages.keys():
-        #         # create an object of type 'LectureActivityFrameGroupDetails'
-        #         lec_emotion_frame_group_details = LectureEmotionFrameGroupDetails()
-        #         lec_emotion_frame_group_details.frame_group = key
-        #         lec_emotion_frame_group_details.frame_group_percentages = frame_group_percentages[key]
-        #
-        #         frame_group_details.append(lec_emotion_frame_group_details)
-        #
-        #
-        #     new_lec_emotion_frame_groupings = LectureEmotionFrameGroupings()
-        #     new_lec_emotion_frame_groupings.lecture_emotion_frame_groupings_id = new_lecture_emotion_frame_grouping_id
-        #     new_lec_emotion_frame_groupings.lecture_emotion_id_id = lec_emotion_id
-        #     new_lec_emotion_frame_groupings.frame_group_details = frame_group_details
-        #
-        #     # save
-        #     new_lec_emotion_frame_groupings.save()
-        #
-        #
-        #     return Response({
-        #         "frame_landmarks": frame_landmarks,
-        #         "frame_group_percentages": frame_group_percentages,
-        #         "emotion_labels": emotion_labels
-        #     })
+        else:
+
+            frame_landmarks = []
+
+            # retrieve frame landmarks from db
+            lec_video_frame_landmarks = LectureVideoFrameLandmarks.objects.filter(
+                lecture_video_id__video_name=video_name)
+            lec_video_frame_landmarks_ser = LectureVideoFrameLandmarksSerializer(lec_video_frame_landmarks, many=True)
+            lec_video_frame_landmarks_data = lec_video_frame_landmarks_ser.data[0]
+
+            retrieved_frame_landmarks = lec_video_frame_landmarks_data["frame_landmarks"]
+
+            # creating a new list to display in the frontend
+            for landmark in retrieved_frame_landmarks:
+                frame_landmarks.append(int(landmark['landmark']))
+
+
+            l, frame_group_dict = ve.getFrameLandmarks(video_name, "Emotion")
+            frame_group_percentages, emotion_labels = ed.emotion_frame_groupings(video_name, frame_landmarks, frame_group_dict)
+
+
+
+            # save the frame group details into db (temp method)
+
+            last_lec_emotion_frame_grouping = LectureEmotionFrameGroupings.objects.order_by('lecture_emotion_frame_groupings_id').last()
+            new_lecture_emotion_frame_grouping_id = "LEFG00001" if (last_lec_emotion_frame_grouping is None) else \
+                ig.generate_new_id(last_lec_emotion_frame_grouping.lecture_emotion_frame_groupings_id)
+
+            # retrieve the lecture emotion id
+            lec_emotion = LectureEmotionReport.objects.filter(lecture_video_id__video_name=video_name)
+            lec_emotion_ser = LectureEmotionSerializer(lec_emotion, many=True)
+            lec_emotion_id = lec_emotion_ser.data[0]['id']
+
+            # create the frame group details
+            frame_group_details = []
+
+            for key in frame_group_percentages.keys():
+                # create an object of type 'LectureActivityFrameGroupDetails'
+                lec_emotion_frame_group_details = LectureEmotionFrameGroupDetails()
+                lec_emotion_frame_group_details.frame_group = key
+                lec_emotion_frame_group_details.frame_group_percentages = frame_group_percentages[key]
+
+                frame_group_details.append(lec_emotion_frame_group_details)
+
+
+            new_lec_emotion_frame_groupings = LectureEmotionFrameGroupings()
+            new_lec_emotion_frame_groupings.lecture_emotion_frame_groupings_id = new_lecture_emotion_frame_grouping_id
+            new_lec_emotion_frame_groupings.lecture_emotion_id_id = lec_emotion_id
+            new_lec_emotion_frame_groupings.frame_group_details = frame_group_details
+
+            # save
+            new_lec_emotion_frame_groupings.save()
+
+
+            return Response({
+                "frame_landmarks": frame_landmarks,
+                "frame_group_percentages": frame_group_percentages,
+                "emotion_labels": emotion_labels
+            })
 
 
 # this API will retrieve lecture gaze summary
@@ -1163,7 +1206,6 @@ class GetLectureActivityCorrelations(APIView):
             activity_correlations = ar.get_activity_correlations(individual_lec_activities, lec_recorded_activity_data)
 
 
-        print('activity correlations: ', activity_correlations)
 
         return Response({
             "correlations": activity_correlations
@@ -1269,3 +1311,257 @@ class GetLectureGazeCorrelations(APIView):
         return Response({
             "correlations": gaze_correlations
         })
+
+
+# this class will handle the student activity-emotion correlations
+class GetStudentActivityEmotionCorrelations(APIView):
+
+    def get(self, request):
+        # get the day option
+        option = request.query_params.get('option')
+        # get the lecturer id
+        lecturer = request.query_params.get('lecturer')
+        int_option = int(option)
+        # initialize the student behavior count
+        student_behavior_count = 0
+
+
+        current_date = datetime.datetime.now().date()
+        option_date = datetime.timedelta(days=int_option)
+
+        # get the actual date
+        previous_date = current_date - option_date
+
+        # initialize the lists
+        individual_lec_activities = []
+        individual_lec_emotions = []
+        activity_emotion_correlations = []
+
+        # retrieving lecture activities
+        lec_activity = LectureActivity.objects.filter(
+            lecture_video_id__date__gte=previous_date,
+            lecture_video_id__date__lte=current_date,
+            lecture_video_id__lecturer=lecturer
+        )
+
+        # retrieving lecture emotions
+        lec_emotion = LectureEmotionReport.objects.filter(
+            lecture_video_id__date__gte=previous_date,
+            lecture_video_id__date__lte=current_date,
+            lecture_video_id__lecturer=lecturer
+        )
+
+
+        # if there are lecture activities
+        if len(lec_activity) > 0:
+            student_behavior_count += 1
+            activity_serializer = LectureActivitySerializer(lec_activity, many=True)
+            activity_data = activity_serializer.data
+            _, individual_lec_activities, _ = ar.get_student_activity_summary_for_period(activity_data)
+
+        # if there are lecture emotions
+        if len(lec_emotion) > 0:
+            student_behavior_count += 1
+            emotion_serializer = LectureEmotionSerializer(lec_emotion, many=True)
+            emotion_data = emotion_serializer.data
+            _, individual_lec_emotions, _ = ed.get_student_emotion_summary_for_period(emotion_data)
+
+
+        # if both student activity, emotion are available
+        if student_behavior_count == 2:
+
+            # find the correlations between student activity and gaze estimations
+            activity_emotion_correlations = sbp.calculate_student_activity_emotion_correlations(individual_lec_activities, individual_lec_emotions)
+
+
+        return Response({
+            "correlations": activity_emotion_correlations
+        })
+
+
+# this class will handle the student activity-emotion correlations
+class GetStudentActivityGazeCorrelations(APIView):
+
+    def get(self, request):
+        # get the day option
+        option = request.query_params.get('option')
+        # get the lecturer id
+        lecturer = request.query_params.get('lecturer')
+        int_option = int(option)
+        # initialize the student behavior count
+        student_behavior_count = 0
+
+
+        current_date = datetime.datetime.now().date()
+        option_date = datetime.timedelta(days=int_option)
+
+        # get the actual date
+        previous_date = current_date - option_date
+
+        # initialize the lists
+        individual_lec_activities = []
+        individual_lec_gaze = []
+        activity_gaze_correlations = []
+
+
+        # retrieving lecture gaze estimations
+        lec_gaze = LectureGazeEstimation.objects.filter(
+            lecture_video_id__date__gte=previous_date,
+            lecture_video_id__date__lte=current_date,
+            lecture_video_id__lecturer=lecturer
+        )
+
+
+        # retrieving lecture activities
+        lec_activity = LectureActivity.objects.filter(
+            lecture_video_id__date__gte=previous_date,
+            lecture_video_id__date__lte=current_date,
+            lecture_video_id__lecturer=lecturer
+        )
+
+
+        # if there are lecture activities
+        if len(lec_activity) > 0:
+            student_behavior_count += 1
+            activity_serializer = LectureActivitySerializer(lec_activity, many=True)
+            activity_data = activity_serializer.data
+            _, individual_lec_activities, _ = ar.get_student_activity_summary_for_period(activity_data)
+
+
+        # if there are gaze estimations
+        if len(lec_gaze) > 0:
+            student_behavior_count += 1
+            gaze_serializer = LectureGazeEstimationSerializer(lec_gaze, many=True)
+            gaze_data = gaze_serializer.data
+            _, individual_lec_gaze, _ = hge.get_student_gaze_estimation_summary_for_period(gaze_data)
+
+
+        # if there are any recorded lectures
+        if student_behavior_count == 2:
+
+            # find the correlations between student activity and gaze estimations
+            activity_gaze_correlations = sbp.calculate_student_activity_gaze_correlations(individual_lec_activities, individual_lec_gaze)
+
+
+        return Response({
+            "correlations": activity_gaze_correlations
+        })
+
+
+# this class will handle the student emotion-gaze correlations
+class GetStudentEmotionGazeCorrelations(APIView):
+
+    def get(self, request):
+        # get the day option
+        option = request.query_params.get('option')
+        # get the lecturer id
+        lecturer = request.query_params.get('lecturer')
+        int_option = int(option)
+        # initialize the student behavior count
+        student_behavior_count = 0
+
+
+        current_date = datetime.datetime.now().date()
+        option_date = datetime.timedelta(days=int_option)
+
+        # get the actual date
+        previous_date = current_date - option_date
+
+        # initialize the lists
+        individual_lec_emotions = []
+        individual_lec_gaze = []
+        emotion_gaze_correlations = []
+
+
+        # retrieving lecture gaze estimations
+        lec_gaze = LectureGazeEstimation.objects.filter(
+            lecture_video_id__date__gte=previous_date,
+            lecture_video_id__date__lte=current_date,
+            lecture_video_id__lecturer=lecturer
+        )
+
+        # retrieving lecture emotions
+        lec_emotion = LectureEmotionReport.objects.filter(
+            lecture_video_id__date__gte=previous_date,
+            lecture_video_id__date__lte=current_date,
+            lecture_video_id__lecturer=lecturer
+        )
+
+        # if there are lecture emotions
+        if len(lec_emotion) > 0:
+            student_behavior_count += 1
+            emotion_serializer = LectureEmotionSerializer(lec_emotion, many=True)
+            emotion_data = emotion_serializer.data
+            _, individual_lec_emotions, _ = ed.get_student_emotion_summary_for_period(emotion_data)
+
+        # if there are gaze estimations
+        if len(lec_gaze) > 0:
+            student_behavior_count += 1
+            gaze_serializer = LectureGazeEstimationSerializer(lec_gaze, many=True)
+            gaze_data = gaze_serializer.data
+            _, individual_lec_gaze, _ = hge.get_student_gaze_estimation_summary_for_period(gaze_data)
+
+
+
+        # if there are any recorded lectures
+        if student_behavior_count == 2:
+
+            # find the correlations between student activity and gaze estimations
+            emotion_gaze_correlations = sbp.calculate_student_emotion_gaze_correlations(individual_lec_emotions, individual_lec_gaze)
+
+
+        return Response({
+            "correlations": emotion_gaze_correlations
+        })
+
+
+##### BATCH PROCESS SECTION #####
+
+# perform the student behavior analysis as a batch process
+class BatchProcess(APIView):
+
+    def get(self, request):
+        video_name = request.query_params.get('video_name')
+        video_id = request.query_params.get('video_id')
+
+        return Response({
+            "response": True
+        })
+
+
+# this API will check whether the lecture activity frame groupings exist
+class CheckStudentBehaviorAvailability(APIView):
+
+    def get(self, request):
+        video_name = request.query_params.get('video_name')
+        #
+        # isActivityExist = LectureActivityFrameGroupings.objects.filter(
+        #     lecture_activity_id__lecture_video_id__video_name=video_name).exists()
+        #
+        # isEmotionExist = LectureEmotionFrameGroupings.objects.filter(
+        #     lecture_emotion_id__lecture_video_id__video_name=video_name).exists()
+        #
+        # isGazeExist = LectureGazeFrameGroupings.objects.filter(
+        #     lecture_gaze_id__lecture_video_id__video_name=video_name).exists()
+
+        isActivityExist = bool(Random().randint(0,2))
+        isEmotionExist = bool(Random().randint(0,2))
+        isGazeExist = bool(Random().randint(0,2))
+
+        return Response({
+            "isActivityExist": isActivityExist,
+            "isEmotionExist": isEmotionExist,
+            "isGazeExist": isGazeExist
+        })
+
+# this API will perform some random task (delete later)
+class TestRandom(APIView):
+
+    def get(self, request):
+
+        random = Random().randint(0, 100)
+
+        return Response({
+            "response": random
+        })
+
