@@ -1,10 +1,15 @@
 from rest_framework import serializers
 
+from FirstApp.MongoModels import Lecturer, Subject
 from FirstApp.serializers import LecturerSerializer, SubjectSerializer
 from LectureSummarizingApp.models import LectureAudioSummary
 from .models import RegisterTeacher, LecturerActivityFrameRecognitions
 from .models import LecturerAudioText, LecturerVideoMetaData, LecturerVideo, LectureRecordedVideo
+from FirstApp.logic import id_generator as ig
 
+
+
+import datetime
 
 class RegisterTeacherSerializer(serializers.ModelSerializer):
     class Meta:
@@ -19,7 +24,6 @@ class LecturerVideoSerializer(serializers.ModelSerializer):
 
 
 class LecturerAudioTextSerializer(serializers.ModelSerializer):
-
     lecturer_audio_original_text = LectureAudioSummary()
 
     class Meta:
@@ -28,7 +32,6 @@ class LecturerAudioTextSerializer(serializers.ModelSerializer):
 
 
 class LectureRecordedVideoSerializer(serializers.ModelSerializer):
-
     lecturer = LecturerSerializer()
     subject = SubjectSerializer()
 
@@ -36,9 +39,47 @@ class LectureRecordedVideoSerializer(serializers.ModelSerializer):
         model = LectureRecordedVideo
         fields = '__all__'
 
+    # this method will override the 'create' method
+    def create(self, validated_data):
+        lecturer = None
+        subject = None
+
+        lecturer_data = validated_data.pop('lecturer')
+        subject_data = validated_data.pop('subject')
+
+        # serialize the lecturer data
+        lecturer = Lecturer.objects.filter(id=lecturer_data)
+        subject = Subject.objects.filter(id=subject_data)
+
+        # retrieve the last lecture video details
+        last_lec_video = LectureRecordedVideo.objects.order_by('lecture_video_id').last()
+        # create the next lecture video id
+        new_lecture_video_id = ig.generate_new_id(last_lec_video.lecture_video_id)
+
+        # if both subject and lecturer details are available
+        if len(lecturer) == 1 & len(subject) == 1:
+            str_video_length = validated_data.pop('lecture_video_length')
+            video_length_parts = str_video_length.split(':')
+            video_length = datetime.timedelta(minutes=int(video_length_parts[0]),
+                                              seconds=int(video_length_parts[1]),
+                                              milliseconds=int(video_length_parts[2]))
+
+            lecture_video, created = LectureRecordedVideo.objects.update_or_create(
+                lecture_video_id=new_lecture_video_id,
+                lecturer=lecturer[0],
+                subject=subject[0],
+                lecturer_date=validated_data.pop('lecturer_date'),
+                lecture_video_name=validated_data.pop('lecture_video_name'),
+                lecture_video_length=video_length
+            )
+
+
+            return lecture_video
+
+        return None
+
 
 class LecturerVideoMetaDataSerializer(serializers.ModelSerializer):
-
     lecturer_video_id = LectureRecordedVideoSerializer()
 
     class Meta:
@@ -46,16 +87,13 @@ class LecturerVideoMetaDataSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-
 # lecture activity frame recognition serializer
 class LecturerActivityFrameRecognitionsSerializer(serializers.ModelSerializer):
-
     lecturer_meta_id = LecturerVideoMetaDataSerializer()
     frame_recognition_details = serializers.SerializerMethodField()
 
     # this method will be used to serialize the 'frame_recogition_details' field
     def get_frame_recognition_details(self, obj):
-
         return_data = []
 
         for frame_recognition in obj.frame_recognition_details:
@@ -71,8 +109,6 @@ class LecturerActivityFrameRecognitionsSerializer(serializers.ModelSerializer):
         # return the data
         return return_data
 
-
     class Meta:
         model = LecturerActivityFrameRecognitions
         fields = '__all__'
-

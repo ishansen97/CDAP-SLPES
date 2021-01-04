@@ -2,11 +2,11 @@ import scripts
 import re
 import os
 
+# change the method signature, IMMEDIATELY
 def run():
 
     # this dictionary will be returned
     analysis = {}
-
     # define the BASE path
     BASE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     FILE_PATH = os.path.join(BASE_PATH, "MonitorLecturerApp\\lecture_Notes\\sample_text2.txt")
@@ -81,7 +81,7 @@ def run():
             lexical_count += d[key]
             # print('\n number of occurrences (that)', d[key])
 
-        # "jest" newei bn "just"
+
         elif (key == "just"):
             lexical_count += d[key]
             # print('\n number of occurrences (just)', d[key])
@@ -209,6 +209,8 @@ def get_lecturer_audio_summary_for_period(lecture_audio_text_data):
 
         # append to the list
         individual_lec_data.append(individual_lecture)
+
+        #saving processed to the db
 
 
 
