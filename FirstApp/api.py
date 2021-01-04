@@ -168,13 +168,17 @@ class LectureVideoViewSet(APIView):
         # serializer = LectureVideoSerializer(data=request.data, many=True)
         serializer = LectureVideoSerializer(data=request.data)
         # serializer.create(validated_data=request.data)
+        data = {}
+        data_ser = {}
 
 
         if serializer.is_valid(raise_exception=ValueError):
-            print('valid')
-            serializer.create(validated_data=request.data)
+            data = serializer.create(validated_data=request.data)
+            print('data: ', data)
+            # data_ser = LectureVideoSerializer(data, many=True)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        # return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(data, status=status.HTTP_201_CREATED)
 
 
         # return Response(serializer.error_messages,
@@ -462,6 +466,7 @@ class GetLectureEmotionReportViewSet(APIView):
         lecture_emotions = LectureEmotionReport.objects.filter(lecture_video_id__lecture_video_id=lecture_video_id)
         serializer = LectureEmotionSerializer(lecture_emotions, many=True)
 
+        print('data: ', serializer.data)
 
         return Response({
             "response": serializer.data,

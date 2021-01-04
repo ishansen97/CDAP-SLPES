@@ -21,6 +21,11 @@
     <!-- Core plugin JavaScript-->
     <script src="{% static 'FirstApp/vendor/jquery-easing/jquery.easing.min.js' %}"></script>
 
+    <!-- canvasJS implementation -->
+    <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+
+
+
 
     <script type="text/javascript">
 
@@ -32,11 +37,15 @@
         var global_lecture_date = '';
         var global_lecturer_video_name = '';
         var lecturer_fps = 0;
+        var lecture_activity_frame_group_percentages = {};
+        var lecture_video_time_landmarks = [];
 
 
-        ;
         //jquery
         $(document).ready(function () {
+
+            //disable the 'integrate_activity' button
+            $('#integrate_activity').hide();
 
             //select a particular subject
             $('input[type=radio]').click(function () {
@@ -75,6 +84,7 @@
                 let object = e;
                 let real_class = clicked_class.split(' ')[1];
                 real_class = '.' + real_class;
+
 
                 let date = e.target.parentNode.parentNode.firstChild.innerHTML;
                 //assign the date
@@ -161,6 +171,9 @@
                 $('#generate_report_before').attr('disabled', false);
 
                 $('#video_modal').modal();
+
+                //display the 'integrate activity' button
+                $('#integrate_activity').show();
             }
 
             //binding a click event for 'btn-primary' buttons
@@ -254,14 +267,13 @@
 
                 //fetch the lecture recorded video name
                 fetch('http://127.0.0.1:8000/get-lecture-recorded-video-name/?lecturer=' + global_lecturer + '&subject=' + global_subject + '&date=' + global_lecture_date)
-                .then((res) => res.json())
-                .then((out) => assignLecturerRecordedVideoName(out))
-                .catch((err) => alert('error: ' + err));
+                    .then((res) => res.json())
+                    .then((out) => assignLecturerRecordedVideoName(out))
+                    .catch((err) => alert('error: ' + err));
 
                 {#global_lecturer_video_name = "Test_1.mp4";#}
                 {#global_lecturer_video_name = "Test_2.mp4";#}
                 {#global_lecturer_video_name = "Test_3.mp4";#}
-
 
 
                 //fetch data from the API
@@ -524,6 +536,165 @@
             });
 
 
+            //this function will handle the activity 'summary' button
+            $('#graph-tab').click(function (e) {
+
+                //display the graph loader
+                $('#graph_loader').attr('hidden', false);
+
+                //fetch the video time landmark details
+                fetch('http://127.0.0.1:8000/get-lecture-video-summary-time-landmarks/?video_name=' + global_video_name)
+                    .then((res) => res.json())
+                    .then((out) => assignTimeLandmarks(out.response))
+                    .catch((err) => alert('error: ' + err));
+
+                //change the innerHTML of the clicked button
+                {#e.target.innerHTML = "<span class='font-italic'>Processing</span>";#}
+
+                let phone_perct = $('#phone_perct').text().split("%")[0];
+                let listen_perct = $('#listening_perct').text().split("%")[0];
+                let note_perct = $('#writing_perct').text().split("%")[0];
+
+
+                //fetch the activity summary details
+                fetch('http://127.0.0.1:8000/get-lecture-activity-summary/?video_name=' + global_video_name + '&phone_perct=' + phone_perct + '&note_perct=' + note_perct + '&listen_perct=' + listen_perct)
+                    .then((res) => res.json())
+                    .then((out) => activityFrameGroupPercentages(out, e))
+                    .catch((err) => alert('error: ' + err));
+
+
+            });
+
+            //this function will assign lecture video time landmarks
+            function assignTimeLandmarks(response) {
+
+                lecture_video_time_landmarks = response;
+            }
+
+            //this function will handle the retrieved activity frame group percentages
+            function activityFrameGroupPercentages(response, e) {
+
+
+                lecture_activity_frame_group_percentages = response.frame_group_percentages;
+                let frame_landmarks = response.frame_landmarks;
+                {#let frame_group_dict = response.frame_group_dict;#}
+                let activity_labels = response.activity_labels;
+                let comment_list = response.comments;
+
+
+
+
+                //render the chart onto the modal body
+                renderActivityChart(activity_labels);
+            }
+
+
+            //this function will call the activity chart function
+            function renderActivityChart(activity_labels) {
+
+                //hide the graph loader
+                $('#graph_loader').hide();
+
+                //get the activity label length
+                let activity_label_length = activity_labels.length;
+
+                let data = [];
+
+
+                //loop through the activity labels
+                for (let k = 0; k < activity_label_length; k++) {
+                    let label = activity_labels[k];
+                    let datapoints = [];
+
+                    let count = 0;
+
+                    //loop through the activity frame groups
+                    for (let key in lecture_activity_frame_group_percentages) {
+                        let frame_group_details = lecture_activity_frame_group_percentages[key];
+
+                        let activity_perct = frame_group_details[label];
+
+                        let point = {label: lecture_video_time_landmarks[count], y: activity_perct};
+
+                        datapoints.push(point);
+
+                        count++;
+                    }
+
+                    let obj = {
+                        type: "line",
+                        showInLegend: true,
+                        name: label,
+                        markerType: "square",
+                        {#xValueFormatString: "DD MMM, YYYY",#}
+                        xValueFormatString: "hh:mm:ss",
+                        color: getRandomColor(),
+                        dataPoints: datapoints
+                    };
+
+                    data.push(obj);
+
+                }
+
+
+                var chart = new CanvasJS.Chart("ActivityChartContainer", {
+                    animationEnabled: true,
+                    theme: "light2",
+                    title: {
+                        text: "Student Activity Behavior"
+                    },
+                    axisX: {
+                        title: "Duration",
+                        {#valueFormatString: "DD MMM",#}
+                        valueFormatString: "hh:mm:ss",
+                        crosshair: {
+                            enabled: true,
+                            snapToDataPoint: true
+                        }
+                    },
+                    axisY: {
+                        title: "Percentage",
+                        includeZero: true,
+                        crosshair: {
+                            enabled: true
+                        }
+                    },
+                    toolTip: {
+                        shared: true
+                    },
+                    legend: {
+                        cursor: "pointer",
+                        verticalAlign: "top",
+                        horizontalAlign: "right",
+                        dockInsidePlotArea: true,
+                        itemclick: toogleDataSeries
+                    },
+                    data: data
+                });
+                chart.render();
+            }
+
+            //this function will generate random colors
+            function getRandomColor() {
+                var letters = '0123456789ABCDEF';
+                var color = '#';
+                for (var i = 0; i < 6; i++) {
+                    color += letters[Math.floor(Math.random() * 16)];
+                }
+                return color;
+            }
+
+            //this function will toggle the content
+            function toogleDataSeries(e) {
+                if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+                    e.dataSeries.visible = false;
+                } else {
+                    e.dataSeries.visible = true;
+                }
+                chart.render();
+            }
+
+
         });
 
     </script>
@@ -702,18 +873,18 @@
                                                 <!--this area will display the progress bars -->
                                                 <div class="progress_area mt-4" hidden>
                                                     <!--talking with friends -->
-                                                    <a href="#" class="btn btn-link labels" data-number="1"
-                                                       data-label="talking-with-friends">
-                                                        <h4 class="small font-weight-bold">Talking with friends</h4>
-                                                    </a>
-                                                    <span class="float-right" id="talking_perct">40%</span>
-                                                    <div class="progress mb-4">
-                                                        <div class="progress-bar bg-danger" role="progressbar"
-                                                             id="talking_width"
-                                                             style="width: 20%"
-                                                             aria-valuenow="20" aria-valuemin="0"
-                                                             aria-valuemax="100"></div>
-                                                    </div>
+                                                    {#                                                    <a href="#" class="btn btn-link labels" data-number="1"#}
+                                                    {#                                                       data-label="talking-with-friends">#}
+                                                    {#                                                        <h4 class="small font-weight-bold">Talking with friends</h4>#}
+                                                    {#                                                    </a>#}
+                                                    {#                                                    <span class="float-right" id="talking_perct">40%</span>#}
+                                                    {#                                                    <div class="progress mb-4">#}
+                                                    {#                                                        <div class="progress-bar bg-danger" role="progressbar"#}
+                                                    {#                                                             id="talking_width"#}
+                                                    {#                                                             style="width: 20%"#}
+                                                    {#                                                             aria-valuenow="20" aria-valuemin="0"#}
+                                                    {#                                                             aria-valuemax="100"></div>#}
+                                                    {#                                                    </div>#}
 
                                                     <!--phone checking -->
                                                     <a href="#" class="btn btn-link labels" data-number="0"
@@ -765,46 +936,45 @@
                                         <!--graph tab -->
                                         <div class="tab-pane fade" id="graph" role="tabpanel"
                                              aria-labelledby="profile-tab">
+
+                                            <!-- graph loader -->
+                                            <div class="text-center mt-3" id="graph_loader" hidden>
+                                                <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
+                                                         alt="Loader">
+                                            </div>
+                                            <!-- end of graph loader -->
+
+
                                             <!--card content -->
                                             <div class="card shadow mb-4 p-3">
-                                                <!-- Card Header - Dropdown -->
-                                                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                                                    <h6 class="m-0 font-weight-bold text-primary">Student
-                                                        Activities</h6>
-                                                    <div class="dropdown no-arrow">
-                                                        <a class="dropdown-toggle" href="#" role="button"
-                                                           id="dropdownMenuLink" data-toggle="dropdown"
-                                                           aria-haspopup="true" aria-expanded="false">
-                                                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-                                                        </a>
-                                                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
-                                                             aria-labelledby="dropdownMenuLink">
-                                                            <div class="dropdown-header">Dropdown Header:</div>
-                                                            <a class="dropdown-item" href="#">Action</a>
-                                                            <a class="dropdown-item" href="#">Another action</a>
-                                                            <div class="dropdown-divider"></div>
-                                                            <a class="dropdown-item" href="#">Something else here</a>
-                                                        </div>
-                                                    </div>
-                                                </div>
+{#                                                <!-- Card Header - Dropdown -->#}
+{#                                                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">#}
+{#                                                    <h6 class="m-0 font-weight-bold text-primary">Student#}
+{#                                                        Activities</h6>#}
+{#                                                    <div class="dropdown no-arrow">#}
+{#                                                        <a class="dropdown-toggle" href="#" role="button"#}
+{#                                                           id="dropdownMenuLink" data-toggle="dropdown"#}
+{#                                                           aria-haspopup="true" aria-expanded="false">#}
+{#                                                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>#}
+{#                                                        </a>#}
+{#                                                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"#}
+{#                                                             aria-labelledby="dropdownMenuLink">#}
+{#                                                            <div class="dropdown-header">Dropdown Header:</div>#}
+{#                                                            <a class="dropdown-item" href="#">Action</a>#}
+{#                                                            <a class="dropdown-item" href="#">Another action</a>#}
+{#                                                            <div class="dropdown-divider"></div>#}
+{#                                                            <a class="dropdown-item" href="#">Something else here</a>#}
+{#                                                        </div>#}
+{#                                                    </div>#}
+{#                                                </div>#}
+
                                                 <!-- Card Body -->
                                                 <div class="card-body">
-                                                    <div class="chart-pie pt-4 pb-2">
-                                                        <canvas id="myPieChart"></canvas>
+                                                    <div id="ActivityChartContainer"
+                                                         style="height: 370px; max-width: 920px; margin: 0px auto;"></div>
                                                     </div>
-                                                    <div class="mt-4 text-center small">
-                    <span class="mr-2">
-                      <i class="fas fa-circle text-primary"></i> Direct
-                    </span>
-                                                        <span class="mr-2">
-                      <i class="fas fa-circle text-success"></i> Social
-                    </span>
-                                                        <span class="mr-2">
-                      <i class="fas fa-circle text-info"></i> Referral
-                    </span>
-                                                    </div>
+                                                <!-- End of Card Body -->
                                                 </div>
-                                            </div>
 
                                         </div>
 
@@ -1084,11 +1254,11 @@
                                                 type="video/mp4">
                                         Your browser does not support the video tag.
                                     </video>
-{#                                    <video width="500" height="300" id="student_video" controls>#}
-{#                                        <source src="{% static 'FirstApp/videos/Video_test_2.mp4' %}"#}
-{#                                                type="video/mp4">#}
-{#                                        Your browser does not support the video tag.#}
-{#                                    </video>#}
+                                    {#                                    <video width="500" height="300" id="student_video" controls>#}
+                                    {#                                        <source src="{% static 'FirstApp/videos/Video_test_2.mp4' %}"#}
+                                    {#                                                type="video/mp4">#}
+                                    {#                                        Your browser does not support the video tag.#}
+                                    {#                                    </video>#}
                                 </div>
                                 <!--end of student video section -->
 
@@ -1155,10 +1325,10 @@
 
                                 <!--display lecture video -->
                                 <div class="text-center m-3" id="lecturer_video_section">
-{#                                    <!--temporary text -->#}
-{#                                    <div class="text-center" id="temp_lecturer_text">#}
-{#                                        <span class="font-italic">No video was found</span>#}
-{#                                    </div>#}
+                                    {#                                    <!--temporary text -->#}
+                                    {#                                    <div class="text-center" id="temp_lecturer_text">#}
+                                    {#                                        <span class="font-italic">No video was found</span>#}
+                                    {#                                    </div>#}
 
 
                                     <!--display lecturer video -->
