@@ -1,3 +1,4 @@
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -9,6 +10,33 @@ from .serializers import *
 
 import datetime
 
+
+##### LECTURER VIDEO SECTION #####
+
+# this API will handle basic lecturer video retrieval/saving
+class LecturerVideoAPI(APIView):
+
+    def get(self, request):
+        lecturer_videos = LectureRecordedVideo.objects.all()
+        lecturer_videos_ser = LectureRecordedVideoSerializer(lecturer_videos, many=True)
+        lecturer_videos_ser_data = lecturer_videos_ser.data
+
+        return Response({
+            "response": lecturer_videos_ser_data
+        })
+
+    def post(self, request):
+
+        serializer = LectureRecordedVideoSerializer(data=request.data)
+
+        if serializer.is_valid(raise_exception=ValueError):
+            # serializer.create(validated_data=request.data)
+            serializer.create(validated_data=request.data)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+##### END OF LECTURER VIDEO SECTION #####
 
 
 ##### LECTURER ACTIVITY SECTION #####
@@ -59,6 +87,23 @@ class GetLectureVideoResultsAPI(APIView):
 
         return Response({
             "response": percentages
+        })
+
+# this API will process lecturer video frame recognitions
+class ProcessLecturerFrameRecognitionsAPI(APIView):
+
+    def get(self, request):
+        video_name = request.query_params.get('video_name')
+
+        frame_recognitions, fps = classroom_activity.save_frame_recognition(video_name)
+
+        int_fps = int(fps)
+
+        # print('frame recognitions: ', frame_recognitions)
+
+        return Response({
+            "frame_recognitions": frame_recognitions,
+            "fps": fps
         })
 
 
@@ -169,6 +214,43 @@ class LectureAudioTextAPI(APIView):
         })
 
 
+# this API will save the lecture audio analysis
+class ProcessLectureAudioAnalysis(APIView):
+
+    def get(self, request):
+
+        # lec_audio_text = ta.run()
+
+        # (this is temporary)
+        lec_audio_text = {
+            'num_of_words': 5000,
+            'lexical_count': 300,
+            'non_lexical_count': 40
+        }
+
+        last_lec_audio_text_id = LecturerAudioText.objects.order_by('lecturer_audio_text_id').last()
+        new_lec_audio_text_id = "LAT001" if (last_lec_audio_text_id is None) else ig.generate_new_id(
+            last_lec_audio_text_id.lecturer_audio_text_id)
+
+        # retrieve the lecture audio summary object (temporary)
+        lecture_audio_summary = LectureAudioSummary.objects.filter(lecture_audio_summary_id='LAU004_sum')[0]
+
+        # save the lecture audio text object
+        LecturerAudioText(
+            lecturer_audio_text_id=new_lec_audio_text_id,
+            lecturer_audio_text_wordcount=lec_audio_text['num_of_words'],
+            lecturer_audio_text_lexical_wordcount=lec_audio_text['lexical_count'],
+            lecturer_audio_text_non_lexical_wordcount=lec_audio_text['non_lexical_count'],
+            lecturer_audio_text_status='Average',
+            lecturer_audio_original_text=lecture_audio_summary
+        ).save()
+
+
+        return Response({
+            "response": "success"
+        }, status=status.HTTP_201_CREATED)
+
+
 # this API will retrieve lectuer audio summary for given period
 class LecturerAudioSummaryPeriodAPI(APIView):
 
@@ -249,5 +331,4 @@ class StudentLecturerIntegratedAPI(APIView):
                 "frame_recognitions": frame_recognitions,
                 "fps": fps
             })
-
 

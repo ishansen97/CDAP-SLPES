@@ -12,6 +12,10 @@ urlpatterns = [
     path('lecture-video', views.lecVideo),
     # path('Video', views.hello)
 
+    ##### LECTURER VIDEO SECTION #####
+    # API to retrieve/save lecturer video details
+    url(r'^lecturer-video/$', api.LecturerVideoAPI.as_view()),
+
     ##### LECTURER ACTIVITY SECTION #####
     # API to retrieve activity recognition
     url(r'^activities/$', api.ActivityRecognitionAPI.as_view()),
@@ -22,17 +26,28 @@ urlpatterns = [
     # API to retrieve lecturer video frame recognitions
     url(r'^get-lecturer-video-frame-recognitions/$', api.StudentLecturerIntegratedAPI.as_view()),
 
+    # API to process lecturer video frame recognitions
+    url(r'^process-lecturer-video-frame-recognitions/$', api.ProcessLecturerFrameRecognitionsAPI.as_view()),
+
     ##### END OF LECTURER ACTIVITY SECTION #####
 
 
+    ##### LECTURE AUDIO SECTION #####
+
     # API to retrieve audio analysis
     url(r'^get-audio-analysis/$', api.GetLectureAudioAnalysis.as_view()),
+
+    # API to save audio analysis
+    url(r'^process-lecture-audio-analysis/$', api.ProcessLectureAudioAnalysis.as_view()),
 
     # API to retrieve lecture audio text
     url(r'^get-lecture-audio-text', api.LectureAudioTextAPI.as_view()),
 
     # API to retrieve lecture audio text
     url(r'^get-lecturer-audio-summary-for-period', api.LecturerAudioSummaryPeriodAPI.as_view()),
+
+    ##### END OF LECTURE AUDIO SECTION #####
+
 
     # test API
     url(r'^test-api', api.TestAPI.as_view()),
