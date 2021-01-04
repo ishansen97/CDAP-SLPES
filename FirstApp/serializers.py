@@ -275,6 +275,11 @@ class LectureVideoSerializer(serializers.ModelSerializer):
                 video_length=video_length
             )
 
+            # retrieve the created object
+            created_lecture_video = LectureVideo.objects.filter(lecture_video_id=lecture_video)
+            create_lecture_video_ser = LectureVideoSerializer(created_lecture_video, many=True)
+            create_lecture_video_ser_data = create_lecture_video_ser.data
+
         # faculty_data = validated_data.pop('faculty')
         # serialized_faculty = FacultySerializer(data=faculty_data)
         #
@@ -294,7 +299,7 @@ class LectureVideoSerializer(serializers.ModelSerializer):
         #
         #         return lecturer
         #
-            return lecture_video
+            return create_lecture_video_ser_data
 
         return None
 

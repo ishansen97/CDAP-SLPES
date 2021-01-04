@@ -21,6 +21,11 @@
     <!-- Core plugin JavaScript-->
     <script src="{% static 'FirstApp/vendor/jquery-easing/jquery.easing.min.js' %}"></script>
 
+    <!-- canvasJS implementation -->
+    <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+
+
+
 
     <script type="text/javascript">
 
@@ -31,9 +36,14 @@
         var global_lecturer_subject_index = 0;
         var global_lecturer_video_name = '';
         var lecturer_fps = 0;
+        var lecture_gaze_frame_group_percentages = {};
+
 
         //jquery
         $(document).ready(function () {
+
+            //hide the 'integrate gaze' button
+            $('#integrate_gaze').hide();
 
             //select a particular subject
             $('input[type=radio]').click(function () {
@@ -144,8 +154,8 @@
                 $('#video_name').text(video.video_name);
                 $('#video_duration').text(video.video_length);
                 $('#video_date').text(video.date);
-                {#global_lecture_video_id = video.lecture_video_id;#}
-                global_lecture_video_id = video.id;
+                global_lecture_video_id = video.lecture_video_id;
+                {#global_lecture_video_id = video.id;#}
                 global_video_name = video.video_name;
 
 
@@ -157,6 +167,9 @@
                 }
 
                 $('#video_modal').modal();
+
+                //show the 'integrate gaze' button
+                $('#integrate_gaze').show();
             }
 
 
@@ -247,9 +260,9 @@
 
                 //fetch the lecture recorded video name
                 fetch('http://127.0.0.1:8000/get-lecture-recorded-video-name/?lecturer=' + global_lecturer + '&subject=' + global_subject + '&date=' + global_lecture_date)
-                .then((res) => res.json())
-                .then((out) => assignLecturerRecordedVideoName(out))
-                .catch((err) => alert('error: ' + err));
+                    .then((res) => res.json())
+                    .then((out) => assignLecturerRecordedVideoName(out))
+                    .catch((err) => alert('error: ' + err));
 
                 {#global_lecturer_video_name = "Test_1.mp4";#}
                 {#global_lecturer_video_name = "Test_2.mp4";#}
@@ -520,6 +533,150 @@
             });
 
 
+            //this function will handle the activity 'summary' button
+            $('#graph-tab').click(function (e) {
+
+                //display the graph loader
+                $('#graph_loader').attr('hidden', false);
+
+                //fetch the video time landmark details
+                fetch('http://127.0.0.1:8000/get-lecture-video-summary-time-landmarks/?video_name=' + global_video_name)
+                    .then((res) => res.json())
+                    .then((out) => assignTimeLandmarks(out.response))
+                    .catch((err) => alert('error: ' + err));
+
+
+                //fetch the gaze summary details
+                fetch('http://127.0.0.1:8000/get-lecture-gaze-summary/?video_name=' + global_video_name)
+                    .then((res) => res.json())
+                    .then((out) => gazeFrameGroupPercentages(out, e))
+                    .catch((err) => alert('error: ' + err));
+
+            });
+
+            //this function will assign lecture video time landmarks
+            function assignTimeLandmarks(response) {
+
+                lecture_video_time_landmarks = response;
+            }
+
+            //this function will handle the retrieved gaze frame group percentages
+            function gazeFrameGroupPercentages(response, e) {
+
+                lecture_gaze_frame_group_percentages = response.frame_group_percentages;
+                let frame_landmarks = response.frame_landmarks;
+                let gaze_labels = response.gaze_labels;
+
+
+                //render the chart onto the modal body
+                renderGazeChart(gaze_labels);
+
+            }
+
+
+            //this function will call the chart function
+            function renderGazeChart(gaze_labels) {
+
+                //get the activity label length
+                let gaze_label_length = gaze_labels.length;
+
+                let data = [];
+
+
+                //loop through the activity labels
+                for (let k = 0; k < gaze_label_length; k++) {
+                    let label = gaze_labels[k];
+                    let datapoints = [];
+
+                    let count = 0;
+
+                    //loop through the activity frame groups
+                    for (let key in lecture_gaze_frame_group_percentages) {
+                        let frame_group_details = lecture_gaze_frame_group_percentages[key];
+
+                        let gaze_perct = frame_group_details[label];
+
+                        let point = {label: lecture_video_time_landmarks[count], y: gaze_perct};
+
+                        datapoints.push(point);
+
+                        count++;
+                    }
+
+                    let obj = {
+                        type: "line",
+                        showInLegend: true,
+                        name: label,
+                        markerType: "square",
+                        {#xValueFormatString: "DD MMM, YYYY",#}
+                        xValueFormatString: "hh:mm:ss",
+                        color: getRandomColor(),
+                        dataPoints: datapoints
+                    };
+
+                    data.push(obj);
+
+                }
+
+
+                var chart = new CanvasJS.Chart("GazeChartContainer", {
+                    animationEnabled: true,
+                    theme: "light2",
+                    title: {
+                        text: "Student Gaze estimation Behavior"
+                    },
+                    axisX: {
+                        title: "Duration",
+                        {#valueFormatString: "DD MMM",#}
+                        valueFormatString: "hh:mm:ss",
+                        crosshair: {
+                            enabled: true,
+                            snapToDataPoint: true
+                        }
+                    },
+                    axisY: {
+                        title: "Percentage",
+                        includeZero: true,
+                        crosshair: {
+                            enabled: true
+                        }
+                    },
+                    toolTip: {
+                        shared: true
+                    },
+                    legend: {
+                        cursor: "pointer",
+                        verticalAlign: "top",
+                        horizontalAlign: "right",
+                        dockInsidePlotArea: true,
+                        itemclick: toogleDataSeries
+                    },
+                    data: data
+                });
+                chart.render();
+            }
+
+            //this function will generate random colors
+            function getRandomColor() {
+                var letters = '0123456789ABCDEF';
+                var color = '#';
+                for (var i = 0; i < 6; i++) {
+                    color += letters[Math.floor(Math.random() * 16)];
+                }
+                return color;
+            }
+
+            //this function will toggle the content
+            function toogleDataSeries(e) {
+                if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+                    e.dataSeries.visible = false;
+                } else {
+                    e.dataSeries.visible = true;
+                }
+                chart.render();
+            }
+
+
         });
 
     </script>
@@ -771,53 +928,26 @@
                                              aria-labelledby="profile-tab">
                                             <!--card content -->
                                             <div class="card shadow mb-4 p-3">
-                                                <!-- Card Header - Dropdown -->
-                                                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                                                    <h6 class="m-0 font-weight-bold text-primary">Student
-                                                        Activities</h6>
-                                                    <div class="dropdown no-arrow">
-                                                        <a class="dropdown-toggle" href="#" role="button"
-                                                           id="dropdownMenuLink" data-toggle="dropdown"
-                                                           aria-haspopup="true" aria-expanded="false">
-                                                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-                                                        </a>
-                                                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
-                                                             aria-labelledby="dropdownMenuLink">
-                                                            <div class="dropdown-header">Dropdown Header:</div>
-                                                            <a class="dropdown-item" href="#">Action</a>
-                                                            <a class="dropdown-item" href="#">Another action</a>
-                                                            <div class="dropdown-divider"></div>
-                                                            <a class="dropdown-item" href="#">Something else here</a>
-                                                        </div>
-                                                    </div>
-                                                </div>
+
                                                 <!-- Card Body -->
                                                 <div class="card-body">
-                                                    <div class="chart-pie pt-4 pb-2">
-                                                        <canvas id="myPieChart"></canvas>
-                                                    </div>
-                                                    <div class="mt-4 text-center small">
-                    <span class="mr-2">
-                      <i class="fas fa-circle text-primary"></i> Direct
-                    </span>
-                                                        <span class="mr-2">
-                      <i class="fas fa-circle text-success"></i> Social
-                    </span>
-                                                        <span class="mr-2">
-                      <i class="fas fa-circle text-info"></i> Referral
-                    </span>
-                                                    </div>
+                                                    <div id="GazeChartContainer"
+                                                         style="height: 370px; max-width: 920px; margin: 0px auto;"></div>
                                                 </div>
+
                                             </div>
+                                            <!-- End of Card Body -->
 
                                         </div>
 
                                     </div>
 
-
                                 </div>
+
+
                             </div>
                         </div>
+                        <!-- end of 1st column -->
 
 
                         <!--2nd column -->
@@ -846,17 +976,11 @@
                             </div>
                         </div>
                         <!--end of 2nd column -->
-
-
                     </div>
+
+
+                    {#                    </div>#}
                     <!-- end of 2nd row -->
-
-                    <!--3rd row -->
-                    <div class="row p-2">
-
-
-                    </div>
-                    <!--end of 3rd row -->
 
 
                 </div>
