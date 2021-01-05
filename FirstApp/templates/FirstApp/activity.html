@@ -39,6 +39,7 @@
         var lecturer_fps = 0;
         var lecture_activity_frame_group_percentages = {};
         var lecture_video_time_landmarks = [];
+        var CHART = '';
 
 
         //jquery
@@ -46,6 +47,10 @@
 
             //disable the 'integrate_activity' button
             $('#integrate_activity').hide();
+
+            //hide the 'Generate Report' button
+            {#$('#generate_report_before').hide();#}
+            $('#generate_report').hide();
 
             //select a particular subject
             $('input[type=radio]').click(function () {
@@ -582,8 +587,6 @@
                 let comment_list = response.comments;
 
 
-
-
                 //render the chart onto the modal body
                 renderActivityChart(activity_labels);
             }
@@ -637,7 +640,7 @@
                 }
 
 
-                var chart = new CanvasJS.Chart("ActivityChartContainer", {
+                CHART = new CanvasJS.Chart("ActivityChartContainer", {
                     animationEnabled: true,
                     theme: "light2",
                     title: {
@@ -671,7 +674,11 @@
                     },
                     data: data
                 });
-                chart.render();
+                {#chart.render();#}
+                CHART.render();
+
+                //show the 'generate report' button
+                $('#generate_report').show();
             }
 
             //this function will generate random colors
@@ -694,6 +701,28 @@
                 chart.render();
             }
 
+
+            //this method will handle the 'Generate Report' button
+            $('#generate_report').click(function () {
+
+                let script = "<script src='https://canvasjs.com/assets/script/canvasjs.min.js'><\/script>";
+
+
+                CHART.print();
+
+
+
+                {#var prtContent = document.getElementById("ActivityChartContainer");#}
+                {#var WinPrint = window.open('', '', 'left=0,top=0,width=800,height=900,toolbar=0,scrollbars=0,status=0');#}
+                {#var WinPrint = window.open('');#}
+                {#WinPrint.document.write(prtContent.innerHTML);#}
+                {#WinPrint.document.write(script);#}
+                {#WinPrint.document.write('<h1>This is Ishan</h1>');#}
+                {#WinPrint.document.close();#}
+                {#WinPrint.focus();#}
+                {#WinPrint.print();#}
+                {#WinPrint.close();#}
+            });
 
         });
 
@@ -719,8 +748,12 @@
                     <!-- Page Heading -->
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <h1 class="h3 mb-0 text-gray-800">Student Activity Recognition</h1>
-                        {#                        <button type="button" data-target="#generateReportModal" data-toggle="modal" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" id="generate_report_before" disabled><i#}
-                        {#                                class="fas fa-download fa-sm text-white-50"></i> Generate Report</button>#}
+                        <button type="button" class="btn btn-primary" id="generate_report">Generate Report</button>
+{#                        <button type="button"#}
+{#                                class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"#}
+{#                                id="generate_report_before"><i#}
+{#                                class="fas fa-download fa-sm text-white-50"></i> Generate Report#}
+{#                        </button>#}
                     </div>
 
 
@@ -940,41 +973,41 @@
                                             <!-- graph loader -->
                                             <div class="text-center mt-3" id="graph_loader" hidden>
                                                 <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
-                                                         alt="Loader">
+                                                     alt="Loader">
                                             </div>
                                             <!-- end of graph loader -->
 
 
                                             <!--card content -->
                                             <div class="card shadow mb-4 p-3">
-{#                                                <!-- Card Header - Dropdown -->#}
-{#                                                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">#}
-{#                                                    <h6 class="m-0 font-weight-bold text-primary">Student#}
-{#                                                        Activities</h6>#}
-{#                                                    <div class="dropdown no-arrow">#}
-{#                                                        <a class="dropdown-toggle" href="#" role="button"#}
-{#                                                           id="dropdownMenuLink" data-toggle="dropdown"#}
-{#                                                           aria-haspopup="true" aria-expanded="false">#}
-{#                                                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>#}
-{#                                                        </a>#}
-{#                                                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"#}
-{#                                                             aria-labelledby="dropdownMenuLink">#}
-{#                                                            <div class="dropdown-header">Dropdown Header:</div>#}
-{#                                                            <a class="dropdown-item" href="#">Action</a>#}
-{#                                                            <a class="dropdown-item" href="#">Another action</a>#}
-{#                                                            <div class="dropdown-divider"></div>#}
-{#                                                            <a class="dropdown-item" href="#">Something else here</a>#}
-{#                                                        </div>#}
-{#                                                    </div>#}
-{#                                                </div>#}
+                                                {#                                                <!-- Card Header - Dropdown -->#}
+                                                {#                                                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">#}
+                                                {#                                                    <h6 class="m-0 font-weight-bold text-primary">Student#}
+                                                {#                                                        Activities</h6>#}
+                                                {#                                                    <div class="dropdown no-arrow">#}
+                                                {#                                                        <a class="dropdown-toggle" href="#" role="button"#}
+                                                {#                                                           id="dropdownMenuLink" data-toggle="dropdown"#}
+                                                {#                                                           aria-haspopup="true" aria-expanded="false">#}
+                                                {#                                                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>#}
+                                                {#                                                        </a>#}
+                                                {#                                                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"#}
+                                                {#                                                             aria-labelledby="dropdownMenuLink">#}
+                                                {#                                                            <div class="dropdown-header">Dropdown Header:</div>#}
+                                                {#                                                            <a class="dropdown-item" href="#">Action</a>#}
+                                                {#                                                            <a class="dropdown-item" href="#">Another action</a>#}
+                                                {#                                                            <div class="dropdown-divider"></div>#}
+                                                {#                                                            <a class="dropdown-item" href="#">Something else here</a>#}
+                                                {#                                                        </div>#}
+                                                {#                                                    </div>#}
+                                                {#                                                </div>#}
 
                                                 <!-- Card Body -->
                                                 <div class="card-body">
                                                     <div id="ActivityChartContainer"
                                                          style="height: 370px; max-width: 920px; margin: 0px auto;"></div>
-                                                    </div>
-                                                <!-- End of Card Body -->
                                                 </div>
+                                                <!-- End of Card Body -->
+                                            </div>
 
                                         </div>
 
