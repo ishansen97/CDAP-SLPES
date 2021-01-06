@@ -1144,6 +1144,12 @@
                 //hide the loader
                 $('#activity_corr_loader').hide();
 
+
+                //show the color palettes
+                $('#advanced_activity_color_palette_heading').attr('hidden', false);
+                $('#advanced_activity_color_palette_1').attr('hidden', false);
+                $('#advanced_activity_color_palette_2').attr('hidden', false);
+
                 //show the table
                 $('#activity_corr_table').attr('hidden', false);
 
@@ -1195,6 +1201,11 @@
 
                 //hide the loader
                 $('#emotion_corr_loader').hide();
+
+                //show the color palettes
+                $('#advanced_emotion_color_palette_heading').attr('hidden', false);
+                $('#advanced_emotion_color_palette_1').attr('hidden', false);
+                $('#advanced_emotion_color_palette_2').attr('hidden', false);
 
                 //show the table
                 $('#emotion_corr_table').attr('hidden', false);
@@ -1248,6 +1259,12 @@
 
                 //hide the loader
                 $('#gaze_corr_loader').hide();
+
+                //show the color palettes
+                $('#advanced_gaze_color_palette_heading').attr('hidden', false);
+                $('#advanced_gaze_color_palette_1').attr('hidden', false);
+                $('#advanced_gaze_color_palette_2').attr('hidden', false);
+
 
                 //show the table
                 $('#gaze_corr_table').attr('hidden', false);
@@ -1310,6 +1327,12 @@
                 //hide the loader
                 $('#student_activity_emotion_corr_loader').hide();
 
+                //show the color palettes
+                $('#student_activity_emotion_color_palette_heading').attr('hidden', false);
+                $('#student_activity_emotion_color_palette_1').attr('hidden', false);
+                $('#student_activity_emotion_color_palette_2').attr('hidden', false);
+
+
                 //show the table
                 $('#student_activity_emotion_corr_table').attr('hidden', false);
 
@@ -1369,6 +1392,12 @@
 
                 //hide the loader
                 $('#student_activity_gaze_corr_loader').hide();
+
+                //show the color palettes
+                $('#student_activity_gaze_color_palette_heading').attr('hidden', false);
+                $('#student_activity_gaze_color_palette_1').attr('hidden', false);
+                $('#student_activity_gaze_color_palette_2').attr('hidden', false);
+
 
                 //show the table
                 $('#student_activity_gaze_corr_table').attr('hidden', false);
@@ -1431,6 +1460,12 @@
 
                 //hide the loader
                 $('#student_emotion_gaze_corr_loader').hide();
+
+                //show the color palettes
+                $('#student_emotion_gaze_color_palette_heading').attr('hidden', false);
+                $('#student_emotion_gaze_color_palette_1').attr('hidden', false);
+                $('#student_emotion_gaze_color_palette_2').attr('hidden', false);
+
 
                 //show the table
                 $('#student_emotion_gaze_corr_table').attr('hidden', false);
@@ -2510,13 +2545,14 @@
                 <div class="modal-body text-center">
                     <h3 class="font-weight-bold">Student Activity VS. Lecturer Activity</h3>
 
+
                     <!-- ajax loader -->
                     <div class="text-center" id="activity_corr_loader" hidden>
                         <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="Loader">
                     </div>
 
                     <!-- correlation table -->
-                    <table class="table table-striped" id="activity_corr_table" hidden>
+                    <table class="table table-striped mt-4" id="activity_corr_table" hidden>
                         <thead>
                         <tr>
                             <th>Student Activity</th>
@@ -2530,6 +2566,53 @@
                         </tbody>
                     </table>
                     <!-- end of correlation table -->
+
+                    <!-- Heading row -->
+                    <div class="row mt-3 ml-1" id="advanced_activity_color_palette_heading" hidden>
+                        <h5 class="float-left font-italic">Correlation color palette</h5>
+                    </div>
+                    <!-- End of Heading row -->
+
+                    <!-- Color palette (row 1) -->
+                    <div class="row mt-2 border-top" id="advanced_activity_color_palette_1" hidden>
+                        <div class="col-lg-4">
+                            <p class="text-center">Very High (81-100)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-success rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">High (61-80)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-primary rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">Moderate (41-60)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-warning rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 1) -->
+
+                    <!-- Color palette (row 2) -->
+                    <div class="row mt-4 mb-4 border-top" id="advanced_activity_color_palette_2" hidden>
+                        <div class="col-lg-6">
+                            <p class="text-center">Low (21-40)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-danger rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <p class="text-center">Weak (0-20)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-dark rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 2) -->
+
 
                 </div>
                 <div class="modal-footer">
@@ -2575,6 +2658,54 @@
                     </table>
                     <!-- end of correlation table -->
 
+                    <!-- Heading row -->
+                    <div class="row mt-3 ml-1" id="advanced_emotion_color_palette_heading" hidden>
+                        <h5 class="float-left font-italic">Correlation color palette</h5>
+                    </div>
+                    <!-- End of Heading row -->
+
+                    <!-- Color palette (row 1) -->
+                    <div class="row mt-2 border-top" id="advanced_emotion_color_palette_1" hidden>
+                        <div class="col-lg-4">
+                            <p class="text-center">Very High (81-100)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-success rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">High (61-80)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-primary rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">Moderate (41-60)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-warning rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 1) -->
+
+                    <!-- Color palette (row 2) -->
+                    <div class="row mt-4 mb-4 border-top" id="advanced_emotion_color_palette_2" hidden>
+                        <div class="col-lg-6">
+                            <p class="text-center">Low (21-40)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-danger rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <p class="text-center">Weak (0-20)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-dark rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 2) -->
+
+
+
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
@@ -2618,6 +2749,54 @@
                         </tbody>
                     </table>
                     <!-- end of correlation table -->
+
+
+                    <!-- Heading row -->
+                    <div class="row mt-3 ml-1" id="advanced_gaze_color_palette_heading" hidden>
+                        <h5 class="float-left font-italic">Correlation color palette</h5>
+                    </div>
+                    <!-- End of Heading row -->
+
+                    <!-- Color palette (row 1) -->
+                    <div class="row mt-2 border-top" id="advanced_gaze_color_palette_1" hidden>
+                        <div class="col-lg-4">
+                            <p class="text-center">Very High (81-100)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-success rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">High (61-80)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-primary rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">Moderate (41-60)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-warning rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 1) -->
+
+                    <!-- Color palette (row 2) -->
+                    <div class="row mt-4 mb-4 border-top" id="advanced_gaze_color_palette_2" hidden>
+                        <div class="col-lg-6">
+                            <p class="text-center">Low (21-40)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-danger rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <p class="text-center">Weak (0-20)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-dark rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 2) -->
+
 
                 </div>
                 <div class="modal-footer">
@@ -2665,10 +2844,58 @@
                     </table>
                     <!-- end of correlation table -->
 
+                    <!-- Heading row -->
+                    <div class="row mt-3 ml-1" id="student_activity_emotion_color_palette_heading" hidden>
+                        <h5 class="float-left font-italic">Correlation color palette</h5>
+                    </div>
+                    <!-- End of Heading row -->
+
+                    <!-- Color palette (row 1) -->
+                    <div class="row mt-2 border-top" id="student_activity_emotion_color_palette_1" hidden>
+                        <div class="col-lg-4">
+                            <p class="text-center">Very High (81-100)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-success rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">High (61-80)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-primary rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">Moderate (41-60)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-warning rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 1) -->
+
+                    <!-- Color palette (row 2) -->
+                    <div class="row mt-4 mb-4 border-top" id="student_activity_emotion_color_palette_2" hidden>
+                        <div class="col-lg-6">
+                            <p class="text-center">Low (21-40)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-danger rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <p class="text-center">Weak (0-20)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-dark rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 2) -->
+
+
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
                 </div>
+
             </div>
         </div>
     </div>
@@ -2710,10 +2937,60 @@
                     </table>
                     <!-- end of correlation table -->
 
+
+                    <!-- Heading row -->
+                    <div class="row mt-3 ml-1" id="student_activity_gaze_color_palette_heading" hidden>
+                        <h5 class="float-left font-italic">Correlation color palette</h5>
+                    </div>
+                    <!-- End of Heading row -->
+
+                    <!-- Color palette (row 1) -->
+                    <div class="row mt-2 border-top" id="student_activity_gaze_color_palette_1" hidden>
+                        <div class="col-lg-4">
+                            <p class="text-center">Very High (81-100)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-success rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">High (61-80)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-primary rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">Moderate (41-60)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-warning rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 1) -->
+
+                    <!-- Color palette (row 2) -->
+                    <div class="row mt-4 mb-4 border-top" id="student_activity_gaze_color_palette_2" hidden>
+                        <div class="col-lg-6">
+                            <p class="text-center">Low (21-40)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-danger rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <p class="text-center">Weak (0-20)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-dark rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 2) -->
+
+
                 </div>
+
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
                 </div>
+
             </div>
         </div>
     </div>
@@ -2754,6 +3031,53 @@
                         </tbody>
                     </table>
                     <!-- end of correlation table -->
+
+                    <!-- Heading row -->
+                    <div class="row mt-3 ml-1" id="student_emotion_gaze_color_palette_heading" hidden>
+                        <h5 class="float-left font-italic">Correlation color palette</h5>
+                    </div>
+                    <!-- End of Heading row -->
+
+                    <!-- Color palette (row 1) -->
+                    <div class="row mt-2 border-top" id="student_emotion_gaze_color_palette_1" hidden>
+                        <div class="col-lg-4">
+                            <p class="text-center">Very High (81-100)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-success rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">High (61-80)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-primary rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">Moderate (41-60)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-warning rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 1) -->
+
+                    <!-- Color palette (row 2) -->
+                    <div class="row mt-4 mb-4 border-top" id="student_emotion_gaze_color_palette_2" hidden>
+                        <div class="col-lg-6">
+                            <p class="text-center">Low (21-40)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-danger rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <p class="text-center">Weak (0-20)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-dark rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 2) -->
+
 
                 </div>
                 <div class="modal-footer">
