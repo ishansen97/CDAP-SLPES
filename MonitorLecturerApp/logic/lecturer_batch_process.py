@@ -48,16 +48,16 @@ def save_lecturer_video_details(video):
     return response[0]
 
 
-if __name__ == '__main__':
-
-    video = {
-        "lecturer": 1,
-        "subject": 16,
-        "lecturer_date": "2020-12-09",
-        "lecture_video_name": "Video_test_19.mp4",
-        "lecture_video_length": "00:45:06"
-    }
-
-    response = save_lecturer_video_details(video)
-
-    print('response: ', response)
+# if __name__ == '__main__':
+#
+#     video = {
+#         "lecturer": 1,
+#         "subject": 16,
+#         "lecturer_date": "2020-12-09",
+#         "lecture_video_name": "Video_test_19.mp4",
+#         "lecture_video_length": "00:45:06"
+#     }
+#
+#     response = save_lecturer_video_details(video)
+#
+#     print('response: ', response)
