@@ -21,6 +21,9 @@
     <!-- Core plugin JavaScript-->
     <script src="{% static 'FirstApp/vendor/jquery-easing/jquery.easing.min.js' %}"></script>
 
+    <!-- canvasJS implementation -->
+    <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+
 
     <script type="text/javascript">
 
@@ -31,9 +34,15 @@
         var global_lecturer_subject_index = 0;
         var global_lecturer_video_name = '';
         var lecturer_fps = 0;
+        var lecture_emotion_frame_group_percentages = {};
+        var lecture_video_time_landmarks = [];
+
 
         //jquery
         $(document).ready(function () {
+
+            //hide the 'integrate emotion' button
+            $('#integrate_emotion').hide();
 
             //select a particular subject
             $('input[type=radio]').click(function () {
@@ -145,8 +154,8 @@
                 $('#video_name').text(video.video_name);
                 $('#video_duration').text(video.video_length);
                 $('#video_date').text(video.date);
-                {#global_lecture_video_id = video.lecture_video_id;#}
-                global_lecture_video_id = video.id;
+                global_lecture_video_id = video.lecture_video_id;
+                {#global_lecture_video_id = video.id;#}
                 global_video_name = video.video_name;
 
 
@@ -157,6 +166,9 @@
                 }
 
                 $('#video_modal').modal();
+
+                //display the 'integrate emotion' button
+                $('#integrate_emotion').show();
             }
 
             //binding a click event for 'btn-primary' buttons
@@ -255,9 +267,9 @@
 
                 //fetch the lecture recorded video name
                 fetch('http://127.0.0.1:8000/get-lecture-recorded-video-name/?lecturer=' + global_lecturer + '&subject=' + global_subject + '&date=' + global_lecture_date)
-                .then((res) => res.json())
-                .then((out) => assignLecturerRecordedVideoName(out))
-                .catch((err) => alert('error: ' + err));
+                    .then((res) => res.json())
+                    .then((out) => assignLecturerRecordedVideoName(out))
+                    .catch((err) => alert('error: ' + err));
 
                 {#global_lecturer_video_name = "Test_1.mp4";#}
                 {#global_lecturer_video_name = "Test_2.mp4";#}
@@ -537,6 +549,151 @@
             });
 
 
+            //this function will handle the activity 'summary' button
+            $('#graph-tab').click(function (e) {
+
+                //display the graph loader
+                $('#graph_loader').attr('hidden', false);
+
+                //fetch the video time landmark details
+                fetch('http://127.0.0.1:8000/get-lecture-video-summary-time-landmarks/?video_name=' + global_video_name)
+                    .then((res) => res.json())
+                    .then((out) => assignTimeLandmarks(out.response))
+                    .catch((err) => alert('error: ' + err));
+
+
+                //fetch the activity summary details
+                fetch('http://127.0.0.1:8000/get-lecture-emotion-summary/?video_name=' + global_video_name)
+                    .then((res) => res.json())
+                    .then((out) => emotionFrameGroupPercentages(out, e))
+                    .catch((err) => alert('error: ' + err));
+
+
+            });
+
+            //this function will assign lecture video time landmarks
+            function assignTimeLandmarks(response) {
+
+                lecture_video_time_landmarks = response;
+            }
+
+            //this function will handle the retrieved emotion frame group percentages
+            function emotionFrameGroupPercentages(response, e) {
+
+                lecture_emotion_frame_group_percentages = response.frame_group_percentages;
+                let frame_landmarks = response.frame_landmarks;
+                let emotion_labels = response.emotion_labels;
+
+
+                //render the chart onto the modal body
+                renderEmotionChart(emotion_labels);
+
+            }
+
+
+            //this function will call the emotion chart function
+            function renderEmotionChart(emotion_labels) {
+
+                //get the activity label length
+                let emotion_label_length = emotion_labels.length;
+
+                let data = [];
+
+
+                //loop through the activity labels
+                for (let k = 0; k < emotion_label_length; k++) {
+                    let label = emotion_labels[k];
+                    let datapoints = [];
+
+                    let count = 0;
+
+                    //loop through the activity frame groups
+                    for (let key in lecture_emotion_frame_group_percentages) {
+                        let frame_group_details = lecture_emotion_frame_group_percentages[key];
+
+                        let emotion_perct = frame_group_details[label];
+
+                        let point = {label: lecture_video_time_landmarks[count], y: emotion_perct};
+
+                        datapoints.push(point);
+
+                        count++;
+                    }
+
+                    let obj = {
+                        type: "line",
+                        showInLegend: true,
+                        name: label,
+                        markerType: "square",
+                        {#xValueFormatString: "DD MMM, YYYY",#}
+                        xValueFormatString: "hh:mm:ss",
+                        color: getRandomColor(),
+                        dataPoints: datapoints
+                    };
+
+                    data.push(obj);
+
+                }
+
+
+                var chart = new CanvasJS.Chart("EmotionChartContainer", {
+                    animationEnabled: true,
+                    theme: "light2",
+                    title: {
+                        text: "Student Emotion Behavior"
+                    },
+                    axisX: {
+                        title: "Duration",
+                        {#valueFormatString: "DD MMM",#}
+                        valueFormatString: "hh:mm:ss",
+                        crosshair: {
+                            enabled: true,
+                            snapToDataPoint: true
+                        }
+                    },
+                    axisY: {
+                        title: "Percentage",
+                        includeZero: true,
+                        crosshair: {
+                            enabled: true
+                        }
+                    },
+                    toolTip: {
+                        shared: true
+                    },
+                    legend: {
+                        cursor: "pointer",
+                        verticalAlign: "top",
+                        horizontalAlign: "right",
+                        dockInsidePlotArea: true,
+                        itemclick: toogleDataSeries
+                    },
+                    data: data
+                });
+                chart.render();
+            }
+
+            //this function will generate random colors
+            function getRandomColor() {
+                var letters = '0123456789ABCDEF';
+                var color = '#';
+                for (var i = 0; i < 6; i++) {
+                    color += letters[Math.floor(Math.random() * 16)];
+                }
+                return color;
+            }
+
+            //this function will toggle the content
+            function toogleDataSeries(e) {
+                if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+                    e.dataSeries.visible = false;
+                } else {
+                    e.dataSeries.visible = true;
+                }
+                chart.render();
+            }
+
+
         });
 
     </script>
@@ -787,122 +944,122 @@
 
 
                                         </div>
+                                        <!-- end of frame tab -->
 
                                         <!--graph tab -->
                                         <div class="tab-pane fade" id="graph" role="tabpanel"
                                              aria-labelledby="profile-tab">
                                             <!--card content -->
                                             <div class="card shadow mb-4 p-3">
-                                                <!-- Card Header - Dropdown -->
-                                                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                                                    <h6 class="m-0 font-weight-bold text-primary">Student
-                                                        Activities</h6>
-                                                    <div class="dropdown no-arrow">
-                                                        <a class="dropdown-toggle" href="#" role="button"
-                                                           id="dropdownMenuLink" data-toggle="dropdown"
-                                                           aria-haspopup="true" aria-expanded="false">
-                                                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-                                                        </a>
-                                                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
-                                                             aria-labelledby="dropdownMenuLink">
-                                                            <div class="dropdown-header">Dropdown Header:</div>
-                                                            <a class="dropdown-item" href="#">Action</a>
-                                                            <a class="dropdown-item" href="#">Another action</a>
-                                                            <div class="dropdown-divider"></div>
-                                                            <a class="dropdown-item" href="#">Something else here</a>
-                                                        </div>
-                                                    </div>
-                                                </div>
+
                                                 <!-- Card Body -->
                                                 <div class="card-body">
-                                                    <div class="chart-pie pt-4 pb-2">
-                                                        <canvas id="myPieChart"></canvas>
-                                                    </div>
-                                                    <div class="mt-4 text-center small">
-                    <span class="mr-2">
-                      <i class="fas fa-circle text-primary"></i> Direct
-                    </span>
-                                                        <span class="mr-2">
-                      <i class="fas fa-circle text-success"></i> Social
-                    </span>
-                                                        <span class="mr-2">
-                      <i class="fas fa-circle text-info"></i> Referral
-                    </span>
-                                                    </div>
+                                                    <div id="EmotionChartContainer"
+                                                         style="height: 270px; max-width: 920px; margin: 0px auto;"></div>
                                                 </div>
+                                                <!-- End of Card Body -->
                                             </div>
-
                                         </div>
 
                                     </div>
 
-
                                 </div>
+
+
                             </div>
                         </div>
 
 
                         <!--2nd column -->
-                        {#                        <div class="col-lg-6">#}
-                        {#                            <!--card content -->#}
-                        {#                            <div class="card shadow mb-4">#}
-                        {#                                <!--card header -->#}
-                        {#                                <div class="card-header py-3">#}
-                        {#                                    <h5 class="m-0 font-weight-bold text-primary">Frame Detections</h5>#}
-                        {#                                </div>#}
-                        {##}
-                        {#                                <!--card body -->#}
-                        {#                                <div class="text-center p-4" id="detection_frames">#}
-                        {##}
-                        {#                                    <!--no content message-->#}
-                        {#                                    <div class="text-center p-2" id="no_detection_message_content">#}
-                        {#                                        <span class="font-italic">No frame is selected</span>#}
-                        {#                                    </div>#}
-                        {##}
-                        {#                                    <div class="text-left m-3" id="detection_number_area" hidden>#}
-                        {#                                        <p>No of detections: <span id="no_of_detections"></span></p>#}
-                        {#                                    </div>#}
-                        {#                                    <!--the detection loader -->#}
-                        {#                                    <div class="text-center p-2" id="detection_loader" hidden>#}
-                        {#                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"#}
-                        {#                                             alt="Loader">#}
-                        {#                                    </div>#}
-                        {#                                </div>#}
-                        {#                            </div>#}
-                        {##}
-                        {#                            <!--detection person card -->#}
-                        {#                            <div class="card shadow mb-4">#}
-                        {#                                <!--card header -->#}
-                        {#                                <div class="card-header py-3">#}
-                        {#                                    <h5 class="m-0 font-weight-bold text-primary">Detected Students (by emotion#}
-                        {#                                        type)</h5>#}
-                        {#                                </div>#}
-                        {##}
-                        {#                                <!--card body -->#}
-                        {#                                <div class="text-center p-4" id="detection_students">#}
-                        {#                                    <!--activity type line -->#}
-                        {#                                    <div class="text-center p-2" id="activity_type" hidden>#}
-                        {#                                        <p>Activity Type: <span class="font-weight-bold" id="activity_type_text"></span>#}
-                        {#                                        </p>#}
-                        {#                                    </div>#}
-                        {##}
-                        {#                                    <!--no content message-->#}
-                        {#                                    <div class="text-center p-2" id="no_detection_student_content">#}
-                        {#                                        <span class="font-italic">No activity type is selected</span>#}
-                        {#                                    </div>#}
-                        {##}
-                        {#                                    <!--the detection student loader -->#}
-                        {#                                    <div class="text-center p-2" id="detection_student_loader" hidden>#}
-                        {#                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"#}
-                        {#                                             alt="Loader">#}
-                        {#                                    </div>#}
-                        {##}
-                        {#                                </div>#}
-                        {#                            </div>#}
-                        {#                        </div>#}
+                        <div class="col-lg-6">
+                            <!--card -->
+                            <div class="card shadow mb-4">
+                                <!--card header -->
+                                <div class="card-header">
+                                    <h5 class="m-0 font-weight-bold text-primary">Integrated Evaluation</h5>
+                                </div>
 
+                                <!--card body -->
+                                <div class="card-body">
+                                    <div class="text-center" id="integrate_message">
+                                        <span class="font-italic">The integrated version student and lecturer evaluations will display here.</span>
+                                    </div>
+
+                                    <!--button -->
+                                    <div class="text-right m-4">
+                                        <button type="button" class="btn btn-outline-success" id="integrate_emotion">
+                                            Process
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!--end of 2nd column -->
 
                     </div>
+
+
+                    <!--2nd column -->
+                    {#                        <div class="col-lg-6">#}
+                    {#                            <!--card content -->#}
+                    {#                            <div class="card shadow mb-4">#}
+                    {#                                <!--card header -->#}
+                    {#                                <div class="card-header py-3">#}
+                    {#                                    <h5 class="m-0 font-weight-bold text-primary">Frame Detections</h5>#}
+                    {#                                </div>#}
+                    {##}
+                    {#                                <!--card body -->#}
+                    {#                                <div class="text-center p-4" id="detection_frames">#}
+                    {##}
+                    {#                                    <!--no content message-->#}
+                    {#                                    <div class="text-center p-2" id="no_detection_message_content">#}
+                    {#                                        <span class="font-italic">No frame is selected</span>#}
+                    {#                                    </div>#}
+                    {##}
+                    {#                                    <div class="text-left m-3" id="detection_number_area" hidden>#}
+                    {#                                        <p>No of detections: <span id="no_of_detections"></span></p>#}
+                    {#                                    </div>#}
+                    {#                                    <!--the detection loader -->#}
+                    {#                                    <div class="text-center p-2" id="detection_loader" hidden>#}
+                    {#                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"#}
+                    {#                                             alt="Loader">#}
+                    {#                                    </div>#}
+                    {#                                </div>#}
+                    {#                            </div>#}
+                    {##}
+                    {#                            <!--detection person card -->#}
+                    {#                            <div class="card shadow mb-4">#}
+                    {#                                <!--card header -->#}
+                    {#                                <div class="card-header py-3">#}
+                    {#                                    <h5 class="m-0 font-weight-bold text-primary">Detected Students (by emotion#}
+                    {#                                        type)</h5>#}
+                    {#                                </div>#}
+                    {##}
+                    {#                                <!--card body -->#}
+                    {#                                <div class="text-center p-4" id="detection_students">#}
+                    {#                                    <!--activity type line -->#}
+                    {#                                    <div class="text-center p-2" id="activity_type" hidden>#}
+                    {#                                        <p>Activity Type: <span class="font-weight-bold" id="activity_type_text"></span>#}
+                    {#                                        </p>#}
+                    {#                                    </div>#}
+                    {##}
+                    {#                                    <!--no content message-->#}
+                    {#                                    <div class="text-center p-2" id="no_detection_student_content">#}
+                    {#                                        <span class="font-italic">No activity type is selected</span>#}
+                    {#                                    </div>#}
+                    {##}
+                    {#                                    <!--the detection student loader -->#}
+                    {#                                    <div class="text-center p-2" id="detection_student_loader" hidden>#}
+                    {#                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"#}
+                    {#                                             alt="Loader">#}
+                    {#                                    </div>#}
+                    {##}
+                    {#                                </div>#}
+                    {#                            </div>#}
+                    {#                        </div>#}
+
+
+                    {#                </div>#}
                     <!-- end of 2nd row -->
 
                     <!--3rd row -->
@@ -941,32 +1098,32 @@
                         {#                        </div>#}
                         <!--end of 1st column -->
 
-
-                        <!--2nd column -->
-                        <div class="col-lg-6">
-                            <!--card -->
-                            <div class="card shadow mb-4">
-                                <!--card header -->
-                                <div class="card-header">
-                                    <h5 class="m-0 font-weight-bold text-primary">Integrated Evaluation</h5>
-                                </div>
-
-                                <!--card body -->
-                                <div class="card-body">
-                                    <div class="text-center" id="integrate_message">
-                                        <span class="font-italic">The integrated version student and lecturer evaluations will display here.</span>
-                                    </div>
-
-                                    <!--button -->
-                                    <div class="text-right m-4">
-                                        <button type="button" class="btn btn-outline-success" id="integrate_emotion">
-                                            Process
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!--end of 2nd column -->
+                        {##}
+                        {#                        <!--2nd column -->#}
+                        {#                        <div class="col-lg-6">#}
+                        {#                            <!--card -->#}
+                        {#                            <div class="card shadow mb-4">#}
+                        {#                                <!--card header -->#}
+                        {#                                <div class="card-header">#}
+                        {#                                    <h5 class="m-0 font-weight-bold text-primary">Integrated Evaluation</h5>#}
+                        {#                                </div>#}
+                        {##}
+                        {#                                <!--card body -->#}
+                        {#                                <div class="card-body">#}
+                        {#                                    <div class="text-center" id="integrate_message">#}
+                        {#                                        <span class="font-italic">The integrated version student and lecturer evaluations will display here.</span>#}
+                        {#                                    </div>#}
+                        {##}
+                        {#                                    <!--button -->#}
+                        {#                                    <div class="text-right m-4">#}
+                        {#                                        <button type="button" class="btn btn-outline-success" id="integrate_emotion">#}
+                        {#                                            Process#}
+                        {#                                        </button>#}
+                        {#                                    </div>#}
+                        {#                                </div>#}
+                        {#                            </div>#}
+                        {#                        </div>#}
+                        {#                        <!--end of 2nd column -->#}
 
                     </div>
                     <!--end of 3rd row -->

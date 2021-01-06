@@ -24,5 +24,6 @@ urlpatterns = [
     path('attendance/', include('AttendanceApp.urls')),
     path('lecturer/', include('MonitorLecturerApp.urls')),
     # path('lecturer/', include('MonitorLecturerApp.urls')),
-    path('summary/', include('LectureSummarizingApp.urls'))
+    path('summary/', include('LectureSummarizingApp.urls')),
+    path('record/', include('LectureSummarizingApp.urls'))
 ]

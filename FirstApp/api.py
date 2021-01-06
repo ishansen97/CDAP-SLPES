@@ -168,13 +168,17 @@ class LectureVideoViewSet(APIView):
         # serializer = LectureVideoSerializer(data=request.data, many=True)
         serializer = LectureVideoSerializer(data=request.data)
         # serializer.create(validated_data=request.data)
+        data = {}
+        data_ser = {}
 
 
         if serializer.is_valid(raise_exception=ValueError):
-            print('valid')
-            serializer.create(validated_data=request.data)
+            data = serializer.create(validated_data=request.data)
+            print('data: ', data)
+            # data_ser = LectureVideoSerializer(data, many=True)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        # return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(data, status=status.HTTP_201_CREATED)
 
 
         # return Response(serializer.error_messages,
@@ -462,6 +466,7 @@ class GetLectureEmotionReportViewSet(APIView):
         lecture_emotions = LectureEmotionReport.objects.filter(lecture_video_id__lecture_video_id=lecture_video_id)
         serializer = LectureEmotionSerializer(lecture_emotions, many=True)
 
+        print('data: ', serializer.data)
 
         return Response({
             "response": serializer.data,
@@ -1563,5 +1568,82 @@ class TestRandom(APIView):
 
         return Response({
             "response": random
+        })
+
+
+# this API will display the upcoming lectures for the lecturer (temporary API)
+class DisplayUpcomingLecturesAPI(APIView):
+
+    def get(self, request):
+        lecturer = request.query_params.get('lecturer')
+        lecturer = int(lecturer)
+        cur_date = datetime.datetime.now().date()
+        cur_time = datetime.datetime.now().time()
+
+        eligible_start_time = ''
+        eligible_end_time = ''
+        subject_id = 0
+        subject_name = ''
+        subject_code = ''
+
+        # retrieve the faculty timetable
+        faculty_timetable = FacultyTimetable.objects.all()
+
+        # serialize the timetable
+        faculty_timetable_serialized = FacultyTimetableSerializer(faculty_timetable, many=True)
+
+        # get the serialized timetable data
+        faculty_timetable_serialized_data = faculty_timetable_serialized.data
+
+        # iterate through the serialized timetable data
+        for timetable in faculty_timetable_serialized_data:
+
+            # get the 'timetable' field
+            daily_timetable = timetable['timetable']
+
+            # iterate through the 'timetable' field
+            for day_timetable in daily_timetable:
+
+                # get the 'time_slots' field for a given day
+                time_slots = day_timetable['time_slots']
+
+                # iterate through the time slots
+                for time_slot in time_slots:
+
+                    # if the lecturer is the currently logged in lecturer
+                    if lecturer == time_slot['lecturer']['id']:
+
+                        # find the upcoming lecture for the logged-in lecturer
+                        if cur_date == day_timetable['date']:
+
+                            # get the start and end times
+                            start_time = time_slot['start_time']
+                            end_time = time_slot['end_time']
+
+                            start_time_list = str(start_time).split(":")
+
+                            start_time_date = datetime.datetime.now().replace(hour=int(start_time_list[0]), minute=int(start_time_list[1]), second=int(start_time_list[2]))
+
+                            end_time_list = str(end_time).split(":")
+
+                            end_time_date = datetime.datetime.now().replace(hour=int(end_time_list[0]), minute=int(end_time_list[1]), second=int(end_time_list[2]))
+
+                            # check for the upcoming time slot
+                            if (start_time_date.time() > cur_time):
+                                eligible_start_time = start_time_date.time()
+                                eligible_end_time = end_time_date.time()
+                                subject_id = time_slot['subject']['id']
+                                subject_name = time_slot['subject']['name']
+                                subject_code = time_slot['subject']['subject_code']
+
+
+
+
+        return Response({
+            "start_time": eligible_start_time,
+            "end_time": eligible_end_time,
+            "subject_id": subject_id,
+            "subject_name": subject_name,
+            "subject_code": subject_code,
         })
 

@@ -6,6 +6,14 @@ from .models import LectureAudio, LectureAudioNoiseRemoved, LectureSpeechToText,
 from .serializer import LectureAudioSerializer, LectureAudioNoiseRemovedSerializer, LectureAudioSummarySerializer, \
     LectureSpeechToTextSerializer, LectureNoticesSerializer
 
+def lectureRecord(request):
+
+    lecture_audio = LectureAudio.objects.all()
+    lecture_audio_ser = LectureAudioSerializer(lecture_audio, many=True)
+
+    print('lecture record data: ', lecture_audio_ser.data)
+
+    return render(request, "LectureSummarizationApp/RecordLecture.html")
 
 # Views used in Lecture Summarization
 
@@ -109,3 +117,4 @@ class lectureSummaryList(APIView):
                 notice_text=request.data["notice_text"]
             ).save()
             return Response({"response": request.data})
+
