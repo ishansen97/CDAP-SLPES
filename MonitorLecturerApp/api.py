@@ -28,12 +28,13 @@ class LecturerVideoAPI(APIView):
     def post(self, request):
 
         serializer = LectureRecordedVideoSerializer(data=request.data)
+        data = {}
 
         if serializer.is_valid(raise_exception=ValueError):
             # serializer.create(validated_data=request.data)
-            serializer.create(validated_data=request.data)
+            data = serializer.create(validated_data=request.data)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(data, status=status.HTTP_201_CREATED)
 
 
 ##### END OF LECTURER VIDEO SECTION #####
@@ -59,7 +60,10 @@ class ActivityRecognitionAPI(APIView):
             walking_count=percentages["walking_perct"]
         ).save()
 
-        return Response({"response": percentages})
+        return Response({
+            "response": percentages,
+            "created": True
+        })
 
     def post(self, request):
         pass
@@ -103,7 +107,8 @@ class ProcessLecturerFrameRecognitionsAPI(APIView):
 
         return Response({
             "frame_recognitions": frame_recognitions,
-            "fps": fps
+            "fps": fps,
+            "created": True
         })
 
 
@@ -247,7 +252,8 @@ class ProcessLectureAudioAnalysis(APIView):
 
 
         return Response({
-            "response": "success"
+            "response": "success",
+            "created": True
         }, status=status.HTTP_201_CREATED)
 
 
