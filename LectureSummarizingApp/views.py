@@ -13,7 +13,7 @@ def lectureRecord(request):
 
     print('lecture record data: ', lecture_audio_ser.data)
 
-    return render(request, "LectureSummarizationApp/RecordLecture.html")
+    return render(request, "LectureSummarizingApp/RecordLecture.html")
 
 # Views used in Lecture Summarization
 

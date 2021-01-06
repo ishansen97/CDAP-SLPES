@@ -7,6 +7,7 @@ from LectureSummarizingApp.serializer import LectureAudioSerializer, LectureAudi
     LectureSpeechToTextSerializer, LectureAudioSummarySerializer, LectureNoticesSerializer
 
 from . import speech_to_text as stt
+from . import noiseRemove as nr
 
 
 # APIs used in Lecture Summarizing Component
@@ -47,7 +48,9 @@ class audioToTextList(APIView):
 
         print('video name: ', video_name)
 
-        stt.speech_to_text(video_name)
+        nr.noise_removal(video_name)
+
+        # stt.speech_to_text(video_name)
 
         return Response({
             "response": "successful"
