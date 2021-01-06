@@ -54,3 +54,4 @@ class LectureNotices (models.Model):
     def __str__(self):
         return self.lecture_notice_id
 
+
