@@ -1,9 +1,13 @@
 import requests
 import json
 
+from background_task import background
+
+from .MongoModels import LectureVideo
 from . logic import batch_process as bp
 from MonitorLecturerApp.logic import lecturer_batch_process as lbp
 import datetime
+
 
 # this method will save the lecture video
 
@@ -43,6 +47,10 @@ import datetime
 #     return response[0]
 
 # this method will handle the batch processing and video/audio saving pf the system
+from .serializers import LectureVideoSerializer
+
+
+# @background(schedule=5)
 def automation_process(lecturer, subject, subject_code, video_length="00:20:00"):
 
     current_date = datetime.datetime.now().date()
@@ -80,10 +88,12 @@ def automation_process(lecturer, subject, subject_code, video_length="00:20:00")
     # create the lecturer audio
     lecturer_audio_content = {}
 
+
     # save the student video
     student_video_response = bp.save_student_lecture_video(student_video_content)
     # student_video_response = save_student_lecture_video(student_video_content)
-    student_video_id = student_video_response['id']
+    print('student video response: ', student_video_response)
+    # student_video_id = student_video_response['id']
 
     # save the lecturer video
     lecturer_video_response = lbp.save_lecturer_video_details(lecturer_video_content)
@@ -116,6 +126,7 @@ def automation_process(lecturer, subject, subject_code, video_length="00:20:00")
 
     # return the status
     return is_all_processed
+
 
 # test the above method using 'main' method
 # if __name__ == '__main__':

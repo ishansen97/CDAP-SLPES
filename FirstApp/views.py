@@ -29,6 +29,7 @@ from django.contrib.auth import (
     logout,
 )
 from django.contrib.auth.decorators import login_required
+
 from . serializers import *
 from . forms import *
 import os
@@ -232,8 +233,6 @@ def video_result(request):
                 for item in to_do_lecture_list:
                     isDate = item['date'] == str(day_timetable['date'])
 
-                    print('item date: ', item['date'])
-                    print('timetable date: ', str(day_timetable['date']))
                     # isLecturer = item['lecturer'] ==
                     # check for the particular lecture on the day
                     if isDate:
@@ -245,6 +244,12 @@ def video_result(request):
                             # check for the lecturer and subject
                             isLecturer = item['lecturer'] == slot['lecturer']['id']
                             isSubject = item['subject'] == slot['subject']['id']
+
+                            print('item lecturer: ', item['lecturer'])
+                            print('timetable lecturer: ', slot['lecturer']['id'])
+
+                            print('item subject: ', item['subject'])
+                            print('timetable subject: ', slot['subject']['id'])
 
                             if isLecturer & isSubject:
                                 obj = {}
