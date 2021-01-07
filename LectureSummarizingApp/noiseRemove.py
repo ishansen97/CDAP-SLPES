@@ -8,7 +8,7 @@ import os
 #get_ipython().magic('matplotlib inline')
 
 
-def noise_removal(video_name):
+def noise_removalll(video_name):
 
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     LECTURE_VIDEO_DIR = os.path.join(BASE_DIR, "LectureSummarizingApp\\lectures\\{}".format(video_name))

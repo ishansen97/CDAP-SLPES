@@ -48,16 +48,35 @@
         });
 
 <!--        background noise-->
-        $('.audio_process').click(function() {
-            alert('Processing');
+        $('.audio_process').click(function(e) {
+
+            let id = e.target.parentNode.parentNode.getAttribute('id');
+            let audio_name = e.target.parentNode.parentNode.getAttribute('data-audio-name');
+            audio_name = audio_name + ".wav";
+            alert('id: ' + id);
+            alert('audio name: ' + audio_name);
 
             //call the fetch API
-            fetch('http://127.0.0.1:8000/summary/lecture-audio-to-text/?video_name=Lecture01.wav')
+<!--            fetch('http://127.0.0.1:8000/summary/lecture-audio-to-text/?audio_name=')-->
+<!--            .then((res) => res.json())-->
+<!--            .then((out) => alert(out.response))-->
+<!--            .catch((err) => alert('error: ' + err))-->
+
+            fetch('http://127.0.0.1:8000/summary/lecture-audio-noise-removed/?audio_name=' + audio_name + '&id=' + id)
             .then((res) => res.json())
-            .then((out) => alert(out.response))
+            .then((out) => handleNoiseRemoved(out.response))
             .catch((err) => alert('error: ' + err))
 
         });
+
+
+        //this function will handle the success respopnse for noise removed
+        function handleNoiseRemoved(response) {
+
+            if (response === 200) {
+                document.location.reload();
+            }
+        }
 
 
         <!--        To summary-->
@@ -121,7 +140,7 @@
                                         <tbody>
 
                                         {% for lec_audio in lec_audio_data %}
-                                        <tr class="recordings not_clicked" id="{{ lec_audio.lecture_audio_id }}">
+                                        <tr class="recordings not_clicked" id="{{ lec_audio.id }}" data-audio-name="{{ lec_audio.lecture_audio_name }}">
 <!--                                            <td>-->
 <!--                                                <div class="radio">-->
 <!--                                                    <label><input type="radio"-->
