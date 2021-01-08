@@ -34,33 +34,38 @@
 
     $(document).ready(function() {
 
-
 <!--        speech to text-->
         $('.audio_to_text_process').click(function() {
             alert('Processing');
+            let id = e.target.parentNode.parentNode.getAttribute('id');
+            let speech_to_text_name = e.target.parentNode.parentNode.getAttribute('data-noiseless-audio-name');
+            speech_to_text_name = speech_to_text_name + ".txt";
+            alert('id: ' + id);
+            alert('speech to text file name: ' + speech_to_text_name);
 
             //call the fetch API
-            fetch('http://127.0.0.1:8000/summary/lecture-audio-to-text/?video_name=Lecture01.wav')
+            fetch('http://127.0.0.1:8000/summary/lecture-audio-to-text/?speech_to_text_name=' + speech_to_text_name + '&id=' + id)
             .then((res) => res.json())
-            .then((out) => alert(out.response))
+            .then((out) => handleSpeechToText(out.response))
             .catch((err) => alert('error: ' + err))
 
         });
+          //this function will handle the success response for speech-to-text
+        function handleSpeechToText(response) {
+            if (response === 200) {
+                document.location.reload();
+            }
+        }
 
 <!--        background noise-->
         $('.audio_process').click(function(e) {
-
+            alert('Processing');
             let id = e.target.parentNode.parentNode.getAttribute('id');
             let audio_name = e.target.parentNode.parentNode.getAttribute('data-audio-name');
             audio_name = audio_name + ".wav";
             alert('id: ' + id);
             alert('audio name: ' + audio_name);
-
             //call the fetch API
-<!--            fetch('http://127.0.0.1:8000/summary/lecture-audio-to-text/?audio_name=')-->
-<!--            .then((res) => res.json())-->
-<!--            .then((out) => alert(out.response))-->
-<!--            .catch((err) => alert('error: ' + err))-->
 
             fetch('http://127.0.0.1:8000/summary/lecture-audio-noise-removed/?audio_name=' + audio_name + '&id=' + id)
             .then((res) => res.json())
@@ -68,8 +73,6 @@
             .catch((err) => alert('error: ' + err))
 
         });
-
-
         //this function will handle the success respopnse for noise removed
         function handleNoiseRemoved(response) {
 
@@ -78,18 +81,52 @@
             }
         }
 
-
         <!--        To summary-->
         $('.to_summary').click(function() {
             alert('Processing');
+            let id = e.target.parentNode.parentNode.getAttribute('id');
+            let lecture_summary_name = e.target.parentNode.parentNode.getAttribute('data-summary-name');
+            lecture_summary_name = lecture_summary_name + ".wav";
+            alert('id: ' + id);
+            alert('lecture_summary_name: ' + lecture_summary_name);
 
-            //call the fetch API
-            fetch('http://127.0.0.1:8000/summary/lecture-audio-to-text/?video_name=Lecture01.wav')
+        //call the fetch API
+
+            etch('http://127.0.0.1:8000/summary/lecture-summary/?lecture_summary_name=' + lecture_summary_name + '&id=' + id)
             .then((res) => res.json())
-            .then((out) => alert(out.response))
+            .then((out) => handleLectureRemoved(out.response))
             .catch((err) => alert('error: ' + err))
-
         });
+         //this function will handle the success response for summary
+        function handleLectureRemoved(response) {
+
+            if (response === 200) {
+                document.location.reload();
+            }
+        }
+
+        <!--        To Notice-->
+        $('.get_notices').click(function() {
+            alert('Processing');
+            let id = e.target.parentNode.parentNode.getAttribute('id');
+            let lecture_notice_name = e.target.parentNode.parentNode.getAttribute('data-summary-name');
+            lecture_notice_name = lecture_notice_name + ".wav";
+            alert('id: ' + id);
+            alert('lecture_notice_name: ' + lecture_notice_name);
+
+        //call the fetch API
+
+            etch('http://127.0.0.1:8000/summary/lecture-notices/?lecture_notice_name=' + lecture_notice_name + '&id=' + id)
+            .then((res) => res.json())
+            .then((out) => handleNoticeRemoved(out.response))
+            .catch((err) => alert('error: ' + err))
+        });
+         //this function will handle the success response for notices
+        function handleNoticeRemoved(response) {
+            if (response === 200) {
+                document.location.reload();
+            }
+        }
 
     });
 
@@ -127,6 +164,7 @@
                                     <span class="font-italic">No Recordings</span>
                                 </div>
                                 {% else %}
+                                #lecture list
                                 <div class="table-responsive">
                                     <table class="table table-bordered" id="datatable">
                                         <thead>
@@ -187,6 +225,7 @@
                                     <span class="font-italic">No Recordings</span>
                                 </div>
                                 {% else %}
+                                #noise removes list
                                 <div class="table-responsive">
                                     <table class="table table-bordered" id="datatable">
                                         <thead>
@@ -201,7 +240,7 @@
                                         <tbody>
 
                                         {% for noiseless_audio in noiseless_data %}
-                                        <tr class="recordings not_clicked" id="{{ noiseless_audio.lecture_audio_id }}">
+                                        <tr class="recordings not_clicked" id="{{ noiseless_audio.lecture_audio_id }}" data-noiseless-audio-name="{{ noiseless_audio.lecture_audio_name }}">
 <!--                                            <td>-->
 <!--                                                <div class="radio">-->
 <!--                                                    <label><input type="radio"-->
@@ -269,7 +308,7 @@
                                         <tbody>
 
                                         {% for lec_text in lecture_text_data %}
-                                        <tr class="recordings not_clicked" id="{{ lec_text.lecture_audio_id }}">
+                                        <tr class="recordings not_clicked" id="{{ lec_text.lecture_audio_id }}" data-summary-name="{{lec_text.lecture_audio_id.subject.name}}">
 <!--                                            <td>-->
 <!--                                                <div class="radio">-->
 <!--                                                    <label><input type="radio"-->
