@@ -78,27 +78,3 @@ def output_file(destination ,filename, a, sr, ext=""):
     destination = destination + filename[:-4] + ext + '.wav'
     librosa.output.write_wav(destination, a, sr)
 
-
-# lectures = ['Lecture01.wav', 'Lecture02.wav']
-
-# for s in lectures:
-#     filename = s
-#     a, sr = noise_removal(filename)
-#
-#
-#     # a_reduced_centroid_s = reduce_noise_centroid_s(a, sr)
-#     # a_reduced_mfcc_lowshelf = mfcc_lowshelf(a, sr)
-#     a_reduced_mfcc_highshelf = mffc_highshelf(a, sr)
-#
-#
-#     # trimming silences
-#     # a_reduced_centroid_s, time_trimmed = trim_silence(a_reduced_centroid_s)
-#     # a_reduced_mfcc_up, time_trimmed = trim_silence(mfcc_lowshelf)
-#     a_reduced_mfcc_down, time_trimmed = trim_silence(mffc_highshelf)
-#
-#
-#
-#     # output_file('lectures_trimmed_noise_reduced/' ,filename, y_reduced_centroid_s, sr, '_ctr_s')
-#     #output_file('lectures_trimmed_noise_reduced/' ,filename, a_reduced_mfcc_up, sr, '_mfcc_up')
-#     output_file('lectures_trimmed_noise_reduced/' ,filename, a_reduced_mfcc_down, sr, '_mfcc_down')
-#     # output_file('lectures_trimmed_noise_reduced/' ,filename, a, sr, '_org')
