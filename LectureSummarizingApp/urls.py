@@ -20,7 +20,7 @@ urlpatterns = [
 
     url(r'^lecture-summary/$', api.LectureSummaryList.as_view()),
 
-    url(r'^lecture-notices/$', api.lectureNoticeList.as_view()),
+    url(r'^lecture-notices/$', api.LectureNoticeList.as_view()),
 
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
 

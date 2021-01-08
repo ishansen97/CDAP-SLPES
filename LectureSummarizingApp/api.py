@@ -148,27 +148,27 @@ class LectureSummaryList(APIView):
 
 
 
-class lectureNoticeList(APIView):
+class LectureNoticeList(APIView):
 
     def get(self, request):
         lecture_notice_id = LectureNotices.objects.all()
         # serializer = LectureNoticesSerializer(lecture_notice_id, many=True)
         # return Response(serializer.data)
 
-        lecture_notice_list = LectureNotices.objects.order_by('lecture_notice_list').last()
+        lecture_notice_list = LectureNotices.objects.order_by('lecture_notice_id').last()
 
         lecture_notice_name = request.query_params.get("lecture_notice_name")
         id = int(request.query_params.get("id"))
 
-        # generate new id for notices
-        lecture_notice_id = generate_new_id(lecture_notice_list.lecture_notice_id)
+        # generate new id for notice
+        notice_id = "LN0001" if lecture_notice_list is None else generate_new_id(lecture_notice_list.lecture_notice_id)
 
-        LectureNotices(lecture_notice_name)
+        text = LectureNotices(lecture_notice_name)
 
         LectureNotices(
-            lecture_notice_id=id,
-            lecture_audio_id=lecture_notice_id,
-            notice_text=lecture_notice_name
+            lecture_notice_id=notice_id,
+            lecture_audio_id=id,
+            notice_text=text
         ).save()
         return Response({"response": request.data})
 
