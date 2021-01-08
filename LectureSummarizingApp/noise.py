@@ -27,8 +27,6 @@ def noise_removal(video_name):
 
     output_file(destination=DESTINATION_DIR, filename=video_name, a=a, sr=sr)
 
-
-
     return a, sr
 
 
