@@ -24,7 +24,24 @@ class LectureAudioAPI(APIView):
     def get(self, request):
         lecture_audio = LectureAudio.objects.all().order_by('lecturer_date')
         lecture_audio_serializer = LectureAudioSerializer(lecture_audio, many=True)
-        return Response(lecture_audio_serializer.data)
+
+        audio_list = LectureAudio.objects.order_by('lecture_audio_id').last()
+        audio_name = request.query_params.get("audio_name")
+        # id = int(request.query_params.get("id"))
+        new_audio_id = generate_new_id(audio_list.lecture_audio_noise_removed_id)
+
+        fake_duration = datetime.timedelta(minutes=00, seconds=10, milliseconds=00)
+
+        LectureAudio(
+            lecture_audio_id=new_audio_id,
+            lecture_audio_name =audio_name,
+            lecture_audio_length = fake_duration,
+            lecturer =request.data["lecturer"],
+            subject = request.data["subject"]
+        ).save()
+        return Response({
+            "response": Response.status_code
+        })
 
 
 
