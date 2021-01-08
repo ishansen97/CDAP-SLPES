@@ -195,6 +195,9 @@ urlpatterns = [
     # perform random task (delete later)
     url(r'^display-upcoming-lectures/$', api.DisplayUpcomingLecturesAPI.as_view()),
 
+    # perform random task (delete later)
+    url(r'^automation-process/', api.AutomationProcess.as_view()),
+
 
 
 

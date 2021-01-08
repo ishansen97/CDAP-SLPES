@@ -17,7 +17,7 @@ from MonitorLecturerApp.models import LectureRecordedVideo, LecturerVideoMetaDat
 from MonitorLecturerApp.serializers import LectureRecordedVideoSerializer, LecturerVideoMetaDataSerializer
 from rest_framework.views import *
 from .logic import activity_recognition as ar
-from . import emotion_detector as ed
+from . import emotion_detector as ed, automation_process as ap
 from .logic import id_generator as ig
 from .logic import pdf_file_generator as pdf
 from .logic import head_gaze_estimation as hge
@@ -1647,3 +1647,23 @@ class DisplayUpcomingLecturesAPI(APIView):
             "subject_code": subject_code,
         })
 
+# this API will handle all the batch processes and video/audio saving to the system
+class AutomationProcess(APIView):
+
+    def get(self, request):
+
+        return Response({
+            "response": "This API will be used for Automation process"
+        })
+
+    def post(self, request):
+        lecturer = request.data['lecturer']
+        subject = request.data['subject']
+        subject_code = request.data['subject_code']
+        video_length = request.data['video_length']
+
+        processed = ap.automation_process(lecturer=lecturer, subject=subject, subject_code=subject_code, video_length=video_length)
+
+        return Response({
+            "is_processed": processed
+        })

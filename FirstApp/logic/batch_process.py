@@ -29,10 +29,11 @@ def student_behavior_batch_process(video_id, video_name):
     return is_all_processed
 
 
-# this method will save the lecture video
+# this method will save the student lecture video
 def save_student_lecture_video(student_video):
 
     data_dumps = json.dumps(student_video)
+    response = None
 
     headers = {
         'Content-Type': 'application/json'
@@ -43,11 +44,12 @@ def save_student_lecture_video(student_video):
     student_video_save_resp = requests.post(url='http://127.0.0.1:8000/lecture-video', data=data_dumps, headers=headers)
 
     data = student_video_save_resp.json()
+    response = data[0]
 
-    return data[0]
+    return response
 
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
     # content = {
     #     "lecturer": 1,
     #     "subject": 16,
@@ -63,5 +65,5 @@ if __name__ == '__main__':
     #
     # save_student_lecture_video(content)
 
-    student_behavior_batch_process(8, "Video_test_8.mp4")
+    # student_behavior_batch_process(8, "Video_test_8.mp4")
 
