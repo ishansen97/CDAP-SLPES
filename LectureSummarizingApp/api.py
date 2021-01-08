@@ -122,7 +122,6 @@ class LectureSummaryList(APIView):
 
         lecture_summary_name = request.query_params.get("lecture_summary_name")
         id = int(request.query_params.get("id"))
-        current_date = datetime.datetime.now().date()
 
         # generate new id for summary
         lecture_summary_id = "LSUM0001" if lecture_summary_list is None else generate_new_id(lecture_summary_list.lecture_audio_summary_id)
