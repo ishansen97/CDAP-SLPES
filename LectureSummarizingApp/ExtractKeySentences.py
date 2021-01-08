@@ -1,5 +1,6 @@
 import nltk
 import os
+from fpdf import FPDF
 
 def LectureNotice(notice_name):
 

@@ -2,6 +2,7 @@ from spacy.lang.pt.stop_words import STOP_WORDS
 from sklearn.feature_extraction.text import CountVectorizer
 import pt_core_news_sm
 import os
+from fpdf import FPDF
 
 def LectureSummary(summary_name):
 
