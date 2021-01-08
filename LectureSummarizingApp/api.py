@@ -14,6 +14,7 @@ import datetime
 
 
 # APIs used in Lecture Summarizing Component
+from .Summary import LectureSummary
 from .noise import noise_removal
 from .speech_to_text import speech_to_text
 
@@ -83,15 +84,17 @@ class audioToTextList(APIView):
 
         print('file name: ', speech_to_text_name)
         id = int(request.query_params.get("id"))
+        # id = request.query_params.get("id")
+
 
         # generate new id for speech to text file
-        new_speech_to_text_id = generate_new_id(audio_to_text_list.new_speech_to_text_id)
+        new_speech_to_text_id = generate_new_id(audio_to_text_list.lecture_speech_to_text_id)
 
         speech_to_text(speech_to_text_name)
 
         LectureSpeechToText(
             lecture_speech_to_text_id=new_speech_to_text_id,
-            lecture_audio_id=id,
+            lecture_audio_id_id=id,
             audio_original_text=speech_to_text_name
         ).save()
 
@@ -108,29 +111,29 @@ class audioToTextList(APIView):
         return Response({"response": request.data})
 
 
-class lectureSummaryList(APIView):
+class LectureSummaryList(APIView):
 
     def get(self, request):
         lecture_audio_summary_id = LectureAudioSummary.objects.all()
         # serializer = LectureAudioSummarySerializer(lecture_audio_summary_id, many=True)
         # return Response(serializer.data)
 
-        lecture_summary_list = LectureAudioSummary.objects.order_by('lecture_summary_list').last()
+        lecture_summary_list = LectureAudioSummary.objects.order_by('lecture_audio_summary_id').last()
 
         lecture_summary_name = request.query_params.get("lecture_summary_name")
         id = int(request.query_params.get("id"))
         current_date = datetime.datetime.now().date()
 
         # generate new id for summary
-        lecture_summary_id = generate_new_id(lecture_summary_list.lecture_summary_id)
+        lecture_summary_id = "LSUM0001" if lecture_summary_list is None else generate_new_id(lecture_summary_list.lecture_audio_summary_id)
 
-        LectureAudioSummary(lecture_summary_name)
+        text, summary = LectureSummary(lecture_summary_name)
 
         LectureAudioSummary(
-            lecture_speech_to_text_id=id,
-            lecture_audio_id=lecture_summary_id,
-            audio_original_text=current_date,
-            audio_summary=lecture_summary_name
+            lecture_audio_summary_id=lecture_summary_id,
+            lecture_audio_id_id=id,
+            audio_original_text=text,
+            audio_summary=summary
         ).save()
         return Response({"response": request.data})
 
