@@ -6,14 +6,16 @@ from fpdf import FPDF
 
 def LectureSummary(summary_name):
 
-    # BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    # FILE_PATH = os.path.join(BASE_DIR, "speechToText\\{}".format(summary_name))
-    # DESTINATION_DIR = os.path.dirname(os.path.join(BASE_DIR, "LectureSummarizingApp\\summary\\sample.txt"))
-    # print('destination directory: ', DESTINATION_DIR)
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    FILE_PATH = os.path.join(BASE_DIR, "speechToText\\{}".format(summary_name))
+    DESTINATION_DIR = os.path.join(BASE_DIR, "summary\\Summary_{}".format(summary_name))
+    print('destination directory: ', DESTINATION_DIR)
 
 # Reading the file
     nlp = pt_core_news_sm.load()
-    with open("audioToText.txt", "r", encoding="utf-8") as f:
+    # file = open(DESTINATION_DIR, 'w')
+    text = ''
+    with open(FILE_PATH, "r", encoding="utf-8") as f:
         text = " ".join(f.readlines())
 
     doc = nlp(text)
@@ -53,13 +55,23 @@ def LectureSummary(summary_name):
             summary.append(sent)
         else:
             continue
+
+
+    file = None
     for i in summary:
-        file = open('Summary01.txt', 'w')
+        file = open(DESTINATION_DIR, 'w')
+        # file = open('Summary01.txt', 'w')
         file.write(str(i))
         file.close()
 
 
-def SaveSummary():
+
+# def SaveSummary():
+
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    # PDF_DESTINATION_DIR = os.path.dirname(os.path.join(BASE_DIR, "summaryPDF\\sample.txt"))
+    PDF_DESTINATION_DIR = os.path.join(BASE_DIR, "summaryPDF\\Summary_PDF_{}.pdf".format(summary_name))
+
     pdf = FPDF()
     # Add a page
     pdf.add_page()
@@ -68,11 +80,16 @@ def SaveSummary():
     pdf.set_font("Arial", size=15)
 
     # open the text file in read mode
-    f = open("Summary01.txt", "r")
+    f = open(DESTINATION_DIR, "r")
 
     # insert the texts in pdf
     for x in f:
         pdf.cell(200, 10, txt=x, ln=1, align='C')
 
     # save the pdf with name .pdf
-    pdf.output("summary01.pdf")
+    pdf.output(PDF_DESTINATION_DIR)
+
+    # convert the summary list to a text
+    listToStr = ' '.join([str(elem) for elem in summary])
+
+    return text, listToStr

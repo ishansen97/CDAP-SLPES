@@ -28,6 +28,9 @@ def LectureNotice(notice_name):
                 sentences_with_word.append(sentence)
                 word_sentence_dictionary[word] = sentences_with_word
 
+    file = open('Notices01.txt', 'w')
+    file.close()
+
 
 def SaveNotices():
     pdf = FPDF()

@@ -18,7 +18,7 @@ urlpatterns = [
 
     url(r'^lecture-audio-to-text/', api.audioToTextList.as_view()),
 
-    url(r'^lecture-summary/$', api.lectureSummaryList.as_view()),
+    url(r'^lecture-summary/$', api.LectureSummaryList.as_view()),
 
     url(r'^lecture-notices/$', api.lectureNoticeList.as_view()),
 
