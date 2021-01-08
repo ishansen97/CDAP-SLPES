@@ -8,7 +8,7 @@ router = routers.DefaultRouter()
 
 urlpatterns = [
     path('lecture', views.summarization),
-    path('record', views.lectureRecord),
+    # path('record', views.lectureRecord),
 
 
     # API to retrieve lecture summarizing details
