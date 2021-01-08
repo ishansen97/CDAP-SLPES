@@ -44,7 +44,6 @@ INSTALLED_APPS = [
     'bootstrap4',
     'rest_framework',
     'os',
-    'background_task'
 ]
 
 MIDDLEWARE = [

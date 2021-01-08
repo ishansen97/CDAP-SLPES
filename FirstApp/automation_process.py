@@ -1,7 +1,6 @@
 import requests
 import json
 
-from background_task import background
 
 from .MongoModels import LectureVideo
 from . logic import batch_process as bp
@@ -47,6 +46,7 @@ import datetime
 #     return response[0]
 
 # this method will handle the batch processing and video/audio saving pf the system
+from .logic.batch_process import student_behavior_batch_process
 from .serializers import LectureVideoSerializer
 
 
@@ -62,6 +62,7 @@ def automation_process(lecturer, subject, subject_code, video_length="00:20:00")
     student_video_name = str(current_date) + "_{}_student_video.mp4".format(subject_code)
     lecturer_video_name = str(current_date) + "_{}_lecturer_video.mp4".format(subject_code)
     lecturer_audio_name = str(current_date) + "_{}_lecturer_audio.wav".format(subject_code)
+
 
     # this variable will be passed in the individual batch process
     student_video_id = 0
@@ -93,7 +94,7 @@ def automation_process(lecturer, subject, subject_code, video_length="00:20:00")
     student_video_response = bp.save_student_lecture_video(student_video_content)
     # student_video_response = save_student_lecture_video(student_video_content)
     print('student video response: ', student_video_response)
-    # student_video_id = student_video_response['id']
+    student_video_id = student_video_response['id']
 
     # save the lecturer video
     lecturer_video_response = lbp.save_lecturer_video_details(lecturer_video_content)
@@ -101,6 +102,13 @@ def automation_process(lecturer, subject, subject_code, video_length="00:20:00")
     print('lecturer video response: ', lecturer_video_response)
 
     # save the lecturer audio
+
+
+    for i in range(100):
+        print('outer loop: ', i)
+
+        for j in range(10000):
+            print('inner loop: ', j)
 
 
     # start the batch processing for lecture summarization component

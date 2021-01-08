@@ -11,11 +11,16 @@ each method will return an HttpResponse that allows its data to be rendered into
 arbitrary media types.
 
 """
+import json
 from random import Random
+
+from apscheduler.jobstores.mongodb import MongoDBJobStore
 
 from MonitorLecturerApp.models import LectureRecordedVideo, LecturerVideoMetaData
 from MonitorLecturerApp.serializers import LectureRecordedVideoSerializer, LecturerVideoMetaDataSerializer
 from rest_framework.views import *
+
+from integrated_slpes.wsgi import application
 from .logic import activity_recognition as ar
 from . import emotion_detector as ed, automation_process as ap
 from .logic import id_generator as ig
@@ -23,10 +28,15 @@ from .logic import pdf_file_generator as pdf
 from .logic import head_gaze_estimation as hge
 from .logic import video_extraction as ve
 from . logic import student_behavior_process as sbp
+from .logic.scheduler_tasks import task_scheduler
 from .serializers import *
 from braces.views import CsrfExemptMixin
 
+from django.core.handlers.wsgi import WSGIRequest
+from django.http.request import HttpRequest
+
 import datetime
+import os
 
 
 class LectureViewSet(APIView):
@@ -1539,19 +1549,36 @@ class CheckStudentBehaviorAvailability(APIView):
 
     def get(self, request):
         video_name = request.query_params.get('video_name')
-        #
-        # isActivityExist = LectureActivityFrameGroupings.objects.filter(
-        #     lecture_activity_id__lecture_video_id__video_name=video_name).exists()
-        #
-        # isEmotionExist = LectureEmotionFrameGroupings.objects.filter(
-        #     lecture_emotion_id__lecture_video_id__video_name=video_name).exists()
-        #
-        # isGazeExist = LectureGazeFrameGroupings.objects.filter(
-        #     lecture_gaze_id__lecture_video_id__video_name=video_name).exists()
+        print('video name: ', video_name)
 
-        isActivityExist = bool(Random().randint(0,2))
-        isEmotionExist = bool(Random().randint(0,2))
-        isGazeExist = bool(Random().randint(0,2))
+        # retrieve the 'MongoDbJobStore' instance
+        jobs = MongoDBJobStore().get_all_jobs()
+
+        print('jobs: ', jobs)
+
+        # initialize the variables
+        isActivityExist = False
+        isEmotionExist = False
+        isGazeExist = False
+
+        # if there are scheduled jobs
+        if len(jobs) > 0:
+
+            # retrieve the activity frame groupings
+            isActivityExist = LectureActivityFrameGroupings.objects.filter(lecture_activity_id__lecture_video_id__video_name=video_name).exists()
+            # retrieve the emotion frame groupings
+            isEmotionExist = LectureEmotionFrameGroupings.objects.filter(lecture_emotion_id__lecture_video_id__video_name=video_name).exists()
+            # retrieve the gaze frame groupings
+            isGazeExist = LectureGazeFrameGroupings.objects.filter(lecture_gaze_id__lecture_video_id__video_name=video_name).exists()
+
+        else:
+
+            isActivityExist = True
+            isEmotionExist = True
+            isGazeExist = True
+            # isActivityExist = bool(Random().randint(0,2))
+            # isEmotionExist = bool(Random().randint(0,2))
+            # isGazeExist = bool(Random().randint(0,2))
 
         return Response({
             "isActivityExist": isActivityExist,
@@ -1657,13 +1684,28 @@ class AutomationProcess(APIView):
         })
 
     def post(self, request):
-        lecturer = request.data['lecturer']
-        subject = request.data['subject']
-        subject_code = request.data['subject_code']
-        video_length = request.data['video_length']
 
-        processed = ap.automation_process(lecturer=lecturer, subject=subject, subject_code=subject_code, video_length=video_length)
+        processed = False
 
-        return Response({
-            "is_processed": processed
-        })
+        try :
+
+            lecturer = request.data['lecturer']
+            subject = request.data['subject']
+            subject_code = request.data['subject_code']
+            video_length = request.data['video_length']
+
+            # processed = ap.automation_process(lecturer=lecturer, subject=subject, subject_code=subject_code, video_length=video_length)
+            # run the scheduler
+            scheduler = task_scheduler(lecturer=lecturer, subject=subject, subject_code=subject_code, video_length=video_length)
+
+            processed = True
+
+            return Response({
+                "is_processed": processed,
+            })
+
+        except Exception as exc:
+            print('Exception: ', exc)
+            return Response({
+                "is_processed": processed,
+            })

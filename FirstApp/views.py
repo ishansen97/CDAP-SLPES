@@ -33,7 +33,13 @@ from django.contrib.auth.decorators import login_required
 from . serializers import *
 from . forms import *
 import os
+import datetime as d
 from datetime import datetime
+
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.date import DateTrigger
+from apscheduler.jobstores.mongodb import MongoDBJobStore
+
 
 
 # Create your views here.
@@ -53,6 +59,11 @@ def hello(request):
         user_type = request.session['user_type']
 
         print('user_type: ', user_type)
+
+        print('request type: ', type(request))
+
+        # test the scheduler
+        # test_scheduler()
 
 
         # retrieve the lecturer's timetable slots
@@ -123,6 +134,7 @@ def hello(request):
         return redirect('/401')
 
     except Exception as exc:
+        print('exception: ', exc)
         return redirect('/500')
 
 # this method will handle 404 error page
@@ -270,13 +282,17 @@ def video_result(request):
 
     # handling the general exceptions
     except Exception as exc:
-        print('what is wrong?: ', exc)
+        print('Exception: ', exc)
         return redirect('/500')
 
     print('due lectures: ', due_lecture_list)
 
+    due_lecture_video_name = due_lecture_list[0]['video_name'] if len(due_lecture_list) > 0 else "Test.mp4"
+    # due_lecture_video_name = "Test.mp4"
+    print('due lecture video name: ', due_lecture_video_name)
+
     return render(request, "FirstApp/video_results.html",
-                  {"lecturer": lecturer, "due_lectures": due_lecture_list})
+                  {"lecturer": lecturer, "due_lectures": due_lecture_list, "due_lecture_video_name": due_lecture_video_name})
 
 
 # view for emotion page
@@ -382,6 +398,7 @@ def activity(request):
 
     # handling the general exception
     except Exception as exc:
+        print('exception: ', exc)
         return redirect('/500')
 
     return render(request, "FirstApp/activity.html", {"lecturer_subjects": lecturer_subjects, "subjects": subject_list, "lecturer": lecturer})
