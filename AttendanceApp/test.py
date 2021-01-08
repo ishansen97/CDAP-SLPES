@@ -12,7 +12,7 @@ def IPWebcamTest():
 
     # Replace the URL with your own IPwebcam shot.jpg IP:port
     # url = 'http://192.168.2.35:8080/shot.jpg'
-    url = 'http://192.168.8.103:8080/shot.jpg'
+    url = 'http://192.168.8.100:8080/shot.jpg'
     # url = 'http://192.168.1.11:8080/startvideo?force=1&tag=rec'
     # url = 'http://192.168.1.11:8080/stopvideo?force=1'
 

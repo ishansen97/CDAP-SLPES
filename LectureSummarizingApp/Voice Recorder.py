@@ -12,7 +12,7 @@ def AudioRecorder(audio):
     DESTINATION_DIR = os.path.join(BASE_DIR, "audioArray\\{}".format(audio))
 
     #for the audio
-    LECTURE_AUDIO_DIR = os.path.join(BASE_DIR, "lectures\\{}".format(audio))
+    LECTURE_AUDIO_DIR = os.path.join(BASE_DIR, "lectures\\Lecture_{}".format(audio))
 
 
     # Sampling frequency
@@ -30,8 +30,8 @@ def AudioRecorder(audio):
 
     # This will convert the NumPy array to an audio
     # file with the given sampling frequency
-    write("recording0.wav", freq, recording)
+    write(DESTINATION_DIR, freq, recording)
 
 
     #Convert the NumPy array to audio file
-    wv.write("recording1.wav", recording, freq, sampwidth=2)
+    wv.write(LECTURE_AUDIO_DIR, recording, freq, sampwidth=2)

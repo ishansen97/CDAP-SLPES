@@ -55,6 +55,13 @@ function testAPI() {
     .then((out) => {})
     .catch((err) => alert('error: ' + err));
 
+    //audio
+    var audio_name = 'Lecture';
+    fetch('http://127.0.0.1:8000/summary/lecture-audio/?audio_name=' + audio_name)
+    then((res) => res.json())
+    .then((out) => {})
+    .catch((err) => alert('error: ' + err));
+
 }
 var time = 'time';
 function f() {
