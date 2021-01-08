@@ -5,14 +5,14 @@ import os
 
 def LectureSummary(summary_name):
 
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    FILE_PATH = os.path.join(BASE_DIR, "speechToText\\{}".format(summary_name))
-    DESTINATION_DIR = os.path.dirname(os.path.join(BASE_DIR, "LectureSummarizingApp\\summary\\sample.txt"))
-    print('destination directory: ', DESTINATION_DIR)
+    # BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    # FILE_PATH = os.path.join(BASE_DIR, "speechToText\\{}".format(summary_name))
+    # DESTINATION_DIR = os.path.dirname(os.path.join(BASE_DIR, "LectureSummarizingApp\\summary\\sample.txt"))
+    # print('destination directory: ', DESTINATION_DIR)
 
 # Reading the file
     nlp = pt_core_news_sm.load()
-    with open("audioToText01.txt", "r", encoding="utf-8") as f:
+    with open("audioToText.txt", "r", encoding="utf-8") as f:
         text = " ".join(f.readlines())
 
     doc = nlp(text)
@@ -56,3 +56,22 @@ def LectureSummary(summary_name):
         file = open('Summary01.txt', 'w')
         file.write(str(i))
         file.close()
+
+
+def SaveSummary():
+    pdf = FPDF()
+    # Add a page
+    pdf.add_page()
+    # set style and size of font
+    # that you want in the pdf
+    pdf.set_font("Arial", size=15)
+
+    # open the text file in read mode
+    f = open("Summary01.txt", "r")
+
+    # insert the texts in pdf
+    for x in f:
+        pdf.cell(200, 10, txt=x, ln=1, align='C')
+
+    # save the pdf with name .pdf
+    pdf.output("summary01.pdf")
