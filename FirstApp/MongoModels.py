@@ -79,6 +79,10 @@ class DailyTimeTable(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     lecturer = models.ForeignKey(Lecturer, on_delete=models.CASCADE)
     location = models.CharField(max_length=10)
+    # new temp fields
+    lecturer_name = models.CharField(max_length=20, default='')
+    subject_name = models.CharField(max_length=20, default='')
+    no_of_students = models.IntegerField(default=4)
 
     def __str__(self):
         return self.location
