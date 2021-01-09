@@ -14,6 +14,7 @@ import datetime
 
 
 # APIs used in Lecture Summarizing Component
+from .ExtractKeySentences import GetLectureNotice
 from .Summary import LectureSummary
 from .noise import noise_removal
 from .speech_to_text import speech_to_text
@@ -106,7 +107,7 @@ class audioToTextList(APIView):
 
 
         # generate new id for speech to text file
-        new_speech_to_text_id = generate_new_id(audio_to_text_list.lecture_speech_to_text_id)
+        new_speech_to_text_id = "LST0001" if audio_to_text_list is None else generate_new_id(audio_to_text_list.lecture_speech_to_text_id)
 
         speech_to_text(speech_to_text_name)
 
@@ -180,11 +181,11 @@ class LectureNoticeList(APIView):
         # generate new id for notice
         notice_id = "LN0001" if lecture_notice_list is None else generate_new_id(lecture_notice_list.lecture_notice_id)
 
-        text = LectureNotices(lecture_notice_name)
+        text, sentences_with_word = GetLectureNotice(lecture_notice_name)
 
         LectureNotices(
             lecture_notice_id=notice_id,
-            lecture_audio_id=id,
+            lecture_audio_id_id=id,
             notice_text=text
         ).save()
         return Response({"response": request.data})

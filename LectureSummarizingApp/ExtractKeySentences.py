@@ -2,7 +2,7 @@ import nltk
 import os
 from fpdf import FPDF
 
-def LectureNotice(notice_name):
+def GetLectureNotice(notice_name):
 
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     FILE_PATH = os.path.join(BASE_DIR, "speechToText\\{}".format(notice_name))
@@ -57,4 +57,6 @@ def LectureNotice(notice_name):
     # save the pdf with name .pdf
     pdf.output("PDF_DESTINATION_DIR")
 
-    return text
+    listToStr = ' '.join([str(elem) for elem in sentences_with_word])
+
+    return text, listToStr
