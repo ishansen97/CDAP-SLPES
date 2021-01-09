@@ -40,7 +40,7 @@
         $(document).ready(function () {
             let folder = '';
 
-            $('#activity_loader').attr('hidden', false);
+            {#$('#activity_loader').attr('hidden', false);#}
             {#$('#emotion_loader').attr('hidden', false);#}
             {#$('#gaze_loader').attr('hidden', false);#}
 
@@ -224,6 +224,12 @@
                 let video_id = $(this).attr("data-video-id");
                 let video_name = $(this).attr("data-video-name");
 
+                //display the 'processing' message
+                $('#processing').attr('hidden', false);
+
+                //hide the button
+                $(this).hide();
+
                 //display the activity loader
                 $('#activity_loader').attr("hidden", false);
 
@@ -278,7 +284,7 @@
                     //sending the get request to process the lecture gaze estimations
                     fetch('http://127.0.0.1:8000/process-lecture-gaze-estimation/?lecture_video_name=' + global_video_name + '&lecture_video_id=' + global_lecture_video_id)
                         .then((res) => res.json())
-                        .then((out) => handleGazeResponse(out.response, e))
+                        .then((out) => handleGazeResponse(out.response))
                         .catch((error) => alert('error: ' + error));
                 }
             }
@@ -297,16 +303,8 @@
                 }
             }
 
+
             /*
-            setInterval(() => {
-                let time = new Date().getTime();
-
-                alert('time: ', time);
-
-            }, 5000);
-
-             */
-
             //this is a test function (delete later)
             //get the due lecture video name
             var due_lecture_video_name = "{{ due_lecture_video_name }}";
@@ -367,7 +365,7 @@
 
             }
 
-
+            */
 
 
         });
@@ -451,12 +449,12 @@
                                                     <td class="font-weight-bolder">{{ lecture.start_time }}</td>
                                                     <td class="font-weight-bolder">{{ lecture.end_time }}</td>
                                                     <td>
-                                                        <span class="font-italic text-success">Processing</span>
-{#                                                        <button type="button" class="btn btn-success batch_process"#}
-{#                                                                data-video-id="{{ lecture.video_id }}"#}
-{#                                                                data-video-name="{{ lecture.video_name }}"#}
-{#                                                                id="{{ lecture.subject }}">Process#}
-{#                                                        </button>#}
+                                                        <span class="font-italic text-success" id="processing" hidden>Processing</span>
+                                                        <button type="button" class="btn btn-success batch_process"
+                                                                data-video-id="{{ lecture.video_id }}"
+                                                                data-video-name="{{ lecture.video_name }}"
+                                                                id="{{ lecture.subject }}">Process
+                                                        </button>
                                                         {#                                                        <span class="font-italic font-weight-bolder text-success">Processing</span>#}
                                                     </td>
                                                 </tr>

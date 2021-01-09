@@ -245,6 +245,9 @@ def video_result(request):
                 for item in to_do_lecture_list:
                     isDate = item['date'] == str(day_timetable['date'])
 
+                    # print('item date: ', item['date'])
+                    # print('timetable date: ', str(day_timetable['date']))
+
                     # isLecturer = item['lecturer'] ==
                     # check for the particular lecture on the day
                     if isDate:

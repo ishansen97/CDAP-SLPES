@@ -615,9 +615,9 @@ def activity_frame_groupings(video_name, frame_landmarks, frame_group_dict):
         group_detection_count = frame_group_details['detection_count']
 
 
-        frame_group_phone_perct = float(frame_group_phone_count / group_detection_count) * 100
-        frame_group_listen_perct = float(frame_group_listen_count / group_detection_count) * 100
-        frame_group_note_perct = float(frame_group_note_count / group_detection_count) * 100
+        frame_group_phone_perct = float(frame_group_phone_count / group_detection_count) * 100 if group_detection_count > 0 else 0
+        frame_group_listen_perct = float(frame_group_listen_count / group_detection_count) * 100 if group_detection_count > 0 else 0
+        frame_group_note_perct = float(frame_group_note_count / group_detection_count) * 100 if group_detection_count > 0 else 0
 
         # assign the values to the same dictionary
         frame_group_dict[key]['phone_perct'] = round(frame_group_phone_perct, 1)
