@@ -23,6 +23,11 @@ from .voice_recorder import AudioRecorder
 
 class LectureAudioAPI(APIView):
 
+    def get(self,request):
+        return Response({
+            "response": Response.status_code
+        })
+
     def post(self, request):
         lecture_audio = LectureAudio.objects.all().order_by('lecturer_date')
         lecture_audio_serializer = LectureAudioSerializer(lecture_audio, many=True)
@@ -42,10 +47,14 @@ class LectureAudioAPI(APIView):
             lecturer =request.data["lecturer"],
             subject = request.data["subject"]
         ).save()
-        return Response({
-            "response": Response.status_code
-        })
 
+        # get the created lecture audio instance
+        created_lecture_audio = LectureAudio.objects.filter(lecture_audio_id=new_audio_id)
+
+        return Response({
+            "response": Response.status_code,
+            "audio_id": int(created_lecture_audio[0].id)
+        })
 
 
 class AudioNoiseRemovedList(APIView):
@@ -66,9 +75,9 @@ class AudioNoiseRemovedList(APIView):
         # generate new id for audio noise removed
         new_audio_noise_removed_id = generate_new_id(audio_noise_removed_list.lecture_audio_noise_removed_id)
 
+        print('inside the noise removal api')
 
-        # nr.noise_removalll(video_name)
-        a, sr = noise_removal(audio_name)
+        noise_removal(audio_name)
 
         LectureAudioNoiseRemoved(
             lecture_audio_noise_removed_id=new_audio_noise_removed_id,
@@ -77,6 +86,8 @@ class AudioNoiseRemovedList(APIView):
             lecture_audio_name=audio_name,
             lecture_audio_length=fake_duration
         ).save()
+
+        print('ending the noise removal api')
 
         return Response({
             "response": Response.status_code
@@ -90,6 +101,7 @@ class AudioNoiseRemovedList(APIView):
             lecture_audio_name=request.data["lecture_audio_name"],
             lecture_audio_length=request.data["lecture_audio_length"]
         ).save()
+
         return Response({"response": request.data})
 
 
@@ -111,7 +123,7 @@ class AudioToTextList(APIView):
         # generate new id for speech to text file
         new_speech_to_text_id = "LST0001" if audio_to_text_list is None else generate_new_id(audio_to_text_list.lecture_speech_to_text_id)
 
-        is_finished = speech_to_text(speech_to_text_name)
+        speech_to_text(speech_to_text_name)
 
         LectureSpeechToText(
             lecture_speech_to_text_id=new_speech_to_text_id,
@@ -202,3 +214,67 @@ class LectureNoticeList(APIView):
         ).save()
         return Response({"response": request.data})
 
+
+class TestMethod(APIView):
+
+    def get(self, request):
+        # lecture_audio_noise_removed = LectureAudioNoiseRemoved.objects.all()
+        # serializer = LectureAudioNoiseRemovedSerializer(lecture_audio_noise_removed, many=True)
+        audio_noise_removed_list = LectureAudioNoiseRemoved.objects.order_by('lecture_audio_noise_removed_id').last()
+
+        audio_name = request.query_params.get("audio_name")
+        id = int(request.query_params.get("id"))
+
+        current_date = datetime.datetime.now().date()
+
+        fake_duration = datetime.timedelta(minutes=2, seconds=10, milliseconds=00)
+
+        # generate new id for audio noise removed
+        new_audio_noise_removed_id = generate_new_id(audio_noise_removed_list.lecture_audio_noise_removed_id)
+
+        print('inside the noise removal api')
+
+        noise_removal(audio_name)
+
+        LectureAudioNoiseRemoved(
+            lecture_audio_noise_removed_id=new_audio_noise_removed_id,
+            lecture_audio_id_id=id,
+            lecturer_date=current_date,
+            lecture_audio_name=audio_name,
+            lecture_audio_length=fake_duration
+        ).save()
+
+        print('ending the noise removal api')
+
+        return Response({
+            "response": Response.status_code
+        })
+
+class TestMethod02(APIView):
+    def get(self, request):
+        # lecture_speech_to_text_id = LectureSpeechToText.objects.all()
+        # serializer = LectureSpeechToTextSerializer(lecture_speech_to_text_id, many=True)
+        audio_to_text_list = LectureSpeechToText.objects.order_by('lecture_speech_to_text_id').last()
+        # return Response(serializer.data)
+
+        speech_to_text_name = request.query_params.get("speech_to_text_name")
+
+        print('file name: ', speech_to_text_name)
+        id = int(request.query_params.get("id"))
+        # id = request.query_params.get("id")
+
+        # generate new id for speech to text file
+        new_speech_to_text_id = "LST0001" if audio_to_text_list is None else generate_new_id(
+            audio_to_text_list.lecture_speech_to_text_id)
+
+        speech_to_text(speech_to_text_name)
+
+        LectureSpeechToText(
+            lecture_speech_to_text_id=new_speech_to_text_id,
+            lecture_audio_id_id=id,
+            audio_original_text=speech_to_text_name
+        ).save()
+
+        return Response({
+            "response": Response.status_code
+        })

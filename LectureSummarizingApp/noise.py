@@ -31,8 +31,6 @@ def noise_removal(video_name):
 
     print('ending the noise removal process')
 
-    return a, sr
-
 
 '''MFCC'''
 
