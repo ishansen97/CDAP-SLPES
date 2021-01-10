@@ -8,7 +8,7 @@ router = routers.DefaultRouter()
 
 urlpatterns = [
     path('lecture', views.summarization),
-    path('record', views.lectureRecord),
+    # path('record', views.lectureRecord),
 
 
     # API to retrieve lecture summarizing details
@@ -18,9 +18,9 @@ urlpatterns = [
 
     url(r'^lecture-audio-to-text/', api.audioToTextList.as_view()),
 
-    url(r'^lecture-summary/$', api.lectureSummaryList.as_view()),
+    url(r'^lecture-summary/$', api.LectureSummaryList.as_view()),
 
-    url(r'^lecture-notices/$', api.lectureNoticeList.as_view()),
+    url(r'^lecture-notices/$', api.LectureNoticeList.as_view()),
 
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
 
