@@ -854,11 +854,11 @@ def gaze_estimation_frame_groupings(video_name, frame_landmarks, frame_group_dic
 
 
 
-        frame_group_upright_perct = float(frame_group_upright_count / group_detection_count) * 100
-        frame_group_upleft_perct = float(frame_group_upleft_count / group_detection_count) * 100
-        frame_group_downright_perct = float(frame_group_downright_count / group_detection_count) * 100
-        frame_group_downleft_perct = float(frame_group_downleft_count / group_detection_count) * 100
-        frame_group_front_perct = float(frame_group_front_count / group_detection_count) * 100
+        frame_group_upright_perct = float(frame_group_upright_count / group_detection_count) * 100 if group_detection_count > 0 else 0
+        frame_group_upleft_perct = float(frame_group_upleft_count / group_detection_count) * 100 if group_detection_count > 0 else 0
+        frame_group_downright_perct = float(frame_group_downright_count / group_detection_count) * 100 if group_detection_count > 0 else 0
+        frame_group_downleft_perct = float(frame_group_downleft_count / group_detection_count) * 100 if group_detection_count > 0 else 0
+        frame_group_front_perct = float(frame_group_front_count / group_detection_count) * 100 if group_detection_count > 0 else 0
 
         # assign the values to the same dictionary
         frame_group_dict[key]['upright_perct'] = round(frame_group_upright_perct, 1)

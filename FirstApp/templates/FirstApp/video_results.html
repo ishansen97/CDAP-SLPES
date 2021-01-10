@@ -224,6 +224,12 @@
                 let video_id = $(this).attr("data-video-id");
                 let video_name = $(this).attr("data-video-name");
 
+                //display the 'processing' message
+                $('#processing').attr('hidden', false);
+
+                //hide the button
+                $(this).hide();
+
                 //display the activity loader
                 $('#activity_loader').attr("hidden", false);
 
@@ -278,7 +284,7 @@
                     //sending the get request to process the lecture gaze estimations
                     fetch('http://127.0.0.1:8000/process-lecture-gaze-estimation/?lecture_video_name=' + global_video_name + '&lecture_video_id=' + global_lecture_video_id)
                         .then((res) => res.json())
-                        .then((out) => handleGazeResponse(out.response, e))
+                        .then((out) => handleGazeResponse(out.response))
                         .catch((error) => alert('error: ' + error));
                 }
             }
@@ -297,20 +303,22 @@
                 }
             }
 
-            //this is a test function (delete later)
+
             /*
+            //this is a test function (delete later)
+            //get the due lecture video name
+            var due_lecture_video_name = "{{ due_lecture_video_name }}";
+
             let interval = setInterval(() => {
 
-
-            {#let url = 'http://127.0.0.1:8000/get-random_number';#}
-                let url = 'http://127.0.0.1:8000/check-availability';
+                let url = 'http://127.0.0.1:8000/check-availability/?video_name=' + due_lecture_video_name;
 
                 fetch(url)
                     .then((res) => res.json())
                     .then((out) => displayProcess(out))
                     .catch((err) => alert('error: ' + err))
 
-            }, 10000);
+            }, 5000);
 
 
             //this function will handle the displaying loaders and status in the workflow
@@ -356,6 +364,7 @@
 
 
             }
+
             */
 
 
@@ -440,6 +449,7 @@
                                                     <td class="font-weight-bolder">{{ lecture.start_time }}</td>
                                                     <td class="font-weight-bolder">{{ lecture.end_time }}</td>
                                                     <td>
+                                                        <span class="font-italic text-success" id="processing" hidden>Processing</span>
                                                         <button type="button" class="btn btn-success batch_process"
                                                                 data-video-id="{{ lecture.video_id }}"
                                                                 data-video-name="{{ lecture.video_name }}"
