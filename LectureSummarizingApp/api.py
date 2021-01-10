@@ -32,6 +32,7 @@ class LectureAudioAPI(APIView):
         new_audio_id = generate_new_id(audio_list.lecture_audio_noise_removed_id)
 
         fake_duration = datetime.timedelta(minutes=00, seconds=10, milliseconds=00)
+        AudioRecorder(audio_name)
 
         LectureAudio(
             lecture_audio_id=new_audio_id,
