@@ -10,7 +10,7 @@ def summarization_batch_process(audio_id, audio_name):
 
 
 
-    noise_removed_resp = requests.get('http://127.0.0.1:8000/summary/lecture-audio-noise-removed/', params={'id': audio_id, 'audio_name': audio_name})
+    noise_removed_resp = requests.get('http://127.0.0.1:8000/summary/lecture-noise/', params={'id': audio_id, 'audio_name': audio_name})
 
     print('response: ', noise_removed_resp.json())
 
@@ -21,7 +21,7 @@ def summarization_batch_process(audio_id, audio_name):
         audio_root_name = audio_name.split('.')[0]
         speech_to_text_name = audio_root_name + '.txt'
 
-        audio_text_resp = requests.get('http://127.0.0.1:8000/summary/lecture-audio-to-text/', params={'id': audio_id, 'speech_to_text_name': speech_to_text_name})
+        audio_text_resp = requests.get('http://127.0.0.1:8000/summary/lecture-text/', params={'id': audio_id, 'speech_to_text_name': speech_to_text_name})
 
         if audio_text_resp.json()['response'] == 200:
 

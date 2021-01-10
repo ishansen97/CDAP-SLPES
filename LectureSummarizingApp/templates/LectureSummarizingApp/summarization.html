@@ -45,7 +45,7 @@
             alert('speech to text file name: ' + speech_to_text_name);
 
             //call the fetch API
-            fetch('http://127.0.0.1:8000/summary/lecture-audio-to-text/?speech_to_text_name=' + speech_to_text_name + '&id=' + id)
+            fetch('http://127.0.0.1:8000/summary/lecture-text/?speech_to_text_name=' + speech_to_text_name + '&id=' + id)
             .then((res) => res.json())
             .then((out) => handleSpeechToText(out.response))
             .catch((err) => alert('error: ' + err))
@@ -68,12 +68,14 @@
             alert('audio name: ' + audio_name);
             //call the fetch API
 
-            fetch('http://127.0.0.1:8000/summary/lecture-audio-noise-removed/?audio_name=' + audio_name + '&id=' + id)
+            fetch('http://127.0.0.1:8000/summary/lecture-noise/?audio_name=' + audio_name + '&id=' + id)
             .then((res) => res.json())
             .then((out) => handleNoiseRemoved(out.response))
             .catch((err) => alert('error: ' + err))
 
         });
+
+
         //this function will handle the success respopnse for noise removed
         function handleNoiseRemoved(response) {
 
@@ -167,7 +169,6 @@
                                     <span class="font-italic">No Recordings</span>
                                 </div>
                                 {% else %}
-                                #lecture list
                                 <div class="table-responsive">
                                     <table class="table table-bordered" id="datatable">
                                         <thead>
@@ -228,7 +229,6 @@
                                     <span class="font-italic">No Recordings</span>
                                 </div>
                                 {% else %}
-                                #noise removes list
                                 <div class="table-responsive">
                                     <table class="table table-bordered" id="datatable">
                                         <thead>
