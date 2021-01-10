@@ -10,12 +10,14 @@ def noise_removal(video_name):
     # sample_directory = 'lectures/'
     # sample_path = sample_directory + sample_file
 
+    print('starting the noise removal process')
 
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    LECTURE_VIDEO_DIR = os.path.join(BASE_DIR, "LectureSummarizingApp\\lectures\\{}".format(video_name))
+
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    LECTURE_VIDEO_DIR = os.path.join(BASE_DIR, "lectures\\{}".format(video_name))
     print('lecture audio directory: ', LECTURE_VIDEO_DIR)
     # DESTINATION_DIR = os.path.join(BASE_DIR, "LectureSummarizingApp\\noise_removed_lectures")
-    DESTINATION_DIR = os.path.dirname(os.path.join(BASE_DIR, "LectureSummarizingApp\\noise_removed_lectures\\sample.txt"))
+    DESTINATION_DIR = os.path.dirname(os.path.join(BASE_DIR, "noise_removed_lectures\\sample.txt"))
     print('destination directory: ', DESTINATION_DIR)
     # generating audio time series and a sampling rate (int)
     a, sr = librosa.load(path=LECTURE_VIDEO_DIR)
@@ -26,6 +28,8 @@ def noise_removal(video_name):
     # speech_boosted = mffc_highshelf(a, sr)
 
     output_file(destination=DESTINATION_DIR, filename=video_name, a=a, sr=sr)
+
+    print('ending the noise removal process')
 
     return a, sr
 
@@ -75,6 +79,7 @@ def mffc_highshelf(a, sr):
 #     return a_enhanced
 
 def output_file(destination ,filename, a, sr, ext=""):
-    destination = destination + filename[:-4] + ext + '.wav'
+    destination = destination + "\\" + filename[:-4] + ext + '.wav'
+    print('output destination: ', destination)
     librosa.output.write_wav(destination, a, sr)
 

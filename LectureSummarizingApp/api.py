@@ -14,21 +14,41 @@ import datetime
 
 
 # APIs used in Lecture Summarizing Component
+from .ExtractKeySentences import GetLectureNotice
 from .Summary import LectureSummary
 from .noise import noise_removal
 from .speech_to_text import speech_to_text
+from .voice_recorder import AudioRecorder
 
 
 class LectureAudioAPI(APIView):
 
-    def get(self, request):
+    def post(self, request):
         lecture_audio = LectureAudio.objects.all().order_by('lecturer_date')
         lecture_audio_serializer = LectureAudioSerializer(lecture_audio, many=True)
-        return Response(lecture_audio_serializer.data)
+
+        audio_list = LectureAudio.objects.order_by('lecture_audio_id').last()
+        audio_name = request.data['audio_name']
+        # id = int(request.query_params.get("id"))
+        new_audio_id = generate_new_id(audio_list.lecture_audio_noise_removed_id)
+
+        fake_duration = datetime.timedelta(minutes=00, seconds=10, milliseconds=00)
+        AudioRecorder(audio_name)
+
+        LectureAudio(
+            lecture_audio_id=new_audio_id,
+            lecture_audio_name =audio_name,
+            lecture_audio_length = fake_duration,
+            lecturer =request.data["lecturer"],
+            subject = request.data["subject"]
+        ).save()
+        return Response({
+            "response": Response.status_code
+        })
 
 
 
-class audioNoiseRemovedList(APIView):
+class AudioNoiseRemovedList(APIView):
 
     def get(self, request):
         # lecture_audio_noise_removed = LectureAudioNoiseRemoved.objects.all()
@@ -48,7 +68,7 @@ class audioNoiseRemovedList(APIView):
 
 
         # nr.noise_removalll(video_name)
-        noise_removal(audio_name)
+        a, sr = noise_removal(audio_name)
 
         LectureAudioNoiseRemoved(
             lecture_audio_noise_removed_id=new_audio_noise_removed_id,
@@ -73,7 +93,7 @@ class audioNoiseRemovedList(APIView):
         return Response({"response": request.data})
 
 
-class audioToTextList(APIView):
+class AudioToTextList(APIView):
 
     def get(self, request):
         #lecture_speech_to_text_id = LectureSpeechToText.objects.all()
@@ -89,9 +109,9 @@ class audioToTextList(APIView):
 
 
         # generate new id for speech to text file
-        new_speech_to_text_id = generate_new_id(audio_to_text_list.lecture_speech_to_text_id)
+        new_speech_to_text_id = "LST0001" if audio_to_text_list is None else generate_new_id(audio_to_text_list.lecture_speech_to_text_id)
 
-        speech_to_text(speech_to_text_name)
+        is_finished = speech_to_text(speech_to_text_name)
 
         LectureSpeechToText(
             lecture_speech_to_text_id=new_speech_to_text_id,
@@ -135,7 +155,7 @@ class LectureSummaryList(APIView):
             audio_original_text=text,
             audio_summary=summary
         ).save()
-        return Response({"response": request.data})
+        return Response({"response": Response.status_code})
 
     def post(self, request):
         LectureAudioSummary(
@@ -163,14 +183,14 @@ class LectureNoticeList(APIView):
         # generate new id for notice
         notice_id = "LN0001" if lecture_notice_list is None else generate_new_id(lecture_notice_list.lecture_notice_id)
 
-        text = LectureNotices(lecture_notice_name)
+        text, sentences_with_word = GetLectureNotice(lecture_notice_name)
 
         LectureNotices(
             lecture_notice_id=notice_id,
-            lecture_audio_id=id,
+            lecture_audio_id_id=id,
             notice_text=text
         ).save()
-        return Response({"response": request.data})
+        return Response({"response": Response.status_code})
 
 
 
