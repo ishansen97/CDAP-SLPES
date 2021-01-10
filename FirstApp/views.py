@@ -294,8 +294,11 @@ def video_result(request):
     # due_lecture_video_name = "Test.mp4"
     print('due lecture video name: ', due_lecture_video_name)
 
+    # check whether there are due lectures or not
+    isDue = len(due_lecture_list)
+
     return render(request, "FirstApp/video_results.html",
-                  {"lecturer": lecturer, "due_lectures": due_lecture_list, "due_lecture_video_name": due_lecture_video_name})
+                  {"lecturer": lecturer, "due_lectures": due_lecture_list, "due_lecture_video_name": due_lecture_video_name, 'isDue': isDue})
 
 
 # view for emotion page

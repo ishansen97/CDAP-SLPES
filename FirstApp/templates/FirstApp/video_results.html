@@ -304,68 +304,70 @@
             }
 
 
-            /*
             //this is a test function (delete later)
-            //get the due lecture video name
-            var due_lecture_video_name = "{{ due_lecture_video_name }}";
 
-            let interval = setInterval(() => {
+            var isDue = {{ isDue }};
 
-                let url = 'http://127.0.0.1:8000/check-availability/?video_name=' + due_lecture_video_name;
+            if (isDue > 0) {
+                let interval = setInterval(() => {
 
-                fetch(url)
-                    .then((res) => res.json())
-                    .then((out) => displayProcess(out))
-                    .catch((err) => alert('error: ' + err))
+                    $('#activity_loader').attr('hidden', false);
 
-            }, 5000);
+                    //get the due lecture video name
+                    var due_lecture_video_name = "{{ due_lecture_video_name }}";
+                    let url = 'http://127.0.0.1:8000/check-availability/?video_name=' + due_lecture_video_name;
 
+                    fetch(url)
+                        .then((res) => res.json())
+                        .then((out) => displayProcess(out))
+                        .catch((err) => alert('error: ' + err))
 
-            //this function will handle the displaying loaders and status in the workflow
-            function displayProcess(response) {
+                }, 5000);
 
-                //if the lecture activity has completed processing
-                if (response.isActivityExist) {
+                //this function will handle the displaying loaders and status in the workflow
+                function displayProcess(response) {
 
-                    $('#step_1').attr("class", class1);
-                    $('#activity_loader').hide();
-                    $('#emotion_loader').attr('hidden', false);
+                    //if the lecture activity has completed processing
+                    if (response.isActivityExist) {
+
+                        $('#step_1').attr("class", class1);
+                        $('#activity_loader').hide();
+                        $('#emotion_loader').attr('hidden', false);
+
+                    }
+
+                    //if the lecture emotion has completed processing
+                    if (response.isEmotionExist) {
+
+                        $('#step_2').attr("class", class1);
+                        $('#emotion_loader').hide();
+                        $('#gaze_loader').attr('hidden', false);
+
+                    }
+
+                    //if the lecture gaze has completed processing
+                    if (response.isGazeExist) {
+
+                        $('#step_3').attr("class", class1);
+                        $('#gaze_loader').hide();
+                    }
+
+                    //if all the processes are completed
+                    if (response.isActivityExist && response.isEmotionExist && response.isGazeExist) {
+
+                        var x = document.getElementById("snackbar");
+                        x.className = "show";
+                        setTimeout(function () {
+                            x.className = x.className.replace("show", "");
+                        }, 3000);
+
+                        //clear the setInterval function
+                        clearInterval(interval);
+                    }
+
 
                 }
-
-                //if the lecture emotion has completed processing
-                if (response.isEmotionExist) {
-
-                    $('#step_2').attr("class", class1);
-                    $('#emotion_loader').hide();
-                    $('#gaze_loader').attr('hidden', false);
-
-                }
-
-                //if the lecture gaze has completed processing
-                if (response.isGazeExist) {
-
-                    $('#step_3').attr("class", class1);
-                    $('#gaze_loader').hide();
-                }
-
-                //if all the processes are completed
-                if (response.isActivityExist && response.isEmotionExist && response.isGazeExist) {
-
-                    var x = document.getElementById("snackbar");
-                    x.className = "show";
-                    setTimeout(function () {
-                        x.className = x.className.replace("show", "");
-                    }, 3000);
-
-                    //clear the setInterval function
-                    clearInterval(interval);
-                }
-
-
             }
-
-            */
 
 
         });
@@ -450,11 +452,11 @@
                                                     <td class="font-weight-bolder">{{ lecture.end_time }}</td>
                                                     <td>
                                                         <span class="font-italic text-success" id="processing" hidden>Processing</span>
-                                                        <button type="button" class="btn btn-success batch_process"
-                                                                data-video-id="{{ lecture.video_id }}"
-                                                                data-video-name="{{ lecture.video_name }}"
-                                                                id="{{ lecture.subject }}">Process
-                                                        </button>
+{#                                                        <button type="button" class="btn btn-success batch_process"#}
+{#                                                                data-video-id="{{ lecture.video_id }}"#}
+{#                                                                data-video-name="{{ lecture.video_name }}"#}
+{#                                                                id="{{ lecture.subject }}">Process#}
+{#                                                        </button>#}
                                                         {#                                                        <span class="font-italic font-weight-bolder text-success">Processing</span>#}
                                                     </td>
                                                 </tr>
