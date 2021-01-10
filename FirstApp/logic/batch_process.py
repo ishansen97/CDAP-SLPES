@@ -15,13 +15,13 @@ def student_behavior_batch_process(video_id, video_name):
     if activity_resp.json()['response']:
 
         # call the emotion process
-        emotion_resp = requests.get('http://127.0.0.1:8000/process-lecture-emotion/?lecture_video_name=', params={'lecture_video_name': video_name, 'lecture_video_id': video_id})
+        emotion_resp = requests.get('http://127.0.0.1:8000/process-lecture-emotion/', params={'lecture_video_name': video_name, 'lecture_video_id': video_id})
 
         # if the emotion process is success
         if emotion_resp.json()['response']:
 
             # call the gaze process
-            gaze_resp = requests.get('http://127.0.0.1:8000/process-lecture-gaze-estimation/?lecture_video_name=', params={'lecture_video_name': video_name, 'lecture_video_id': video_id})
+            gaze_resp = requests.get('http://127.0.0.1:8000/process-lecture-gaze-estimation/', params={'lecture_video_name': video_name, 'lecture_video_id': video_id})
 
             # if the gaze estimation process is successful
             if gaze_resp.json()['response']:
