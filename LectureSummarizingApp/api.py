@@ -18,16 +18,17 @@ from .ExtractKeySentences import GetLectureNotice
 from .Summary import LectureSummary
 from .noise import noise_removal
 from .speech_to_text import speech_to_text
+from .voice_recorder import AudioRecorder
 
 
 class LectureAudioAPI(APIView):
 
-    def get(self, request):
+    def post(self, request):
         lecture_audio = LectureAudio.objects.all().order_by('lecturer_date')
         lecture_audio_serializer = LectureAudioSerializer(lecture_audio, many=True)
 
         audio_list = LectureAudio.objects.order_by('lecture_audio_id').last()
-        audio_name = request.query_params.get("audio_name")
+        audio_name = request.data['audio_name']
         # id = int(request.query_params.get("id"))
         new_audio_id = generate_new_id(audio_list.lecture_audio_noise_removed_id)
 

@@ -12,7 +12,7 @@ def AudioRecorder(audio):
     DESTINATION_DIR = os.path.join(BASE_DIR, "audioArray\\{}".format(audio))
 
     #for the audio
-    LECTURE_AUDIO_DIR = os.path.join(BASE_DIR, "lectures\\Lecture_{}".format(audio))
+    LECTURE_AUDIO_DIR = os.path.join(BASE_DIR, "lectures\\{}".format(audio))
 
 
     # Sampling frequency
