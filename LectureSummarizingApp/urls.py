@@ -12,11 +12,11 @@ urlpatterns = [
 
 
     # API to retrieve lecture summarizing details
-    url(r'^lecture-audio/$', api.LectureAudioAPI.as_view()),
+    url(r'^lecture-audio', api.LectureAudioAPI.as_view()),
 
-    url(r'^lecture-audio-noise-removed/$', api.audioNoiseRemovedList.as_view()),
+    url(r'^lecture-audio-noise-removed/$', api.AudioNoiseRemovedList.as_view()),
 
-    url(r'^lecture-audio-to-text/', api.audioToTextList.as_view()),
+    url(r'^lecture-audio-to-text/$', api.AudioToTextList.as_view()),
 
     url(r'^lecture-summary/$', api.LectureSummaryList.as_view()),
 

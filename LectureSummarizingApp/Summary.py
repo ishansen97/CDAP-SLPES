@@ -8,8 +8,12 @@ def LectureSummary(summary_name):
 
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     FILE_PATH = os.path.join(BASE_DIR, "speechToText\\{}".format(summary_name))
+    print('file path: ' , FILE_PATH)
     DESTINATION_DIR = os.path.join(BASE_DIR, "summary\\Summary_{}".format(summary_name))
     print('destination directory: ', DESTINATION_DIR)
+
+    print('starting the summary process')
+
 
 # Reading the file
     nlp = pt_core_news_sm.load()
@@ -87,9 +91,11 @@ def LectureSummary(summary_name):
         pdf.cell(200, 10, txt=x, ln=1, align='C')
 
     # save the pdf with name .pdf
-    pdf.output(PDF_DESTINATION_DIR)
+    # pdf.output(PDF_DESTINATION_DIR)
 
     # convert the summary list to a text
     listToStr = ' '.join([str(elem) for elem in summary])
+
+    print('ending the summary process')
 
     return text, listToStr
