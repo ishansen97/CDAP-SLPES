@@ -153,7 +153,7 @@ class LectureSummaryList(APIView):
             audio_original_text=text,
             audio_summary=summary
         ).save()
-        return Response({"response": request.data})
+        return Response({"response": Response.status_code})
 
     def post(self, request):
         LectureAudioSummary(
@@ -188,7 +188,7 @@ class LectureNoticeList(APIView):
             lecture_audio_id_id=id,
             notice_text=text
         ).save()
-        return Response({"response": request.data})
+        return Response({"response": Response.status_code})
 
 
 

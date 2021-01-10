@@ -10,9 +10,15 @@ def GetLectureNotice(notice_name):
     print('destination directory: ', DESTINATION_DIR)
 
     text = ''
-    read_lines = [line.rstrip('\n') for line in open(FILE_PATH, "r")]
+    # read_lines = [line.rstrip('\n') for line in open(FILE_PATH, "r")]
+    # read_lines = [line.rstrip('\n') for line in open(FILE_PATH, "r")]
+
+    for line in open(FILE_PATH, "r"):
+        text += line.rstrip('\n')
+
+
     sentences_list = []
-    sentence_list = nltk.sent_tokenize(read_lines)
+    sentence_list = nltk.sent_tokenize(text)
     word_search = "important"
     sentences_with_word = []
     for sentence in sentence_list:
@@ -55,7 +61,7 @@ def GetLectureNotice(notice_name):
         pdf.cell(200, 10, txt=x, ln=1, align='C')
 
     # save the pdf with name .pdf
-    pdf.output("PDF_DESTINATION_DIR")
+    # pdf.output("PDF_DESTINATION_DIR")
 
     listToStr = ' '.join([str(elem) for elem in sentences_with_word])
 

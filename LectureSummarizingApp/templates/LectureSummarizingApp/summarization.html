@@ -86,8 +86,8 @@
         $('.to_summary').click(function(e) {
             alert('Processing');
             let id = e.target.parentNode.parentNode.getAttribute('id');
-<!--            let lecture_summary_name = e.target.parentNode.parentNode.getAttribute('data-summary-name');-->
-            let lecture_summary_name = e.target.parentNode.parentNode.getAttribute('data-notice-name');
+            let lecture_summary_name = e.target.parentNode.parentNode.getAttribute('data-summary-name');
+<!--            let lecture_summary_name = e.target.parentNode.parentNode.getAttribute('data-notice-name');-->
 <!--            lecture_summary_name = lecture_summary_name + ".txt";-->
             lecture_summary_name = lecture_summary_name + ".wav.txt";
             alert('id: ' + id);
@@ -112,7 +112,7 @@
         $('.get_notices').click(function(e) {
             alert('Processing');
             let id = e.target.parentNode.parentNode.getAttribute('id');
-            let lecture_notice_name = e.target.parentNode.parentNode.getAttribute('data-summary-name');
+            let lecture_notice_name = e.target.parentNode.parentNode.getAttribute('data-notice-name');
             lecture_notice_name = lecture_notice_name + ".wav.txt";
             alert('id: ' + id);
             alert('lecture_notice_name: ' + lecture_notice_name);
@@ -311,7 +311,7 @@
                                         <tbody>
 
                                         {% for lec_text in lecture_text_data %}
-                                        <tr class="recordings not_clicked" id="{{ lec_text.lecture_audio_id.id }}" data-summary-name="{{lec_text.lecture_audio_id.lecture_audio_name}}" data-notice-name="{{lec_text.lecture_audio_id}}" >
+                                        <tr class="recordings not_clicked" id="{{ lec_text.lecture_audio_id.id }}" data-summary-name="{{lec_text.lecture_audio_id.lecture_audio_name}}" data-notice-name="{{lec_text.lecture_audio_id.lecture_audio_name}}" >
 <!--                                            <td>-->
 <!--                                                <div class="radio">-->
 <!--                                                    <label><input type="radio"-->

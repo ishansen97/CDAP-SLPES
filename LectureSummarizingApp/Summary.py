@@ -88,7 +88,7 @@ def LectureSummary(summary_name):
         pdf.cell(200, 10, txt=x, ln=1, align='C')
 
     # save the pdf with name .pdf
-    pdf.output(PDF_DESTINATION_DIR)
+    # pdf.output(PDF_DESTINATION_DIR)
 
     # convert the summary list to a text
     listToStr = ' '.join([str(elem) for elem in summary])
