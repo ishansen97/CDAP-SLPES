@@ -104,11 +104,11 @@ def automation_process(lecturer, subject, subject_code, video_length="00:20:00")
     # save the lecturer audio
 
 
-    for i in range(100):
-        print('outer loop: ', i)
-
-        for j in range(10000):
-            print('inner loop: ', j)
+    # for i in range(100):
+    #     print('outer loop: ', i)
+    #
+    #     for j in range(10000):
+    #         print('inner loop: ', j)
 
 
     # start the batch processing for lecture summarization component
