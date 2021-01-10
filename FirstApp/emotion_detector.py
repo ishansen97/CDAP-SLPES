@@ -523,11 +523,11 @@ def emotion_frame_groupings(video_name, frame_landmarks, frame_group_dict):
         group_detection_count = frame_group_details['detection_count']
 
         # calculate the frame group emotion percentages
-        frame_group_happy_perct = float(frame_group_happy_count / group_detection_count) * 100
-        frame_group_sad_perct = float(frame_group_sad_count / group_detection_count) * 100
-        frame_group_angry_perct = float(frame_group_angry_count / group_detection_count) * 100
-        frame_group_surprise_perct = float(frame_group_surprise_count / group_detection_count) * 100
-        frame_group_neutral_perct = float(frame_group_neutral_count / group_detection_count) * 100
+        frame_group_happy_perct = float(frame_group_happy_count / group_detection_count) * 100 if group_detection_count > 0 else 0
+        frame_group_sad_perct = float(frame_group_sad_count / group_detection_count) * 100 if group_detection_count > 0 else 0
+        frame_group_angry_perct = float(frame_group_angry_count / group_detection_count) * 100 if group_detection_count > 0 else 0
+        frame_group_surprise_perct = float(frame_group_surprise_count / group_detection_count) * 100 if group_detection_count > 0 else 0
+        frame_group_neutral_perct = float(frame_group_neutral_count / group_detection_count) * 100 if group_detection_count > 0 else 0
 
         # assign the values to the same dictionary
         frame_group_dict[key]['happy_perct'] = round(frame_group_happy_perct, 1)

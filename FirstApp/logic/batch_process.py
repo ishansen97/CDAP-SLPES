@@ -1,5 +1,6 @@
 import requests
 import json
+from background_task import background
 
 
 def student_behavior_batch_process(video_id, video_name):
@@ -30,6 +31,7 @@ def student_behavior_batch_process(video_id, video_name):
 
 
 # this method will save the student lecture video
+# @background(schedule=5)
 def save_student_lecture_video(student_video):
 
     data_dumps = json.dumps(student_video)
