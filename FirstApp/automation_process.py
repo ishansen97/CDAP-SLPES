@@ -1,7 +1,8 @@
 import requests
 import json
 
-
+from LectureSummarizingApp.lecture_audio_batch_process import save_lecturer_audio, summarization_batch_process
+from MonitorLecturerApp.logic.lecturer_batch_process import lecturer_batch_process
 from .MongoModels import LectureVideo
 from . logic import batch_process as bp
 from MonitorLecturerApp.logic import lecturer_batch_process as lbp
@@ -86,8 +87,13 @@ def automation_process(lecturer, subject, subject_code, video_length="00:20:00")
         "lecture_video_length": video_length
     }
 
-    # create the lecturer audio
-    lecturer_audio_content = {}
+    # create the lecturer audio content
+    lecturer_audio_content = {
+        "lecturer": lecturer,
+        "subject": subject,
+        "audio_name": lecturer_audio_name
+    }
+
 
 
     # save the student video
@@ -102,7 +108,8 @@ def automation_process(lecturer, subject, subject_code, video_length="00:20:00")
     print('lecturer video response: ', lecturer_video_response)
 
     # save the lecturer audio
-
+    lecturer_audio_response = save_lecturer_audio(lecturer_audio_content)
+    audio_id = lecturer_audio_response['audio_id']
 
     # for i in range(100):
     #     print('outer loop: ', i)
@@ -112,24 +119,23 @@ def automation_process(lecturer, subject, subject_code, video_length="00:20:00")
 
 
     # start the batch processing for lecture summarization component
-    # lecture_summary_batch_process = lecture_summarization_batch_process(audio_name)
-    lecture_summary_batch_process = True
+    lecture_summary_batch_process = summarization_batch_process(audio_id, lecturer_audio_name)
 
     # if the lecture summarization process is successful
-    # if lecture_summary_batch_process:
-    #
-    #     # start the batch processing for monitoring lecturer performance component
-    #     lecturer_batch_process_response = lecturer_batch_process(lecturer_video_name, lecturer_audio_name)
-    #
-    #     # if the lecturer performance process is successful
-    #     if lecturer_batch_process_response:
-    #
-    #         # start the batch processing for monitoring student behavior component
-    #         student_batch_process_response = student_behavior_batch_process(student_video_id, student_video_name)
-    #
-    #         # if the student behavior process is successful
-    #         if student_batch_process_response:
-    #             is_all_processed = True
+    if lecture_summary_batch_process:
+
+        # start the batch processing for monitoring lecturer performance component
+        lecturer_batch_process_response = lecturer_batch_process(lecturer_video_name, lecturer_audio_name)
+
+        # if the lecturer performance process is successful
+        if lecturer_batch_process_response:
+
+            # start the batch processing for monitoring student behavior component
+            student_batch_process_response = student_behavior_batch_process(student_video_id, student_video_name)
+
+            # if the student behavior process is successful
+            if student_batch_process_response:
+                is_all_processed = True
 
 
     # return the status
