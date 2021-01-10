@@ -48,7 +48,7 @@ class LectureAudioAPI(APIView):
 
 
 
-class audioNoiseRemovedList(APIView):
+class AudioNoiseRemovedList(APIView):
 
     def get(self, request):
         # lecture_audio_noise_removed = LectureAudioNoiseRemoved.objects.all()
@@ -68,7 +68,7 @@ class audioNoiseRemovedList(APIView):
 
 
         # nr.noise_removalll(video_name)
-        noise_removal(audio_name)
+        a, sr = noise_removal(audio_name)
 
         LectureAudioNoiseRemoved(
             lecture_audio_noise_removed_id=new_audio_noise_removed_id,
@@ -93,7 +93,7 @@ class audioNoiseRemovedList(APIView):
         return Response({"response": request.data})
 
 
-class audioToTextList(APIView):
+class AudioToTextList(APIView):
 
     def get(self, request):
         #lecture_speech_to_text_id = LectureSpeechToText.objects.all()
@@ -111,7 +111,7 @@ class audioToTextList(APIView):
         # generate new id for speech to text file
         new_speech_to_text_id = "LST0001" if audio_to_text_list is None else generate_new_id(audio_to_text_list.lecture_speech_to_text_id)
 
-        speech_to_text(speech_to_text_name)
+        is_finished = speech_to_text(speech_to_text_name)
 
         LectureSpeechToText(
             lecture_speech_to_text_id=new_speech_to_text_id,

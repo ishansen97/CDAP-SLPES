@@ -4,6 +4,7 @@ import os
 
 def speech_to_text(speech_to_text_name):
 
+    print('starting the speech_to_text process')
 #calling the Recognizer()
     r = sr.Recognizer()
 
@@ -26,3 +27,7 @@ def speech_to_text(speech_to_text_name):
             file.write('error')
 
         file.close()
+
+    print('ending the speech_to_text process')
+
+    return True

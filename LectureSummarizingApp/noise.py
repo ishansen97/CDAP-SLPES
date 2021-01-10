@@ -10,6 +10,8 @@ def noise_removal(video_name):
     # sample_directory = 'lectures/'
     # sample_path = sample_directory + sample_file
 
+    print('starting the noise removal process')
+
 
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     LECTURE_VIDEO_DIR = os.path.join(BASE_DIR, "lectures\\{}".format(video_name))
@@ -26,6 +28,8 @@ def noise_removal(video_name):
     # speech_boosted = mffc_highshelf(a, sr)
 
     output_file(destination=DESTINATION_DIR, filename=video_name, a=a, sr=sr)
+
+    print('ending the noise removal process')
 
     return a, sr
 

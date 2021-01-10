@@ -12,6 +12,9 @@ def LectureSummary(summary_name):
     DESTINATION_DIR = os.path.join(BASE_DIR, "summary\\Summary_{}".format(summary_name))
     print('destination directory: ', DESTINATION_DIR)
 
+    print('starting the summary process')
+
+
 # Reading the file
     nlp = pt_core_news_sm.load()
     # file = open(DESTINATION_DIR, 'w')
@@ -92,5 +95,7 @@ def LectureSummary(summary_name):
 
     # convert the summary list to a text
     listToStr = ' '.join([str(elem) for elem in summary])
+
+    print('ending the summary process')
 
     return text, listToStr

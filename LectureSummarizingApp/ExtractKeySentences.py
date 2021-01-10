@@ -9,6 +9,9 @@ def GetLectureNotice(notice_name):
     DESTINATION_DIR = os.path.join(BASE_DIR, "notices\\Notice_{}".format(notice_name))
     print('destination directory: ', DESTINATION_DIR)
 
+    print('starting the notice process')
+
+
     text = ''
     # read_lines = [line.rstrip('\n') for line in open(FILE_PATH, "r")]
     # read_lines = [line.rstrip('\n') for line in open(FILE_PATH, "r")]
@@ -64,5 +67,8 @@ def GetLectureNotice(notice_name):
     # pdf.output("PDF_DESTINATION_DIR")
 
     listToStr = ' '.join([str(elem) for elem in sentences_with_word])
+
+    print('ending the notice process')
+
 
     return text, listToStr
