@@ -119,13 +119,13 @@ def automation_process(lecturer, subject, subject_code, video_length="00:20:00")
 
 
     # start the batch processing for lecture summarization component
-    lecture_summary_batch_process = summarization_batch_process(audio_id, lecturer_audio_name)
+    lecture_summary_batch_process, summary_id = summarization_batch_process(audio_id, lecturer_audio_name)
 
     # if the lecture summarization process is successful
     if lecture_summary_batch_process:
 
         # start the batch processing for monitoring lecturer performance component
-        lecturer_batch_process_response = lecturer_batch_process(lecturer_video_name, lecturer_audio_name)
+        lecturer_batch_process_response = lecturer_batch_process(lecturer_video_name, lecturer_audio_name, summary_id)
 
         # if the lecturer performance process is successful
         if lecturer_batch_process_response:

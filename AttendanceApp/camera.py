@@ -23,7 +23,7 @@ maskNet = load_model(os.path.join(settings.BASE_DIR,'face_detector/mask_detector
 
 class IPWebCam(object):
 	def __init__(self):
-		self.url = "http://192.168.8.100:8080/shot.jpg"
+		self.url = "http://192.168.8.101:8080/shot.jpg"
 
 	def __del__(self):
 		cv2.destroyAllWindows()

@@ -353,6 +353,7 @@ def loggedInView(request):
             login(request, user)
             # setting up the session
             request.session['lecturer'] = lecturer.id
+            request.session['lecturer-name'] = lecturer.fname + ' ' + lecturer.lname
             request.session['user_type'] = "Lecturer"
 
             return redirect('/')

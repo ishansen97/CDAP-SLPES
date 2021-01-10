@@ -29,27 +29,35 @@ class LectureAudioAPI(APIView):
         })
 
     def post(self, request):
+        print('main target')
         lecture_audio = LectureAudio.objects.all().order_by('lecturer_date')
         lecture_audio_serializer = LectureAudioSerializer(lecture_audio, many=True)
 
         audio_list = LectureAudio.objects.order_by('lecture_audio_id').last()
         audio_name = request.data['audio_name']
+
+        print(lecture_audio)
+        print(audio_list)
+        print(audio_name)
         # id = int(request.query_params.get("id"))
-        new_audio_id = generate_new_id(audio_list.lecture_audio_noise_removed_id)
+        new_audio_id = generate_new_id(audio_list.lecture_audio_id)
+        print(new_audio_id)
 
         fake_duration = datetime.timedelta(minutes=00, seconds=10, milliseconds=00)
-        AudioRecorder(audio_name)
+        # AudioRecorder(audio_name)
 
         LectureAudio(
             lecture_audio_id=new_audio_id,
             lecture_audio_name =audio_name,
             lecture_audio_length = fake_duration,
-            lecturer =request.data["lecturer"],
-            subject = request.data["subject"]
+            lecturer_id =int(request.data["lecturer"]),
+            subject_id = int(request.data["subject"]),
+            lecturer_date=datetime.datetime.now().date()
         ).save()
 
         # get the created lecture audio instance
         created_lecture_audio = LectureAudio.objects.filter(lecture_audio_id=new_audio_id)
+        print(created_lecture_audio)
 
         return Response({
             "response": Response.status_code,
@@ -167,7 +175,9 @@ class LectureSummaryList(APIView):
             audio_original_text=text,
             audio_summary=summary
         ).save()
-        return Response({"response": Response.status_code})
+
+        # created_summary = LectureS
+        return Response({"response": Response.status_code, "summary_id": lecture_summary_id})
 
     def post(self, request):
         LectureAudioSummary(

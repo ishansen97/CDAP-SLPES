@@ -22,7 +22,12 @@ urlpatterns = [
     url(r'^process-initiate-lecture/$', InitiateLecture.as_view()),
 
     # this url will be used for testing
-    url(r'^test-api/$', TestAPI.as_view()),
-    url(r'^stop-api/$', stopRecording.as_view())
+    url(r'^test-api', TestAPI.as_view()),
+    url(r'^stop-api/$', stopRecording.as_view()),
+    url(r'^training-api/$', getTrainingImages.as_view()),
+
+    # this url will be used for testing
+    url(r'^lecture-video-api', LecturerVideoAPI.as_view()),
+    url(r'^stop-lecture-api/$', stopRecording.as_view())
 
 ]

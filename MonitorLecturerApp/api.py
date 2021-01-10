@@ -225,6 +225,7 @@ class ProcessLectureAudioAnalysis(APIView):
     def get(self, request):
 
         # lec_audio_text = ta.run()
+        summary_id = request.query_params.get('summary_id')
 
         # (this is temporary)
         lec_audio_text = {
@@ -238,7 +239,7 @@ class ProcessLectureAudioAnalysis(APIView):
             last_lec_audio_text_id.lecturer_audio_text_id)
 
         # retrieve the lecture audio summary object (temporary)
-        lecture_audio_summary = LectureAudioSummary.objects.filter(lecture_audio_summary_id='LAU004_sum')[0]
+        lecture_audio_summary = LectureAudioSummary.objects.filter(lecture_audio_summary_id=summary_id)[0]
 
         # save the lecture audio text object
         LecturerAudioText(

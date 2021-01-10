@@ -1,8 +1,8 @@
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
-from .models import Student, Subject, Attendance
-from .serializers import StudentSerializer, SubjectSerializer, AttendanceSerializer, FileSerializer
+from .models import Student, Subject, Attendance, TrainingData
+from .serializers import StudentSerializer, SubjectSerializer, AttendanceSerializer, FileSerializer, TrainingSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -11,6 +11,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 
 from . import record
 from . import test as t
+from . import lecturerVideo as lv
 
 from rest_framework.views import *
 
@@ -176,25 +177,86 @@ class InitiateLecture(APIView):
 class stopRecording(APIView):
     def get(self, request):
         t.isStop = 1
+        t.firstIteration = 0
+        # lv.isStop = 1
         return Response({
             "response": "stopped"
         })
     def post(self, request):
         pass
 
+class getTrainingImages(APIView):
+    def get(self, request):
+        data = TrainingData.objects.all()
+        print(data[0].studentId)
+        serialized = TrainingSerializer(data).data
+
+        print(serialized)
+        return Response({
+            "response": "goda"
+        })
+    def post(self, request):
+        pass
+
+class StopLectureVideoRecording(APIView):
+    def get(self, request):
+        lv.isStop = 1
+        return Response({
+            "response": "stopped"
+        })
+    def post(self, request):
+        pass
+
+
 # test method (delete later)
 class TestAPI(APIView):
 
     def get(self, request):
+        pass
+        # t.isStop = 0
+        # param = request.query_params.get('param')
+        #
+        # # t.test()
+        # t.IPWebcamTest(param)
+        #
+        # return Response({
+        #     "response": "started"
+        # })
+
+    def post(self, request):
         t.isStop = 0
-        param = request.query_params.get('param')
+
 
         # t.test()
-        t.IPWebcamTest()
+        t.IPWebcamTest(request.data)
+        # lv.startLecturerVideo(request.data)
 
         return Response({
             "response": "started"
         })
 
-    def post(self, request):
+
+class LecturerVideoAPI(APIView):
+
+    def get(self, request):
         pass
+        # t.isStop = 0
+        # param = request.query_params.get('param')
+        #
+        # # t.test()
+        # t.IPWebcamTest(param)
+        #
+        # return Response({
+        #     "response": "started"
+        # })
+
+    def post(self, request):
+        lv.isStop = 0
+
+
+        # t.test()
+        lv.startLecturerVideo(request.data)
+
+        return Response({
+            "response": "started"
+        })

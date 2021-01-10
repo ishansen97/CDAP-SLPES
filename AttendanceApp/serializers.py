@@ -1,12 +1,18 @@
 from rest_framework import serializers
 
 from FirstApp.serializers import SubjectSerializer
-from .models import Student, Subject, Attendance, File
+from .models import Student, Subject, Attendance, File, TrainingData
 
 
 class StudentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student
+        fields = '__all__'
+
+
+class TrainingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TrainingData
         fields = '__all__'
 
 #

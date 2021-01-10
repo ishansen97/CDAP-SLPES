@@ -32,6 +32,8 @@
 
 
 <script>
+
+
 function toggleLectureLive() {
   var x = document.getElementById("liveStreamLecture");
   var y = document.getElementById("liveStreamLectureStartButton");
@@ -48,9 +50,64 @@ var timer = false;
 function testAPI() {
     timer = true
     startTimer()
-    let param = 'sachith';
+    let subject_code = "{{ upcomingLecture.subject_code }}";
+    let subject_name = "{{ upcomingLecture.subject_name }}";
+    let subject_id = "{{ upcomingLecture.subject_id }}";
+    let lecturerId = {{ lecturerId }};
+    let lecturerName = "{{ lecturerName }}";
+
+    let year = new Date().getFullYear();
+    let month = new Date().getMonth();
+    let date = new Date().getDate();
+
+    month = ("0" + (month + 1)).slice(-2);
+    date = ("0" + date).slice(-2);
+
+
+
+
+    let dateFormat = year + "-" + month + "-" + date;
+
+
+    let param = {
+        'subject_code': subject_code? subject_code: null,
+        'subject_name': subject_name? subject_name: null,
+        'lecturerId': lecturerId? Number.parseInt(lecturerId): null,
+        'lecturerName': lecturerName? lecturerName: null,
+        'dateFormat': dateFormat? dateFormat: null,
+        'subject_id': Number.parseInt(subject_id)
+    };
+
+    let paramObj = JSON.stringify(param);
+        {#let param = 'sachith'#}
     //call the API
-    fetch('http://127.0.0.1:8000/attendance/test-api/?param=' + param)
+    {#fetch('http://127.0.0.1:8000/attendance/test-api/?param=' + param)#}
+    {#.then((res) => res.json())#}
+    {#.then((out) => {})#}
+    {#.catch((err) => alert('error: ' + err));#}
+
+    fetch('http://127.0.0.1:8000/attendance/test-api', {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: paramObj
+    })
+    .then((res) => res.json())
+    .then((out) => {})
+    .catch((err) => alert('error: ' + err));
+
+}
+
+function saveLectureRecording(obj) {
+
+    fetch('http://127.0.0.1:8000/attendance/lecture-video-api', {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: obj
+    })
     .then((res) => res.json())
     .then((out) => {})
     .catch((err) => alert('error: ' + err));
@@ -63,15 +120,56 @@ function testAPI() {
     .catch((err) => alert('error: ' + err));
 
 }
+
 var time = 'time';
+
+function train() {
+    fetch('http://127.0.0.1:8000/attendance/training-api/').then((value) => value.json()).then((data) => alert(data.response)).catch((err) => alert(error))
+}
 function f() {
-    let param = 'sachith';
+    let year = new Date().getFullYear();
+    let month = new Date().getMonth();
+    let date = new Date().getDate();
+
+    if (month < 9) {
+        month = "0" + month + 1;
+    }
+    else {
+        month = month + 1;
+    }
+
+
+
+
+
+
+    let dateFormat = year + "-" + month + "-" + date;
+    {#let param = {#}
+    {#    'subject_code': subject_code? subject_code: null,#}
+    {#    'subject_name': subject_name? subject_name: null,#}
+    {#    'lecturerId': lecturerId? lecturerId: null,#}
+    {#    'lecturerName': lecturerName? lecturerName: null,#}
+    {#    'dateFormat': dateFormat? dateFormat: null#}
+    {#};#}
+        let param = 'sachith'
     //call the API
     fetch('http://127.0.0.1:8000/attendance/stop-api/?param=' + param)
     .then((res) => res.json())
     .then((out) => {
-        timer = false
-        startTimer();
+        {#timer = false#}
+        {#stopLectureVideoRecording();#}
+
+    })
+    .catch((err) => alert('error: ' + err));
+}
+
+
+function stopLectureVideoRecording() {
+
+    fetch('http://127.0.0.1:8000/attendance/stop-lecture-api/')
+    .then((res) => res.json())
+    .then((out) => {
+        alert(out)
     })
     .catch((err) => alert('error: ' + err));
 }
@@ -106,7 +204,7 @@ function startTimer() {
             <div class="text-center">
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="card-title">Lecture Live</h4>
+                        <h4 class="card-title">{{ upcomingLecture.subject_code }} {{ upcomingLecture.subject_name }} Live</h4>
                     </div>
 
                     <div class="card-body">
@@ -125,6 +223,9 @@ function startTimer() {
                             </div>
                             <div class="col">
                                 <button style="display: block; width: 70px; height: 70px;" id="liveStreamLectureStartButton" class="btn btn-warning btn-circle" onclick="f()"><i class="fas fa-square"></i></button>
+                            </div>
+                            <div class="col">
+                                <button style="display: block; width: 70px; height: 70px;" id="train" class="btn btn-warning btn-circle" onclick="train()"><i class="fas fa-plus"></i></button>
                             </div>
                         </div>
                     </div>

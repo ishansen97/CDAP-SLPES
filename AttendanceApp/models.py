@@ -51,6 +51,18 @@ class Lecture(models.Model):
     endTime = models.DateField()
     day = models.CharField(max_length=20)
 
+
+class TrainingData(models.Model):
+    studentId = models.CharField(max_length=20, default='')
+    image_1 = models.CharField(max_length=2000000, null=True, blank=True, default='')
+    image_2 = models.CharField(max_length=2000000, null=True, blank=True, default='')
+    image_3 = models.CharField(max_length=2000000, null=True, blank=True, default='')
+    image_4 = models.CharField(max_length=2000000, null=True, blank=True, default='')
+    image_5 = models.CharField(max_length=2000000, null=True, blank=True, default='')
+
+    def __str__(self):
+        return self.studentId
+
 from django.db import models
 
 # Create your models here.
