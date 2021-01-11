@@ -1,4 +1,5 @@
 import nltk
+nltk.download('punkt')
 import os
 from fpdf import FPDF
 
