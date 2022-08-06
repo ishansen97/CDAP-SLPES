@@ -1,0 +1,3124 @@
+{% extends 'FirstApp/template.html' %}
+<!DOCTYPE html>
+<html lang="en">
+{#{% block 'head' %}#}
+{#    {% endblock %}#}
+<body id="page-top">
+
+{% block javascript %}
+    {% load static %}
+
+    <!-- Bootstrap core JavaScript-->
+    <script src="{% static 'FirstApp/vendor/jquery/jquery.min.js' %}"></script>
+    <script src="{% static 'FirstApp/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+
+    <!-- Page level plugins -->
+    <script src="{% static 'FirstApp/vendor/datatables/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'FirstApp/vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+
+    <!-- Page level custom scripts -->
+    <script src="{% static 'FirstApp/js/demo/datatables-demo.js' %}"></script>
+
+    <!-- Core plugin JavaScript-->
+    <script src="{% static 'FirstApp/vendor/jquery-easing/jquery.easing.min.js' %}"></script>
+
+    <!-- canvasJS implementation -->
+    <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+
+
+    <!--basic jquery functions-->
+    <script type="text/javascript">
+
+        var global_lecturer = 0;
+        var global_lecturer_subject_index = 0;
+        var global_lecture_date = '';
+        var global_lecture_video_id = '';
+        var global_video_name = '';
+        var student_behavior_summary = {};
+        var lecture_video_time_landmarks = [];
+        var lecture_activity_frame_group_percentages = {};
+        var lecture_emotion_frame_group_percentages = {};
+        var lecture_gaze_frame_group_percentages = {};
+
+
+        $(document).ready(function () {
+
+            $('.lecture_radio').click(function () {
+
+                //hide the previously displayed progress areas
+                $('#progress_areas').attr('hidden', true);
+                //hide the summary button
+                $('#student_behavior_OR_text').attr('hidden', true);
+                //hide the summart button
+                $('#student_behavior_view_summary').attr('hidden', true);
+
+
+                global_lecturer_subject_index = $(this).attr('data-index');
+                global_lecturer = $(this).attr('data-lecturer');
+                global_lecture_date = $(this).attr('data-date');
+
+                let counter = $(this).attr('data-counter');
+
+                {#alert('counter: ' + counter);#}
+
+                let real_date = new Date(global_lecture_date);
+                //extract the day
+                let day = '' + real_date.getDate();
+                let month = '' + (real_date.getMonth() + 1);
+                let year = '' + real_date.getFullYear();
+
+                if (month.length < 2)
+                    month = '0' + month;
+                if (day.length < 2)
+                    day = '0' + day;
+
+                let date_format = [year, month, day].join('-');
+
+
+                //hide the message
+                $('#student_behavior_overview').attr('hidden', true);
+                //display the loader
+                $('#student_behavior_loader').attr('hidden', false);
+                //display the video loading message
+                $('#student_behavior_video_loading').attr('hidden', false);
+
+                fetch('http://127.0.0.1:8000/get-lecture-video-for-home/?lecturer=' + global_lecturer + '&date=' + date_format + '&counter=' + counter)
+                    .then((res) => res.json())
+                    .then((out) => retrieveLectureVideoDetails(out))
+                    .catch((error) => alert('an error occurred: ' + error));
+
+            });
+
+            //function to display student behavior
+            function displayStudentBehavior(res) {
+                //hide the loader
+                $('#student_behavior_loader').attr('hidden', true);
+
+
+            }
+
+            //this function will retrieve lecture video details
+            function retrieveLectureVideoDetails(lecVideo) {
+
+                //hide the loading video details message
+                $('#student_behavior_video_loading').attr('hidden', true);
+                //display the activity loading message
+                $('#student_behavior_activity').attr('hidden', false);
+
+
+                //get the lecture video response
+                let video = lecVideo.response;
+
+                global_lecture_video_id = video.lecture_video_id;
+                global_video_name = video.video_name;
+
+                //after retrieving lecture video details, get lecture activity details
+                fetch('http://127.0.0.1:8000/get-lecture-activity/?lecture_video_id=' + global_lecture_video_id + '&lecture_video_name=' + global_video_name)
+                    .then((res) => res.json())
+                    .then((out) => displayActivity(out))
+                    .catch((err) => alert('error: ' + err));
+
+
+            }
+
+
+            //this function will display the activity
+            function displayActivity(activity) {
+
+                //hide the activity loading message
+                $('#student_behavior_video_loading').attr('hidden', true);
+                //hide the loading message
+                $('#student_behavior_activity').attr('hidden', true);
+                //display the emotion loading message
+                $('#student_behavior_emotion').hide();
+
+                activity.response.map((act, index) => {
+                    //setting the percentage values
+                    $('#phone_perct').text(act.phone_perct + '%');
+                    $('#talking_perct').text(act.talking_perct + '%');
+                    $('#listening_perct').text(act.listening_perct + '%');
+                    $('#writing_perct').text(act.writing_perct + '%');
+
+                    //setting the width in the progress bars
+                    $('#phone_width').width(act.phone_perct + '%');
+                    $('#talking_width').width(act.talking_perct + '%');
+                    $('#listening_width').width(act.listening_perct + '%');
+                    $('#writing_width').width(act.writing_perct + '%');
+                });
+
+                //retrieve the lecture emotions
+                retrieveLectureEmotion();
+
+            }
+
+            //this function will retrieve lecture emotion details
+            function retrieveLectureEmotion() {
+
+                //using fetch API
+                fetch('http://127.0.0.1:8000/get-lecture-emotion/?lecture_video_id=' + global_lecture_video_id + '&lecture_video_name=' + global_video_name)
+                    .then((res) => res.json())
+                    .then((out) => displayEmotion(out))
+                    .catch((err) => alert('error: ' + err));
+
+            }
+
+            //displaying the activity percentages in the progress bars
+            function displayEmotion(emotion) {
+
+                //hide the emotion loading message
+                $('#student_behavior_emotion').attr('hidden', true);
+                //display the gaze message
+                $('#student_behavior_gaze').attr('hidden', false);
+
+
+                emotion.response.map((act, index) => {
+                    //setting the percentage values
+                    $('#happy_perct').text(act.happy_perct + '%');
+                    $('#sad_perct').text(act.sad_perct + '%');
+                    $('#anger_perct').text(act.angry_perct + '%');
+                    $('#surprise_perct').text(act.surprise_perct + '%');
+                    $('#neutral_perct').text(act.neutral_perct + '%');
+
+                    //setting the width in the progress bars
+                    $('#happy_width').width(act.happy_perct + '%');
+                    $('#sad_width').width(act.sad_perct + '%');
+                    $('#anger_width').width(act.angry_perct + '%');
+                    $('#surprise_width').width(act.surprise_perct + '%');
+                    $('#neutral_width').width(act.neutral_perct + '%');
+                });
+
+                //retrieve the lecture gaze estimation
+                retrieveLectureGazeEstimation();
+
+                //display the progress bar area
+                //$('#progress_areas').attr('hidden', false);
+            }
+
+
+            //this function will retrieve lecture gaze estimations
+            function retrieveLectureGazeEstimation() {
+
+                //using fetch API
+                fetch('http://127.0.0.1:8000/get-lecture-gaze-estimation/?lecture_video_id=' + global_lecture_video_id + '&lecture_video_name=' + global_video_name)
+                    .then((res) => res.json())
+                    .then((out) => displayGazeEstimation(out))
+                    .catch((err) => alert('error: ' + err));
+
+            }
+
+            //displaying the activity percentages in the progress bars
+            function displayGazeEstimation(gaze_estimation) {
+
+                //hide the loader
+                $('#student_behavior_loader').attr('hidden', true);
+                //hide the emotion loading message
+                $('#student_behavior_gaze').attr('hidden', true);
+
+
+                gaze_estimation.response.map((act, index) => {
+                    //setting the percentage values
+                    $('#looking_up_right_perct').text(act.looking_up_and_right_perct + '%');
+                    $('#looking_up_left_perct').text(act.looking_up_and_left_perct + '%');
+                    $('#looking_down_right_perct').text(act.looking_down_and_right_perct + '%');
+                    $('#looking_down_left_perct').text(act.looking_down_and_left_perct + '%');
+                    $('#looking_front_perct').text(act.looking_front_perct + '%');
+
+                    //setting the width in the progress bars
+                    $('#looking_up_right_width').width(act.looking_up_and_right_perct + '%');
+                    $('#looking_up_left_width').width(act.looking_up_and_left_perct + '%');
+                    $('#looking_down_right_width').width(act.looking_down_and_right_perct + '%');
+                    $('#looking_down_left_width').width(act.looking_down_and_left_perct + '%');
+                    $('#looking_front_width').width(act.looking_front_perct + '%');
+                });
+
+
+                //fetch the video time landmark details
+                fetch('http://127.0.0.1:8000/get-lecture-video-summary-time-landmarks/?video_name=' + global_video_name)
+                    .then((res) => res.json())
+                    .then((out) => assignTimeLandmarks(out.response))
+                    .catch((err) => alert('error: ' + err));
+
+
+                //display the progress bar area
+                $('#progress_areas').attr('hidden', false);
+            }
+
+
+            //this function will assign lecture video time landmarks
+            function assignTimeLandmarks(response) {
+
+                lecture_video_time_landmarks = response;
+            }
+
+
+            //this function will handle the activity 'summary' button
+            $('#activity_summary_btn').click(function (e) {
+
+                //change the innerHTML of the clicked button
+                e.target.innerHTML = "<span class='font-italic'>Processing</span>";
+
+                let phone_perct = $('#phone_perct').text().split("%")[0];
+                let listen_perct = $('#listening_perct').text().split("%")[0];
+                let note_perct = $('#writing_perct').text().split("%")[0];
+
+
+                //fetch the activity summary details
+                fetch('http://127.0.0.1:8000/get-lecture-activity-summary/?video_name=' + global_video_name + '&phone_perct=' + phone_perct + '&note_perct=' + note_perct + '&listen_perct=' + listen_perct)
+                    .then((res) => res.json())
+                    .then((out) => activityFrameGroupPercentages(out, e))
+                    .catch((err) => alert('error: ' + err));
+
+
+            });
+
+            //this function will handle the emotion 'summary' button
+            $('#emotion_summary_btn').click(function (e) {
+
+                //change the innerHTML of the clicked button
+                e.target.innerHTML = "<span class='font-italic'>Processing</span>";
+
+                //fetch the activity summary details
+                fetch('http://127.0.0.1:8000/get-lecture-emotion-summary/?video_name=' + global_video_name)
+                    .then((res) => res.json())
+                    .then((out) => emotionFrameGroupPercentages(out, e))
+                    .catch((err) => alert('error: ' + err));
+
+            });
+
+            //this function will handle the gaze 'summary' button
+            $('#gaze_summary_btn').click(function (e) {
+                //change the innerHTML of the clicked button
+                e.target.innerHTML = "<span class='font-italic'>Processing</span>";
+
+                //fetch the activity summary details
+                fetch('http://127.0.0.1:8000/get-lecture-gaze-summary/?video_name=' + global_video_name)
+                    .then((res) => res.json())
+                    .then((out) => gazeFrameGroupPercentages(out, e))
+                    .catch((err) => alert('error: ' + err));
+            });
+
+
+            //this function will handle the retrieved activity frame group percentages
+            function activityFrameGroupPercentages(response, e) {
+                //remove the previous comments
+                $('#student_activity_comments').empty();
+
+                lecture_activity_frame_group_percentages = response.frame_group_percentages;
+                let frame_landmarks = response.frame_landmarks;
+                {#let frame_group_dict = response.frame_group_dict;#}
+                let activity_labels = response.activity_labels;
+                let comment_list = response.comments;
+
+                //define a html string
+                let htmlString = "";
+
+                for (let i = 0; i < comment_list.length; i++) {
+                    htmlString += "<p class='font-italic font-weight-bold'>";
+                    htmlString += comment_list[i];
+                    htmlString += "</p>";
+                }
+
+                //change the button back to original
+                e.target.innerHTML = "Summary";
+
+                //append the html string to the comments list
+                $('#student_activity_comments').append(htmlString);
+
+                //open the modal
+                $('#ActivitySummaryModal').modal();
+
+
+                //render the chart onto the modal body
+                renderActivityChart(activity_labels);
+            }
+
+
+            //this function will handle the retrieved emotion frame group percentages
+            function emotionFrameGroupPercentages(response, e) {
+
+                lecture_emotion_frame_group_percentages = response.frame_group_percentages;
+                let frame_landmarks = response.frame_landmarks;
+                let emotion_labels = response.emotion_labels;
+
+
+                //change the button back to original
+                e.target.innerHTML = "Summary";
+
+                //open the modal
+                $('#EmotionSummaryModal').modal();
+
+
+                //render the chart onto the modal body
+                renderEmotionChart(emotion_labels);
+
+            }
+
+            //this function will handle the retrieved gaze frame group percentages
+            function gazeFrameGroupPercentages(response, e) {
+
+                lecture_gaze_frame_group_percentages = response.frame_group_percentages;
+                let frame_landmarks = response.frame_landmarks;
+                let gaze_labels = response.gaze_labels;
+
+
+                //change the button back to original
+                e.target.innerHTML = "Summary";
+
+                //open the modal
+                $('#GazeSummaryModal').modal();
+
+
+                //render the chart onto the modal body
+                renderGazeChart(gaze_labels);
+
+            }
+
+
+            //this function will call the activity chart function
+            function renderActivityChart(activity_labels) {
+
+                //get the activity label length
+                let activity_label_length = activity_labels.length;
+
+                let data = [];
+
+
+                //loop through the activity labels
+                for (let k = 0; k < activity_label_length; k++) {
+                    let label = activity_labels[k];
+                    let datapoints = [];
+
+                    let count = 0;
+
+                    //loop through the activity frame groups
+                    for (let key in lecture_activity_frame_group_percentages) {
+                        let frame_group_details = lecture_activity_frame_group_percentages[key];
+
+                        let activity_perct = frame_group_details[label];
+
+                        let point = {label: lecture_video_time_landmarks[count], y: activity_perct};
+
+                        datapoints.push(point);
+
+                        count++;
+                    }
+
+                    let obj = {
+                        type: "line",
+                        showInLegend: true,
+                        name: label,
+                        markerType: "square",
+                        {#xValueFormatString: "DD MMM, YYYY",#}
+                        xValueFormatString: "hh:mm:ss",
+                        color: getRandomColor(),
+                        dataPoints: datapoints
+                    };
+
+                    data.push(obj);
+
+                }
+
+
+                var chart = new CanvasJS.Chart("ActivityChartContainer", {
+                    animationEnabled: true,
+                    theme: "light2",
+                    title: {
+                        text: "Student Activity Behavior"
+                    },
+                    axisX: {
+                        title: "Duration",
+                        {#valueFormatString: "DD MMM",#}
+                        valueFormatString: "hh:mm:ss",
+                        crosshair: {
+                            enabled: true,
+                            snapToDataPoint: true
+                        }
+                    },
+                    axisY: {
+                        title: "Percentage",
+                        includeZero: true,
+                        crosshair: {
+                            enabled: true
+                        }
+                    },
+                    toolTip: {
+                        shared: true
+                    },
+                    legend: {
+                        cursor: "pointer",
+                        verticalAlign: "top",
+                        horizontalAlign: "right",
+                        dockInsidePlotArea: true,
+                        itemclick: toogleDataSeries
+                    },
+                    data: data
+                });
+                chart.render();
+            }
+
+
+            //this function will call the emotion chart function
+            function renderEmotionChart(emotion_labels) {
+
+                //get the activity label length
+                let emotion_label_length = emotion_labels.length;
+
+                let data = [];
+
+
+                //loop through the activity labels
+                for (let k = 0; k < emotion_label_length; k++) {
+                    let label = emotion_labels[k];
+                    let datapoints = [];
+
+                    let count = 0;
+
+                    //loop through the activity frame groups
+                    for (let key in lecture_emotion_frame_group_percentages) {
+                        let frame_group_details = lecture_emotion_frame_group_percentages[key];
+
+                        let emotion_perct = frame_group_details[label];
+
+                        let point = {label: lecture_video_time_landmarks[count], y: emotion_perct};
+
+                        datapoints.push(point);
+
+                        count++;
+                    }
+
+                    let obj = {
+                        type: "line",
+                        showInLegend: true,
+                        name: label,
+                        markerType: "square",
+                        {#xValueFormatString: "DD MMM, YYYY",#}
+                        xValueFormatString: "hh:mm:ss",
+                        color: getRandomColor(),
+                        dataPoints: datapoints
+                    };
+
+                    data.push(obj);
+
+                }
+
+
+                var chart = new CanvasJS.Chart("EmotionChartContainer", {
+                    animationEnabled: true,
+                    theme: "light2",
+                    title: {
+                        text: "Student Emotion Behavior"
+                    },
+                    axisX: {
+                        title: "Duration",
+                        {#valueFormatString: "DD MMM",#}
+                        valueFormatString: "hh:mm:ss",
+                        crosshair: {
+                            enabled: true,
+                            snapToDataPoint: true
+                        }
+                    },
+                    axisY: {
+                        title: "Percentage",
+                        includeZero: true,
+                        crosshair: {
+                            enabled: true
+                        }
+                    },
+                    toolTip: {
+                        shared: true
+                    },
+                    legend: {
+                        cursor: "pointer",
+                        verticalAlign: "top",
+                        horizontalAlign: "right",
+                        dockInsidePlotArea: true,
+                        itemclick: toogleDataSeries
+                    },
+                    data: data
+                });
+                chart.render();
+            }
+
+
+            //this function will call the chart function
+            function renderGazeChart(gaze_labels) {
+
+                //get the activity label length
+                let gaze_label_length = gaze_labels.length;
+
+                let data = [];
+
+
+                //loop through the activity labels
+                for (let k = 0; k < gaze_label_length; k++) {
+                    let label = gaze_labels[k];
+                    let datapoints = [];
+
+                    let count = 0;
+
+                    //loop through the activity frame groups
+                    for (let key in lecture_gaze_frame_group_percentages) {
+                        let frame_group_details = lecture_gaze_frame_group_percentages[key];
+
+                        let gaze_perct = frame_group_details[label];
+
+                        let point = {label: lecture_video_time_landmarks[count], y: gaze_perct};
+
+                        datapoints.push(point);
+
+                        count++;
+                    }
+
+                    let obj = {
+                        type: "line",
+                        showInLegend: true,
+                        name: label,
+                        markerType: "square",
+                        {#xValueFormatString: "DD MMM, YYYY",#}
+                        xValueFormatString: "hh:mm:ss",
+                        color: getRandomColor(),
+                        dataPoints: datapoints
+                    };
+
+                    data.push(obj);
+
+                }
+
+
+                var chart = new CanvasJS.Chart("GazeChartContainer", {
+                    animationEnabled: true,
+                    theme: "light2",
+                    title: {
+                        text: "Student Gaze estimation Behavior"
+                    },
+                    axisX: {
+                        title: "Duration",
+                        {#valueFormatString: "DD MMM",#}
+                        valueFormatString: "hh:mm:ss",
+                        crosshair: {
+                            enabled: true,
+                            snapToDataPoint: true
+                        }
+                    },
+                    axisY: {
+                        title: "Percentage",
+                        includeZero: true,
+                        crosshair: {
+                            enabled: true
+                        }
+                    },
+                    toolTip: {
+                        shared: true
+                    },
+                    legend: {
+                        cursor: "pointer",
+                        verticalAlign: "top",
+                        horizontalAlign: "right",
+                        dockInsidePlotArea: true,
+                        itemclick: toogleDataSeries
+                    },
+                    data: data
+                });
+                chart.render();
+            }
+
+
+            //this function will render the chart for Activity statistics
+            function renderActivityStatistics() {
+
+                let individual_activities = student_behavior_summary.individual_activities;
+                let activity_labels = student_behavior_summary.activity_labels;
+                let activity_length = individual_activities.length;
+                let label_length = activity_labels.length;
+
+                let data = [];
+                let colors = [
+                    "#000000",
+                    "#00FF00",
+                    "#0000FF"
+                ];
+
+
+                for (let i = 0; i < label_length; i++) {
+
+                    let label = activity_labels[i];
+                    let datapoints = [];
+
+                    for (let j = 0; j < activity_length; j++) {
+                        let activity = individual_activities[j];
+                        datapoints.push({label: "lecture " + (j + 1), y: activity[label]});
+                    }
+
+
+                    let obj = {
+                        type: "line",
+                        showInLegend: true,
+                        name: label,
+                        markerType: "square",
+                        {#xValueFormatString: "DD MMM, YYYY",#}
+                        xValueFormatString: "lec " + (i + 1),
+                        color: getRandomColor(),
+                        dataPoints: datapoints
+                    };
+
+                    data.push(obj);
+                }
+
+                var chart = new CanvasJS.Chart("activity_stats_chart", {
+                    animationEnabled: true,
+                    theme: "light2",
+                    title: {
+                        text: "Activity Statistics"
+                    },
+                    axisX: {
+                        title: "Lecture",
+                        {#valueFormatString: "DD MMM",#}
+                        valueFormatString: "lec",
+                        crosshair: {
+                            enabled: true,
+                            snapToDataPoint: true
+                        }
+                    },
+                    axisY: {
+                        title: "Percentage",
+                        includeZero: true,
+                        crosshair: {
+                            enabled: true
+                        }
+                    },
+                    toolTip: {
+                        shared: true
+                    },
+                    legend: {
+                        cursor: "pointer",
+                        verticalAlign: "bottom",
+                        horizontalAlign: "center",
+                        {#dockInsidePlotArea: true,#}
+                        itemclick: toogleDataSeries
+                    },
+                    data: data
+                });
+
+                chart.render();
+            }
+
+
+            //this function render the chart for Emotion statistics
+            function renderEmotionStatistics() {
+
+                let individual_emotions = student_behavior_summary.individual_emotions;
+                let emotion_labels = student_behavior_summary.emotion_labels;
+                let emotion_length = individual_emotions.length;
+                let label_length = emotion_labels.length;
+
+
+                let data = [];
+                let colors = [
+                    "#000000",
+                    "#00FF00",
+                    "#0000FF"
+                ];
+
+                for (let i = 0; i < label_length; i++) {
+
+                    let label = emotion_labels[i];
+                    let datapoints = [];
+
+                    for (let j = 0; j < emotion_length; j++) {
+                        let emotion = individual_emotions[j];
+                        datapoints.push({label: "lecture " + (j + 1), y: emotion[label]});
+                    }
+
+                    let obj = {
+                        type: "line",
+                        showInLegend: true,
+                        name: label,
+                        markerType: "square",
+                        {#xValueFormatString: "DD MMM, YYYY",#}
+                        xValueFormatString: "Lec " + (i + 1),
+                        color: colors[i - 1],
+                        dataPoints: datapoints
+                    };
+
+                    data.push(obj);
+                }
+
+                var chart = new CanvasJS.Chart("emotion_stats_chart", {
+                    animationEnabled: true,
+                    theme: "light2",
+                    title: {
+                        text: "Emotion Statistics"
+                    },
+                    axisX: {
+                        title: "Lecture",
+                        {#valueFormatString: "DD MMM",#}
+                        valueFormatString: "lec",
+                        crosshair: {
+                            enabled: true,
+                            snapToDataPoint: true
+                        }
+                    },
+                    axisY: {
+                        title: "Percentage",
+                        includeZero: true,
+                        crosshair: {
+                            enabled: true
+                        }
+                    },
+                    toolTip: {
+                        shared: true
+                    },
+                    legend: {
+                        cursor: "pointer",
+                        verticalAlign: "bottom",
+                        horizontalAlign: "center",
+                        {#dockInsidePlotArea: true,#}
+                        itemclick: toogleDataSeries
+                    },
+                    data: data
+                });
+                chart.render();
+            }
+
+
+            //this function render the chart for Emotion statistics
+            function renderGazeEstimationStatistics() {
+
+                let individual_gaze_estimations = student_behavior_summary.individual_gaze_estimations;
+                let gaze_estimation_labels = student_behavior_summary.gaze_estimation_labels;
+                let gaze_estimation_length = individual_gaze_estimations.length;
+                let label_length = gaze_estimation_labels.length;
+
+
+                let data = [];
+                let colors = [
+                    "#000000",
+                    "#00FF00",
+                    "#0000FF"
+                ];
+
+                for (let i = 0; i < label_length; i++) {
+
+                    let label = gaze_estimation_labels[i];
+                    let datapoints = [];
+
+                    for (let j = 0; j < gaze_estimation_length; j++) {
+                        let gaze_estimation = individual_gaze_estimations[j];
+                        datapoints.push({label: "lecture " + (j + 1), y: gaze_estimation[label]});
+                    }
+
+                    let obj = {
+                        type: "line",
+                        showInLegend: true,
+                        name: label,
+                        markerType: "square",
+                        {#xValueFormatString: "DD MMM, YYYY",#}
+                        xValueFormatString: "Lec " + (i + 1),
+                        color: colors[i - 1],
+                        dataPoints: datapoints
+                    };
+
+                    data.push(obj);
+                }
+
+                var chart = new CanvasJS.Chart("gaze_estimation_stats_chart", {
+                    animationEnabled: true,
+                    theme: "light2",
+                    title: {
+                        text: "Gaze Estimation Statistics"
+                    },
+                    axisX: {
+                        title: "Lecture",
+                        {#valueFormatString: "DD MMM",#}
+                        valueFormatString: "lec",
+                        crosshair: {
+                            enabled: true,
+                            snapToDataPoint: true
+                        }
+                    },
+                    axisY: {
+                        title: "Percentage",
+                        includeZero: true,
+                        crosshair: {
+                            enabled: true
+                        }
+                    },
+                    toolTip: {
+                        shared: true
+                    },
+                    legend: {
+                        cursor: "pointer",
+                        verticalAlign: "bottom",
+                        horizontalAlign: "center",
+                        {#dockInsidePlotArea: true,#}
+                        itemclick: toogleDataSeries
+                    },
+                    data: data
+                });
+                chart.render();
+            }
+
+            //this function will toggle the content
+            function toogleDataSeries(e) {
+                if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+                    e.dataSeries.visible = false;
+                } else {
+                    e.dataSeries.visible = true;
+                }
+                chart.render();
+            }
+
+
+            //this function will handle the 'View Summary' button click events
+            $('#student_behavior_view_summary_btn').click(function () {
+                $('#student_behavior_view_summary_modal').modal();
+
+
+            });
+
+            //this function will handle the view summary option form
+            $('#view_summary_option_form').submit(function (e) {
+                let option = $("input[name='option']:checked").val();
+
+                let lecturer = "{{ lecturer }}";
+
+                e.preventDefault();
+
+                //send the data using fetch API
+
+                fetch('http://127.0.0.1:8000/get-student-behavior-summary-for-period/?option=' + option + "&lecturer=" + lecturer)
+                    .then((res) => res.json())
+                    .then((out) => displayPeriodStudentActivitySummary(out))
+                    .catch((err) => alert('error: ' + err))
+            });
+
+
+            //this function will display the percentages
+            function displayPeriodStudentActivitySummary(out) {
+
+                //assign the response to the global variable
+                student_behavior_summary = out;
+
+                if (out.isRecordFound) {
+
+                    //show the summary tables
+                    $('#student_behavior_summary_for_period').attr('hidden', false);
+
+                    //assign the activity values
+                    $('#phone_perct_for_period').text(out.activity_response.phone_perct);
+                    $('#listening_perct_for_period').text(out.activity_response.listening_perct);
+                    $('#writing_perct_for_period').text(out.activity_response.writing_perct);
+
+                    //assign the emotion values
+                    $('#happy_perct_for_period').text(out.emotion_response.happy_perct);
+                    $('#sad_perct_for_period').text(out.emotion_response.sad_perct);
+                    $('#angry_perct_for_period').text(out.emotion_response.angry_perct);
+                    $('#disgust_perct_for_period').text(out.emotion_response.disgust_perct);
+                    $('#surprise_perct_for_period').text(out.emotion_response.surprise_perct);
+                    $('#neutral_perct_for_period').text(out.emotion_response.neutral_perct);
+
+                    //assign the gaze estimation values
+                    $('#looking_up_right_perct_for_period').text(out.gaze_estimation_response.looking_up_and_right_perct);
+                    $('#looking_up_left_perct_for_period').text(out.gaze_estimation_response.looking_up_and_left_perct);
+                    $('#looking_down_right_perct_for_period').text(out.gaze_estimation_response.looking_down_and_right_perct);
+                    $('#looking_down_left_perct_for_period').text(out.gaze_estimation_response.looking_down_and_left_perct);
+                    $('#looking_front_perct_for_period').text(out.gaze_estimation_response.looking_front_perct);
+
+                } else {
+                    $('#student_summary_not_found_message').attr('hidden', false);
+                }
+
+
+                //hide the modal
+                $('#student_behavior_view_summary_modal').modal("hide");
+
+            }
+
+
+            //this function will view activity statistics
+            $('#view_activity_stats').click(function () {
+                //render the chart
+                renderActivityStatistics();
+
+                //open the modal
+                $('#activity_stats_modal').modal();
+
+
+            });
+
+            //this function will view emotion statistics
+            $('#view_emotion_stats').click(function () {
+                //render the chart
+                renderEmotionStatistics();
+
+                //open the modal
+                $('#emotion_stats_modal').modal();
+            });
+
+
+            //this function will view emotion statistics
+            $('#view_gaze_estimation_stats').click(function () {
+                //render the chart
+                renderGazeEstimationStatistics();
+
+                //open the modal
+                $('#gaze_estimation_stats_modal').modal();
+            });
+
+
+            //this function will generate random colors
+            function getRandomColor() {
+                var letters = '0123456789ABCDEF';
+                var color = '#';
+                for (var i = 0; i < 6; i++) {
+                    color += letters[Math.floor(Math.random() * 16)];
+                }
+                return color;
+            }
+
+
+            //this function will handle the advanced analysis for activity
+            $('#activity_advanced_btn').click(function () {
+                $('#activity_advanced_modal').modal();
+
+                //enable the loader
+                $('#activity_corr_loader').attr('hidden', false);
+
+
+                let lecturer = "{{ lecturer }}";
+                let option = $("input[name='option']:checked").val();
+
+
+                //fetch the correlation data
+                fetch('http://127.0.0.1:8000/get-activity-correlations/?lecturer=' + lecturer + '&option=' + option)
+                    .then((res) => res.json())
+                    .then((out) => displayActivityCorrelations(out.correlations))
+                    .catch((err) => alert('error: ' + err));
+
+            });
+
+
+            //this function will handle the advanced analysis for emotion
+            $('#emotion_advanced_btn').click(function () {
+                $('#emotion_advanced_modal').modal();
+
+                //enable the loader
+                $('#emotion_corr_loader').attr('hidden', false);
+
+                let lecturer = "{{ lecturer }}";
+                let option = $("input[name='option']:checked").val();
+
+                //fetch the correlation data
+                fetch('http://127.0.0.1:8000/get-emotion-correlations/?lecturer=' + lecturer + "&option=" + option)
+                    .then((res) => res.json())
+                    .then((out) => displayEmotionCorrelations(out.correlations))
+                    .catch((err) => alert('err: ' + err));
+
+            });
+
+            //this function will handle the advanced analysis for gaze
+            $('#gaze_advanced_btn').click(function () {
+                $('#gaze_advanced_modal').modal();
+
+                //enable the loader
+                $('#gaze_corr_loader').attr('hidden', false);
+
+
+                let lecturer = "{{ lecturer }}";
+                let option = $("input[name='option']:checked").val();
+
+                //fetch the correlation data
+                fetch('http://127.0.0.1:8000/get-gaze-correlations/?lecturer=' + lecturer + "&option=" + option)
+                    .then((res) => res.json())
+                    .then((out) => displayGazeCorrelations(out.correlations))
+                    .catch((err) => alert('err: ' + err));
+
+            });
+
+
+            //this method will handle the student activity-emotion correlations advanced analysis
+            $('#student_activity_emotion_corr').click(function () {
+                //open the modal
+                $('#student_activity_emotion_advanced_modal').modal();
+
+                //show the loader
+                $('#student_activity_emotion_corr_loader').attr('hidden', false);
+
+
+                let lecturer = "{{ lecturer }}";
+                let option = $("input[name='option']:checked").val();
+
+                //fetch the correlation data
+                fetch('http://127.0.0.1:8000/get-student-activity-emotion-correlations/?lecturer=' + lecturer + "&option=" + option)
+                    .then((res) => res.json())
+                    .then((out) => displayActivityEmotionCorrelations(out.correlations))
+                    .catch((err) => alert('err: ' + err));
+
+            });
+
+            //this method will handle the student activity-gaze correlations advanced analysis
+            $('#student_activity_gaze_corr').click(function () {
+                //open the modal
+                $('#student_activity_gaze_advanced_modal').modal();
+
+                //show the loader
+                $('#student_activity_gaze_corr_loader').attr('hidden', false);
+
+
+                let lecturer = "{{ lecturer }}";
+                let option = $("input[name='option']:checked").val();
+
+                //fetch the correlation data
+                fetch('http://127.0.0.1:8000/get-student-activity-gaze-correlations/?lecturer=' + lecturer + "&option=" + option)
+                    .then((res) => res.json())
+                    .then((out) => displayActivityGazeCorrelations(out.correlations))
+                    .catch((err) => alert('err: ' + err));
+
+            });
+
+            //this method will handle the student emotion-gaze correlations advanced analysis
+            $('#student_emotion_gaze_corr').click(function () {
+                //open the modal
+                $('#student_emotion_gaze_advanced_modal').modal();
+
+                //show the loader
+                $('#student_emotion_gaze_corr_loader').attr('hidden', false);
+
+
+                let lecturer = "{{ lecturer }}";
+                let option = $("input[name='option']:checked").val();
+
+                //fetch the correlation data
+                fetch('http://127.0.0.1:8000/get-student-emotion-gaze-correlations/?lecturer=' + lecturer + "&option=" + option)
+                    .then((res) => res.json())
+                    .then((out) => displayEmotionGazeCorrelations(out.correlations))
+                    .catch((err) => alert('err: ' + err));
+
+            });
+
+
+            //this method will display the activity correlations in a table
+            function displayActivityCorrelations(correlations) {
+
+                let htmlString = "";
+
+                //create the html content for the activity correlation table
+                for (let i = 0; i < correlations.length; i++) {
+                    let corr = correlations[i];
+
+                    let indices = corr.index;
+                    let value = corr.value;
+                    value = Math.round(value * 100, 1);
+
+                    if (value <= 100 && value > 80) {
+                        htmlString += "<tr class='bg-success text-white'>";
+                    } else if (value <= 80 && value > 60) {
+                        htmlString += "<tr class='bg-primary text-white'>";
+                    } else if (value <= 60 && value > 40) {
+                        htmlString += "<tr class='bg-warning text-white'>";
+                    } else if (value <= 40 && value > 20) {
+                        htmlString += "<tr class='bg-danger text-white'>";
+                    } else if (value <= 20 && value > 0) {
+                        htmlString += "<tr class='bg-dark text-white'>";
+                    }
+
+                    //create a <tr> to be inserted
+                    htmlString += "<td>";
+                    htmlString += indices[0];
+                    htmlString += "</td>";
+                    htmlString += "<td>";
+                    htmlString += indices[1];
+                    htmlString += "</td>";
+                    htmlString += "<td>";
+                    htmlString += value;
+                    htmlString += "</td>";
+
+                    htmlString += "</tr>";
+
+                }
+
+                //append to the <tbody>
+                $('#activity_corr_tbody').append(htmlString);
+
+
+                //hide the loader
+                $('#activity_corr_loader').hide();
+
+
+                //show the color palettes
+                $('#advanced_activity_color_palette_heading').attr('hidden', false);
+                $('#advanced_activity_color_palette_1').attr('hidden', false);
+                $('#advanced_activity_color_palette_2').attr('hidden', false);
+
+                //show the table
+                $('#activity_corr_table').attr('hidden', false);
+
+            }
+
+            //this method will display the emotion correlations in a table
+            function displayEmotionCorrelations(correlations) {
+
+                let htmlString = "";
+
+                //create the html content for the activity correlation table
+                for (let i = 0; i < correlations.length; i++) {
+                    let corr = correlations[i];
+
+                    let indices = corr.index;
+                    let value = corr.value;
+                    value = Math.round(value * 100, 1);
+
+                    if (value <= 100 && value > 80) {
+                        htmlString += "<tr class='bg-success text-white'>";
+                    } else if (value <= 80 && value > 60) {
+                        htmlString += "<tr class='bg-primary text-white'>";
+                    } else if (value <= 60 && value > 40) {
+                        htmlString += "<tr class='bg-warning text-white'>";
+                    } else if (value <= 40 && value > 20) {
+                        htmlString += "<tr class='bg-danger text-white'>";
+                    } else if (value <= 20 && value > 0) {
+                        htmlString += "<tr class='bg-dark text-white'>";
+                    }
+
+                    //create a <tr> to be inserted
+                    htmlString += "<td>";
+                    htmlString += indices[0];
+                    htmlString += "</td>";
+                    htmlString += "<td>";
+                    htmlString += indices[1];
+                    htmlString += "</td>";
+                    htmlString += "<td>";
+                    htmlString += value;
+                    htmlString += "</td>";
+
+                    htmlString += "</tr>";
+
+                }
+
+                //append to the <tbody>
+                $('#emotion_corr_tbody').append(htmlString);
+
+
+                //hide the loader
+                $('#emotion_corr_loader').hide();
+
+                //show the color palettes
+                $('#advanced_emotion_color_palette_heading').attr('hidden', false);
+                $('#advanced_emotion_color_palette_1').attr('hidden', false);
+                $('#advanced_emotion_color_palette_2').attr('hidden', false);
+
+                //show the table
+                $('#emotion_corr_table').attr('hidden', false);
+
+            }
+
+
+            //this method will display the activity correlations in a table
+            function displayGazeCorrelations(correlations) {
+
+                let htmlString = "";
+
+                //create the html content for the activity correlation table
+                for (let i = 0; i < correlations.length; i++) {
+                    let corr = correlations[i];
+
+                    let indices = corr.index;
+                    let value = corr.value;
+                    value = Math.round(value * 100, 1);
+
+                    if (value <= 100 && value > 80) {
+                        htmlString += "<tr class='bg-success text-white'>";
+                    } else if (value <= 80 && value > 60) {
+                        htmlString += "<tr class='bg-primary text-white'>";
+                    } else if (value <= 60 && value > 40) {
+                        htmlString += "<tr class='bg-warning text-white'>";
+                    } else if (value <= 40 && value > 20) {
+                        htmlString += "<tr class='bg-danger text-white'>";
+                    } else if (value <= 20 && value > 0) {
+                        htmlString += "<tr class='bg-dark text-white'>";
+                    }
+
+                    //create a <tr> to be inserted
+                    htmlString += "<td>";
+                    htmlString += indices[0];
+                    htmlString += "</td>";
+                    htmlString += "<td>";
+                    htmlString += indices[1];
+                    htmlString += "</td>";
+                    htmlString += "<td>";
+                    htmlString += value;
+                    htmlString += "</td>";
+
+                    htmlString += "</tr>";
+
+                }
+
+                //append to the <tbody>
+                $('#gaze_corr_tbody').append(htmlString);
+
+
+                //hide the loader
+                $('#gaze_corr_loader').hide();
+
+                //show the color palettes
+                $('#advanced_gaze_color_palette_heading').attr('hidden', false);
+                $('#advanced_gaze_color_palette_1').attr('hidden', false);
+                $('#advanced_gaze_color_palette_2').attr('hidden', false);
+
+
+                //show the table
+                $('#gaze_corr_table').attr('hidden', false);
+
+            }
+
+
+            //this method will display the student activity-emotion correlations in a table
+            function displayActivityEmotionCorrelations(correlations) {
+
+                let htmlString = "";
+                if (correlations.length !== 0) {
+                    //create the html content for the activity correlation table
+                    for (let i = 0; i < correlations.length; i++) {
+                        let corr = correlations[i];
+
+                        let indices = corr.index;
+                        let value = corr.value;
+                        value = Math.round(value * 100, 1);
+
+                        if (value <= 100 && value > 80) {
+                            htmlString += "<tr class='bg-success text-white'>";
+                        } else if (value <= 80 && value > 60) {
+                            htmlString += "<tr class='bg-primary text-white'>";
+                        } else if (value <= 60 && value > 40) {
+                            htmlString += "<tr class='bg-warning text-white'>";
+                        } else if (value <= 40 && value > 20) {
+                            htmlString += "<tr class='bg-danger text-white'>";
+                        } else if (value <= 20 && value > 0) {
+                            htmlString += "<tr class='bg-dark text-white'>";
+                        }
+
+                        //create a <tr> to be inserted
+                        htmlString += "<td>";
+                        htmlString += indices[0];
+                        htmlString += "</td>";
+                        htmlString += "<td>";
+                        htmlString += indices[1];
+                        htmlString += "</td>";
+                        htmlString += "<td>";
+                        htmlString += value;
+                        htmlString += "</td>";
+
+                        htmlString += "</tr>";
+
+                    }
+                } else {
+                    htmlString += "<tr>";
+                    htmlString += "<td colspan='3'>";
+                    htmlString += "<span class='font-italic'>No correlations were found</span>";
+                    htmlString += "</td>";
+                    htmlString += "</tr>";
+                }
+
+
+                //append to the <tbody>
+                $('#student_activity_emotion_corr_tbody').append(htmlString);
+
+
+                //hide the loader
+                $('#student_activity_emotion_corr_loader').hide();
+
+                //show the color palettes
+                $('#student_activity_emotion_color_palette_heading').attr('hidden', false);
+                $('#student_activity_emotion_color_palette_1').attr('hidden', false);
+                $('#student_activity_emotion_color_palette_2').attr('hidden', false);
+
+
+                //show the table
+                $('#student_activity_emotion_corr_table').attr('hidden', false);
+
+            }
+
+            //this method will display the student activity-gaze correlations in a table
+            function displayActivityGazeCorrelations(correlations) {
+
+                let htmlString = "";
+
+                if (correlations.length !== 0) {
+                    //create the html content for the activity correlation table
+                    for (let i = 0; i < correlations.length; i++) {
+                        let corr = correlations[i];
+
+                        let indices = corr.index;
+                        let value = corr.value;
+                        value = Math.round(value * 100, 1);
+
+                        if (value <= 100 && value > 80) {
+                            htmlString += "<tr class='bg-success text-white'>";
+                        } else if (value <= 80 && value > 60) {
+                            htmlString += "<tr class='bg-primary text-white'>";
+                        } else if (value <= 60 && value > 40) {
+                            htmlString += "<tr class='bg-warning text-white'>";
+                        } else if (value <= 40 && value > 20) {
+                            htmlString += "<tr class='bg-danger text-white'>";
+                        } else if (value <= 20 && value > 0) {
+                            htmlString += "<tr class='bg-dark text-white'>";
+                        }
+
+                        //create a <tr> to be inserted
+                        htmlString += "<td>";
+                        htmlString += indices[0];
+                        htmlString += "</td>";
+                        htmlString += "<td>";
+                        htmlString += indices[1];
+                        htmlString += "</td>";
+                        htmlString += "<td>";
+                        htmlString += value;
+                        htmlString += "</td>";
+
+                        htmlString += "</tr>";
+
+                    }
+                } else {
+                    htmlString += "<tr>";
+                    htmlString += "<td colspan='3'>";
+                    htmlString += "<span class='font-italic'>No correlations were found</span>";
+                    htmlString += "</td>";
+                    htmlString += "</tr>";
+                }
+
+                //append to the <tbody>
+                $('#student_activity_gaze_corr_tbody').append(htmlString);
+
+
+                //hide the loader
+                $('#student_activity_gaze_corr_loader').hide();
+
+                //show the color palettes
+                $('#student_activity_gaze_color_palette_heading').attr('hidden', false);
+                $('#student_activity_gaze_color_palette_1').attr('hidden', false);
+                $('#student_activity_gaze_color_palette_2').attr('hidden', false);
+
+
+                //show the table
+                $('#student_activity_gaze_corr_table').attr('hidden', false);
+
+            }
+
+
+            //this method will display the student emotion-gaze correlations in a table
+            function displayEmotionGazeCorrelations(correlations) {
+
+                let htmlString = "";
+
+                if (correlations.length !== 0) {
+                    //create the html content for the activity correlation table
+                    for (let i = 0; i < correlations.length; i++) {
+                        let corr = correlations[i];
+
+                        let indices = corr.index;
+                        let value = corr.value;
+                        value = Math.round(value * 100, 1);
+
+                        if (value <= 100 && value > 80) {
+                            htmlString += "<tr class='bg-success text-white'>";
+                        } else if (value <= 80 && value > 60) {
+                            htmlString += "<tr class='bg-primary text-white'>";
+                        } else if (value <= 60 && value > 40) {
+                            htmlString += "<tr class='bg-warning text-white'>";
+                        } else if (value <= 40 && value > 20) {
+                            htmlString += "<tr class='bg-danger text-white'>";
+                        } else if (value <= 20 && value > 0) {
+                            htmlString += "<tr class='bg-dark text-white'>";
+                        }
+
+                        //create a <tr> to be inserted
+                        htmlString += "<td>";
+                        htmlString += indices[0];
+                        htmlString += "</td>";
+                        htmlString += "<td>";
+                        htmlString += indices[1];
+                        htmlString += "</td>";
+                        htmlString += "<td>";
+                        htmlString += value;
+                        htmlString += "</td>";
+
+                        htmlString += "</tr>";
+
+                    }
+                } else {
+                    htmlString += "<tr>";
+                    htmlString += "<td colspan='3'>";
+                    htmlString += "<span class='font-italic'>No correlations were found</span>";
+                    htmlString += "</td>";
+                    htmlString += "</tr>";
+                }
+
+
+                //append to the <tbody>
+                $('#student_emotion_gaze_corr_tbody').append(htmlString);
+
+
+                //hide the loader
+                $('#student_emotion_gaze_corr_loader').hide();
+
+                //show the color palettes
+                $('#student_emotion_gaze_color_palette_heading').attr('hidden', false);
+                $('#student_emotion_gaze_color_palette_1').attr('hidden', false);
+                $('#student_emotion_gaze_color_palette_2').attr('hidden', false);
+
+
+                //show the table
+                $('#student_emotion_gaze_corr_table').attr('hidden', false);
+
+            }
+
+
+        });
+
+    </script>
+
+
+{% endblock %}
+
+<!-- Page Wrapper -->
+<div id="wrapper">
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+
+        <!-- Main Content -->
+        <div id="content">
+
+            <!-- Begin Page Content -->
+            {% block 'container-fluid' %}
+                <div class="container-fluid">
+
+                    <!-- Page Heading -->
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <h1 class="h3 mb-0 text-gray-800">{{ object.Message }}</h1>
+                        {#            <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> Generate Report</a>#}
+                    </div>
+
+                    <!-- Content Row -->
+
+
+                    <!-- Content Row -->
+
+                    <div class="row">
+
+                        <!-- Area Chart -->
+                        <div class="col-lg-6">
+                            <div class="card shadow mb-4">
+                                <!-- Card Header - Dropdown -->
+                                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                    <h6 class="m-0 font-weight-bold text-primary">Student Behavior Overview</h6>
+                                    <div class="dropdown no-arrow">
+                                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+                                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                <!-- Card Body -->
+                                <div class="card-body">
+                                    <!-- default message -->
+                                    <div class="text-center" id="student_behavior_overview">
+                                        <span class="font-italic">Please select a date to preview</span>
+                                    </div>
+
+                                    <!-- OR message -->
+                                    <div class="text-center mt-4" id="student_behavior_OR_text">
+                                        <span class="font-italic">---OR---</span>
+                                    </div>
+
+                                    <!-- 'View summary' button section -->
+                                    <div class="text-center my-4" id="student_behavior_view_summary">
+                                        <button type="button" class="btn btn-primary"
+                                                id="student_behavior_view_summary_btn">View Summary
+                                        </button>
+                                    </div>
+
+                                    <!-- loading video details message -->
+                                    <div class="text-center" id="student_behavior_video_loading" hidden>
+                                        <span class="font-italic">Loading Video Details...</span>
+                                    </div>
+
+                                    <!-- loading lecture activity message -->
+                                    <div class="text-center" id="student_behavior_activity" hidden>
+                                        <span class="font-italic">Loading Student Activity...</span>
+                                    </div>
+
+                                    <!-- loading lecture emotion message -->
+                                    <div class="text-center" id="student_behavior_emotion" hidden>
+                                        <span class="font-italic">Loading Student Emotion...</span>
+                                    </div>
+
+                                    <!-- loading lecture gaze estimation message -->
+                                    <div class="text-center" id="student_behavior_gaze" hidden>
+                                        <span class="font-italic">Loading Student Gaze estimation...</span>
+                                    </div>
+
+                                    <!--loader -->
+                                    <div class="text-center" id="student_behavior_loader" hidden>
+                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="Loader">
+                                    </div>
+
+                                    <!-- student summary not found message -->
+                                    <div class="text-center mt-4" id="student_summary_not_found_message" hidden>
+                                        <span class="font-italic">No student summary was found</span>
+                                    </div>
+
+                                    <!-- to display student behavior summary for period -->
+                                    <div class="text-center" id="student_behavior_summary_for_period" hidden>
+                                        <!-- Activity card -->
+                                        <div class="card shadow-lg mb-2">
+                                            <div class="card-body">
+                                                <!-- put the heading -->
+                                                <div class="text-center mt-2">
+                                                    <h4 class="font-weight-bold">Activity</h4>
+                                                </div>
+
+                                                <!-- percentages -->
+                                                <div class="text-center">
+                                                    <!-- activity table -->
+                                                    <table class="table table-borderless table-striped">
+                                                        <tbody>
+                                                        <tr>
+                                                            <td>
+                                                                Phone percentage
+                                                                <hr style="height: 5px">
+                                                            </td>
+                                                            <td id="phone_perct_for_period"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                Listening percentage
+                                                                <hr style="height: 5px">
+                                                            </td>
+                                                            <td id="listening_perct_for_period"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                Note taking percentage
+                                                                <hr style="height: 5px">
+                                                            </td>
+                                                            <td id="writing_perct_for_period"></td>
+                                                        </tr>
+                                                        </tbody>
+                                                    </table>
+                                                    <!-- end of activity table -->
+
+                                                </div>
+                                                <!-- stats button -->
+                                                <div class="float-right">
+                                                    <button type="button" class="btn btn-primary"
+                                                            id="view_activity_stats">
+                                                        <i class="fa fa-line-chart"></i>
+                                                        View stats
+                                                    </button>
+                                                </div>
+                                                <!-- end of stats button -->
+
+                                                <!-- button to view advanced analysis -->
+                                                <button type="button" class="btn btn-danger float-right mr-2"
+                                                        id="activity_advanced_btn">
+                                                    Advanced Analysis
+                                                </button>
+                                                <!-- end of button to view advanced analysis -->
+
+
+                                                <!-- button to view advanced analysis dropdown -->
+                                                {#                                                <div class="dropdown">#}
+                                                {#                                                    <button class="btn btn-secondary dropdown-toggle float-right mr-2" type="button"#}
+                                                {#                                                            id="activity_advanced_dropdown" data-toggle="dropdown"#}
+                                                {#                                                            aria-haspopup="true" aria-expanded="false">#}
+                                                {#                                                        Advanced Analysis#}
+                                                {#                                                    </button>#}
+                                                {#                                                    <div class="dropdown-menu"#}
+                                                {#                                                         aria-labelledby="activity_advanced_dropdown">#}
+                                                {#                                                        <button class="dropdown-item" id="activity_advanced_btn">Student vs. Lecturer</button>#}
+                                                {#                                                        <button class="dropdown-item">Student vs. Student</button>#}
+                                                {#                                                    </div>#}
+                                                {#                                                </div>#}
+                                                <!-- end of button to view advanced analysis dropdown -->
+
+                                            </div>
+                                        </div>
+                                        <!-- end of Activity card -->
+
+
+                                        <!-- Emotion card -->
+                                        <div class="card shadow-lg mb-2">
+                                            <div class="card-body">
+                                                <!-- put the heading -->
+                                                <div class="text-center mt-2">
+                                                    <h4 class="font-weight-bold">Emotion</h4>
+                                                </div>
+
+                                                <!-- percentages -->
+                                                <div class="text-center">
+                                                    <!-- emotion table -->
+                                                    <table class="table table-borderless table-striped">
+                                                        <tbody>
+                                                        <tr>
+                                                            <td>
+                                                                Happy percentage
+                                                                <hr style="height: 5px">
+                                                            </td>
+                                                            <td id="happy_perct_for_period"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                Sad percentage
+                                                                <hr style="height: 5px">
+                                                            </td>
+                                                            <td id="sad_perct_for_period"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                Angry percentage
+                                                                <hr style="height: 5px">
+                                                            </td>
+                                                            <td id="angry_perct_for_period"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                Disgust percentage
+                                                                <hr style="height: 5px">
+                                                            </td>
+                                                            <td id="disgust_perct_for_period"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                Surprise percentage
+                                                                <hr style="height: 5px">
+                                                            </td>
+                                                            <td id="surprise_perct_for_period"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                Neutral percentage
+                                                                <hr style="height: 5px">
+                                                            </td>
+                                                            <td id="neutral_perct_for_period"></td>
+                                                        </tr>
+                                                        </tbody>
+                                                    </table>
+                                                    <!-- end of emotion table -->
+                                                </div>
+                                                <!-- end of percentages -->
+
+                                                <!-- stats button -->
+                                                <div class="float-right">
+                                                    <button type="button" class="btn btn-primary"
+                                                            id="view_emotion_stats">
+                                                        <i class="fa fa-line-chart"></i>
+                                                        View stats
+                                                    </button>
+                                                </div>
+                                                <!-- end of stats button -->
+
+
+                                                <!-- button to view advanced analysis -->
+                                                <button type="button" class="btn btn-danger float-right mr-2"
+                                                        id="emotion_advanced_btn">
+                                                    Advanced Analysis
+                                                </button>
+                                                <!-- end of button to view advanced analysis -->
+
+                                                <!-- button to view advanced analysis dropdown -->
+                                                {#                                                <div class="dropdown">#}
+                                                {#                                                    <button class="btn btn-secondary dropdown-toggle float-right mr-2" type="button"#}
+                                                {#                                                            id="emotion_advanced_dropdown" data-toggle="dropdown"#}
+                                                {#                                                            aria-haspopup="true" aria-expanded="false">#}
+                                                {#                                                        Advanced Analysis#}
+                                                {#                                                    </button>#}
+                                                {#                                                    <div class="dropdown-menu"#}
+                                                {#                                                         aria-labelledby="emotion_advanced_dropdown">#}
+                                                {#                                                        <button class="dropdown-item" id="emotion_advanced_btn">Student vs. Lecturer</button>#}
+                                                {#                                                        <button class="dropdown-item">Student vs. Student</button>#}
+                                                {#                                                    </div>#}
+                                                {#                                                </div>#}
+                                                <!-- end of button to view advanced analysis dropdown -->
+
+                                            </div>
+
+                                        </div>
+                                        <!-- end of Emotion card -->
+
+
+                                        <!-- Gaze estimation card -->
+                                        <div class="card shadow-lg mb-2">
+                                            <div class="card-body">
+                                                <!-- put the heading -->
+                                                <div class="text-center mt-2">
+                                                    <h4 class="font-weight-bold">Gaze estimation</h4>
+                                                </div>
+
+                                                <!-- percentages -->
+                                                <div class="text-center">
+                                                    <!-- gaze estimation table -->
+                                                    <table class="table table-borderless table-striped">
+                                                        <tbody>
+                                                        <tr>
+                                                            <td>
+                                                                Looking up and right
+                                                                <hr style="height: 5px">
+                                                            </td>
+                                                            <td id="looking_up_right_perct_for_period"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                Looking up and left
+                                                                <hr style="height: 5px">
+                                                            </td>
+                                                            <td id="looking_up_left_perct_for_period"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                Looking down and right
+                                                                <hr style="height: 5px">
+                                                            </td>
+                                                            <td id="looking_down_right_perct_for_period"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                Looking down and left
+                                                                <hr style="height: 5px">
+                                                            </td>
+                                                            <td id="looking_down_left_perct_for_period"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                Looking front
+                                                                <hr style="height: 5px">
+                                                            </td>
+                                                            <td id="looking_front_perct_for_period"></td>
+                                                        </tr>
+                                                        </tbody>
+                                                    </table>
+                                                    <!-- end of gaze estimation table -->
+                                                </div>
+                                                <!-- end of percentages -->
+
+                                                <!-- stats button -->
+                                                <div class="float-right">
+                                                    <button type="button" class="btn btn-primary"
+                                                            id="view_gaze_estimation_stats">
+                                                        <i class="fa fa-line-chart"></i>
+                                                        View stats
+                                                    </button>
+                                                </div>
+                                                <!-- end of stats button -->
+
+                                                <!-- button to view advanced analysis -->
+                                                <button type="button" class="btn btn-danger float-right mr-2"
+                                                        id="gaze_advanced_btn">
+                                                    Advanced Analysis
+                                                </button>
+                                                <!-- end of button to view advanced analysis -->
+
+                                                <!-- button to view advanced analysis dropdown -->
+                                                {#                                                <div class="dropdown">#}
+                                                {#                                                    <button class="btn btn-secondary dropdown-toggle float-right mr-2" type="button"#}
+                                                {#                                                            id="gaze_advanced_dropdown" data-toggle="dropdown"#}
+                                                {#                                                            aria-haspopup="true" aria-expanded="false">#}
+                                                {#                                                        Advanced Analysis#}
+                                                {#                                                    </button>#}
+                                                {#                                                    <div class="dropdown-menu"#}
+                                                {#                                                         aria-labelledby="gaze_advanced_dropdown">#}
+                                                {#                                                        <button class="dropdown-item" id="gaze_advanced_btn">Student vs. Lecturer</button>#}
+                                                {#                                                        <button class="dropdown-item">Student vs. Student</button>#}
+                                                {#                                                    </div>#}
+                                                {#                                                </div>#}
+                                                <!-- end of button to view advanced analysis dropdown -->
+
+                                            </div>
+
+                                        </div>
+                                        <!-- end of Gaze estimation card -->
+
+                                        <!-- advanced analysis for student-student correlations -->
+                                        {#                                        <div class="float-right m-2">#}
+                                        {#                                            <button type="button" class="btn btn-success" id="student_student_corr">#}
+                                        {#                                                Advanced Analysis#}
+                                        {#                                            </button>#}
+                                        {#                                        </div>#}
+                                        <!-- end of advanced analysis for student-student correlations -->
+
+                                        <!-- button to view advanced analysis dropdown -->
+                                        <div class="dropdown">
+                                            <button class="btn btn-secondary dropdown-toggle float-right mr-2"
+                                                    type="button"
+                                                    id="student_student_advanced_dropdown" data-toggle="dropdown"
+                                                    aria-haspopup="true" aria-expanded="false">
+                                                Advanced Analysis
+                                            </button>
+                                            <div class="dropdown-menu"
+                                                 aria-labelledby="student_student_advanced_dropdown">
+                                                <button class="dropdown-item" id="student_activity_emotion_corr">
+                                                    Activity vs. Emotion
+                                                </button>
+                                                <button class="dropdown-item" id="student_activity_gaze_corr">Activity
+                                                    vs. Gaze
+                                                </button>
+                                                <button class="dropdown-item" id="student_emotion_gaze_corr">Emotion vs.
+                                                    Gaze
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <!-- end of button to view advanced analysis dropdown -->
+
+                                    </div>
+                                    <!-- end of student behavior summary -->
+
+
+                                    <!-- a vertical list displaying the student engagement categories -->
+                                    <ul class="list-group" id="progress_areas" hidden>
+                                        <li class="list-group-item border">
+                                            <button type="button" class="btn btn-link"
+                                                    data-target="#progress_area_activity" data-toggle="collapse">
+                                                <h5 class="font-weight-bold">Activity</h5>
+                                            </button>
+                                            <!--this area will display the activity progress bars -->
+                                            <div id="progress_area_activity" class="collapse">
+                                                <!--talking with friends -->
+                                                <h4 class="small font-weight-bold">Talking with friends</h4>
+
+                                                <span class="float-right" id="talking_perct">40%</span>
+                                                <div class="progress mb-4">
+                                                    <div class="progress-bar bg-danger" role="progressbar"
+                                                         id="talking_width"
+                                                         style="width: 20%"
+                                                         aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+
+                                                <!--phone checking -->
+                                                <h4 class="small font-weight-bold">Phone checking</h4>
+
+                                                <span class="float-right" id="phone_perct">45%</span>
+                                                <div class="progress mb-4">
+                                                    <div class="progress-bar bg-warning" role="progressbar"
+                                                         id="phone_width"
+                                                         style="width: 40%"
+                                                         aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+
+                                                <!--note taking -->
+
+                                                <h4 class="small font-weight-bold">Writing</h4>
+
+                                                <span class="float-right" id="writing_perct">50%</span>
+                                                <div class="progress mb-4">
+                                                    <div class="progress-bar" role="progressbar" id="writing_width"
+                                                         style="width: 60%"
+                                                         aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+
+                                                <!--listening-->
+
+                                                <h4 class="small font-weight-bold">Listening</h4>
+                                                <span class="float-right" id="listening_perct">60%</span>
+                                                <div class="progress mb-4">
+                                                    <div class="progress-bar bg-info" role="progressbar"
+                                                         id="listening_width" style="width: 80%"
+                                                         aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+
+                                            </div>
+                                            <!-- end of progress area (activity) -->
+                                            <hr>
+
+                                            <!-- button to view activity summary -->
+                                            <button type="button" class="btn btn-primary float-right"
+                                                    id="activity_summary_btn">
+                                                Summary
+                                            </button>
+                                            <!-- end of button to view activity summary -->
+
+
+                                        </li>
+                                        <!-- end of the activity list item -->
+
+                                        <!-- beginning of the emotion list item -->
+                                        <li class="list-group-item">
+                                            <button type="button" class="btn btn-link"
+                                                    data-target="#progress_area_emotion"
+                                                    data-toggle="collapse">
+                                                <h5 class="font-weight-bold">Emotion</h5>
+                                            </button>
+                                            <!-- this area will display the emotion progress bars -->
+                                            <!--this area will display the progress bars -->
+                                            <div id="progress_area_emotion" class="collapse">
+                                                <!--Happy -->
+                                                <h4 class="small font-weight-bold">Happy</h4>
+                                                <span class="float-right" id="happy_perct">40%</span>
+                                                <div class="progress mb-4">
+                                                    <div class="progress-bar bg-danger" role="progressbar"
+                                                         id="happy_width"
+                                                         style="width: 20%"
+                                                         aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+
+                                                <!--sad -->
+                                                <h4 class="small font-weight-bold">Sad</h4>
+                                                <span class="float-right" id="sad_perct">45%</span>
+                                                <div class="progress mb-4">
+                                                    <div class="progress-bar bg-warning" role="progressbar"
+                                                         id="sad_width"
+                                                         style="width: 40%"
+                                                         aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+
+                                                <!--anger -->
+                                                <h4 class="small font-weight-bold">Anger</h4>
+                                                <span class="float-right" id="anger_perct">50%</span>
+                                                <div class="progress mb-4">
+                                                    <div class="progress-bar" role="progressbar" id="anger_width"
+                                                         style="width: 60%"
+                                                         aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+
+                                                <!--surprise-->
+                                                <h4 class="small font-weight-bold">Surprise</h4>
+                                                <span class="float-right" id="surprise_perct">60%</span>
+                                                <div class="progress mb-4">
+                                                    <div class="progress-bar bg-info" role="progressbar"
+                                                         id="surprise_width" style="width: 80%"
+                                                         aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+
+                                                <!--neutral-->
+                                                <h4 class="small font-weight-bold">Neutral</h4>
+                                                <span class="float-right" id="neutral_perct">60%</span>
+                                                <div class="progress mb-4">
+                                                    <div class="progress-bar bg-info" role="progressbar"
+                                                         id="neutral_width" style="width: 80%"
+                                                         aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+
+                                            </div>
+                                            <!-- end of emotion progress bars -->
+                                            <hr>
+
+                                            <!-- button to view emotion summary -->
+                                            <button type="button" class="btn btn-primary float-right"
+                                                    id="emotion_summary_btn">
+                                                Summary
+                                            </button>
+                                            <!-- end of button to view emotion summary -->
+
+
+                                        </li>
+                                        <!-- end of the emotion list item -->
+
+
+                                        <!-- beginning of the gaze list item -->
+                                        <li class="list-group-item border">
+                                            <button type="button" class="btn btn-link"
+                                                    data-target="#progress_area_gaze" data-toggle="collapse">
+                                                <h5 class="font-weight-bold">Gaze</h5>
+                                            </button>
+                                            <!--this area will display the activity progress bars -->
+                                            <div id="progress_area_gaze" class="collapse">
+                                                <!--looking up and right -->
+                                                <h4 class="small font-weight-bold">Looking up and right</h4>
+
+                                                <span class="float-right" id="looking_up_right_perct">40%</span>
+                                                <div class="progress mb-4">
+                                                    <div class="progress-bar bg-danger" role="progressbar"
+                                                         id="looking_up_right_width"
+                                                         style="width: 20%"
+                                                         aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+
+                                                <!--looking up and left -->
+                                                <h4 class="small font-weight-bold">Looking up and left</h4>
+
+                                                <span class="float-right" id="looking_up_left_perct">45%</span>
+                                                <div class="progress mb-4">
+                                                    <div class="progress-bar bg-warning" role="progressbar"
+                                                         id="looking_up_left_width"
+                                                         style="width: 40%"
+                                                         aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+
+                                                <!--looking down and right -->
+
+                                                <h4 class="small font-weight-bold">Looking down and right</h4>
+
+                                                <span class="float-right" id="looking_down_right_perct">50%</span>
+                                                <div class="progress mb-4">
+                                                    <div class="progress-bar bg-success" role="progressbar"
+                                                         id="looking_down_right_width"
+                                                         style="width: 60%"
+                                                         aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+
+                                                <!--Looking down and left-->
+
+                                                <h4 class="small font-weight-bold">Looking down and left</h4>
+                                                <span class="float-right" id="looking_down_left_perct">60%</span>
+                                                <div class="progress mb-4">
+                                                    <div class="progress-bar bg-info" role="progressbar"
+                                                         id="looking_down_left_width" style="width: 80%"
+                                                         aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+
+                                                <!--Looking front-->
+
+                                                <h4 class="small font-weight-bold">Looking front</h4>
+                                                <span class="float-right" id="looking_front_perct">60%</span>
+                                                <div class="progress mb-4">
+                                                    <div class="progress-bar bg-secondary" role="progressbar"
+                                                         id="looking_front_width" style="width: 80%"
+                                                         aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+
+                                            </div>
+                                            <!-- end of progress area (gaze) -->
+                                            <hr>
+
+
+                                            <!-- button to view gaze summary -->
+                                            <button type="button" class="btn btn-primary float-right"
+                                                    id="gaze_summary_btn">
+                                                Summary
+                                            </button>
+                                            <!-- end of button to view gaze summary -->
+
+
+                                        </li>
+                                        <!-- end of the gaze list item -->
+
+
+                                    </ul>
+
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- list of recent lectures -->
+
+                        <div class="col-lg-6">
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Recent Lecture Recordings</h6>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th>Date</th>
+                                            <th>Subject</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for lecturer_detail in lecturer_details %}
+                                            <tr>
+                                                <td>
+                                                    <div class="radio">
+                                                        <label><input type="radio"
+                                                                      class="lecture_radio"
+                                                                      name="recent_recordings_radio"
+                                                                      data-lecturer="{{ lecturer_detail.lecturer }}"
+                                                                      data-index="{{ lecturer_detail.index }}"
+                                                                      data-date="{{ lecturer_detail.date }}"
+                                                                      data-counter="{{ forloop.counter0 }}">
+                                                        </label>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    {{ lecturer_detail.date }}
+                                                </td>
+                                                <td>
+                                                    {{ lecturer_detail.subject_name }}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                    <!-- end of table -->
+
+                                    <!-- button -->
+                                    {#                                    <div class="float-right">#}
+                                    {#                                        <button type="button" class="btn btn-info" id="weekly_summary">Weekly Summary</button>#}
+                                    {#                                    </div>#}
+
+                                </div>
+                            </div>
+                        </div>
+
+
+                    </div>
+
+                    <!-- Content Row -->
+                    <div class="row">
+
+                        <!-- 1st Column -->
+                        <div class="col-lg-6 mb-4">
+
+                            {% load static %}
+                            <!-- Project Card Example -->
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Attendance Preview</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="text-center" id="temp_attendance_content">
+                                        <span class="font-italic">Attendance preview will be displayed here</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Color System -->
+                            {#                            <div class="row">#}
+                            {#                                <div class="col-lg-6 mb-4">#}
+                            {#                                    <div class="card bg-primary text-white shadow">#}
+                            {#                                        <div class="card-body">#}
+                            {#                                            Primary#}
+                            {#                                            <div class="text-white-50 small">#4e73df</div>#}
+                            {#                                        </div>#}
+                            {#                                    </div>#}
+                            {#                                </div>#}
+                            {#                                <div class="col-lg-6 mb-4">#}
+                            {#                                    <div class="card bg-success text-white shadow">#}
+                            {#                                        <div class="card-body">#}
+                            {#                                            Success#}
+                            {#                                            <div class="text-white-50 small">#1cc88a</div>#}
+                            {#                                        </div>#}
+                            {#                                    </div>#}
+                            {#                                </div>#}
+                            {#                                <div class="col-lg-6 mb-4">#}
+                            {#                                    <div class="card bg-info text-white shadow">#}
+                            {#                                        <div class="card-body">#}
+                            {#                                            Info#}
+                            {#                                            <div class="text-white-50 small">#36b9cc</div>#}
+                            {#                                        </div>#}
+                            {#                                    </div>#}
+                            {#                                </div>#}
+                            {#                                <div class="col-lg-6 mb-4">#}
+                            {#                                    <div class="card bg-warning text-white shadow">#}
+                            {#                                        <div class="card-body">#}
+                            {#                                            Warning#}
+                            {#                                            <div class="text-white-50 small">#f6c23e</div>#}
+                            {#                                        </div>#}
+                            {#                                    </div>#}
+                            {#                                </div>#}
+                            {#                                <div class="col-lg-6 mb-4">#}
+                            {#                                    <div class="card bg-danger text-white shadow">#}
+                            {#                                        <div class="card-body">#}
+                            {#                                            Danger#}
+                            {#                                            <div class="text-white-50 small">#e74a3b</div>#}
+                            {#                                        </div>#}
+                            {#                                    </div>#}
+                            {#                                </div>#}
+                            {#                                <div class="col-lg-6 mb-4">#}
+                            {#                                    <div class="card bg-secondary text-white shadow">#}
+                            {#                                        <div class="card-body">#}
+                            {#                                            Secondary#}
+                            {#                                            <div class="text-white-50 small">#858796</div>#}
+                            {#                                        </div>#}
+                            {#                                    </div>#}
+                            {#                                </div>#}
+                            {#                            </div>#}
+
+                        </div>
+
+                        <!-- 2nd column -->
+                        <div class="col-lg-6 mb-4">
+
+                            <!-- Approach -->
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">My Performances</h6>
+                                </div>
+                                <div class="card-body">
+                                    <!-- beginning of the table -->
+                                    <table class="table table-bordered">
+                                        <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th>Date</th>
+                                            <th>Subject</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for lecturer_detail in lecturer_details %}
+                                            <tr>
+                                                <td>
+                                                    <div class="radio">
+                                                        <label><input type="radio"
+                                                                      id="{{ subject.0.subject_code }}"
+                                                                      name="recent_recordings_radio"
+                                                                      data-lecturer="{{ lecturer }}"
+                                                                      data-index="{{ lecturer_detail.index }}"
+                                                                      data-date="{{ lecturer_detail.date }}">
+                                                        </label>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    {{ lecturer_detail.date }}
+                                                </td>
+                                                <td>
+                                                    {{ lecturer_detail.subject_name }}
+                                                </td>
+                                                <td>
+                                                    <button type="button" class="btn btn-primary">View</button>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                    <!-- end of table -->
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+                <!-- /.container-fluid -->
+            {% endblock %}
+
+        </div>
+        <!-- End of Main Content -->
+
+    </div>
+    <!-- End of Content Wrapper -->
+
+</div>
+<!-- End of Page Wrapper -->
+
+<!--    scroll to top button-->
+{% block 'modal' %}
+    <a class="scroll-to-top rounded" href="#page-top">
+        <i class="fas fa-angle-up"></i>
+    </a>
+
+    <!-- Logout Modal-->
+    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                    <a class="btn btn-primary" href="/logout">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end of logout modal -->
+
+    <!-- activity summary Modal-->
+    <div class="modal fade" id="ActivitySummaryModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document" style="max-width: 1300px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Summary</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="ActivityChartContainer" style="height: 370px; max-width: 920px; margin: 0px auto;"></div>
+
+
+                    <!-- Notes header -->
+                    <div class="modal-header mt-4">
+                        <h3>Notes</h3>
+                    </div>
+                    <!-- End of Notes header -->
+
+                    <!-- Comments row -->
+                    <div class="row mt-3">
+                        <div class="col-lg-6" id="student_activity_comments">
+
+                        </div>
+                    </div>
+                    <!-- End of Comments row -->
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end of activity summary modal -->
+
+    <!-- emotion summary Modal-->
+    <div class="modal fade" id="EmotionSummaryModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document" style="max-width: 1300px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Summary</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="EmotionChartContainer" style="height: 370px; max-width: 920px; margin: 0px auto;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end of emotion summary modal -->
+
+    <!-- gaze summary Modal-->
+    <div class="modal fade" id="GazeSummaryModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document" style="max-width: 1300px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Summary</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="GazeChartContainer" style="height: 370px; max-width: 920px; margin: 0px auto;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end of gaze summary modal -->
+
+
+    <!-- student behavior view summary modal -->
+    <div class="modal fade" id="student_behavior_view_summary_modal" tabindex="-1" role="dialog"
+         aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document" style="max-width: 500px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="exampleModalLabel">View Summary Options</h3>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <h5>View Summary for...</h5>
+                    </div>
+
+                    <!-- list of options -->
+                    <form action="#" method="get" id="view_summary_option_form">
+                        <div class="custom-control custom-radio mt-2">
+                            <input type="radio" class="custom-control-input" id="customRadio" name="option" value="7">
+                            <label class="custom-control-label" for="customRadio">one week</label>
+                        </div>
+
+                        <div class="custom-control custom-radio mt-2">
+                            <input type="radio" class="custom-control-input" id="customRadio1" name="option" value="14">
+                            <label class="custom-control-label" for="customRadio1">2 weeks</label>
+                        </div>
+
+                        <div class="custom-control custom-radio mt-2">
+                            <input type="radio" class="custom-control-input" id="customRadio2" name="option" value="30">
+                            <label class="custom-control-label" for="customRadio2">one month</label>
+                        </div>
+
+                        <div class="custom-control custom-radio mt-2">
+                            <input type="radio" class="custom-control-input" id="customRadio3" name="option"
+                                   value="10000">
+                            <label class="custom-control-label" for="customRadio3">All</label>
+                        </div>
+
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-outline-success" id="submit_view_summary_option">
+                                Submit
+                            </button>
+                        </div>
+                    </form>
+                    <!-- end of list of options -->
+
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- end of student behavior view summary modal -->
+
+
+
+    <!-- activity statistics Modal-->
+    <div class="modal fade" id="activity_stats_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document" style="max-width: 1400px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Activity Statistics</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center">
+                    <div id="activity_stats_chart" style="height: 370px; width: 100%"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end of activity statistics modal -->
+
+
+    <!-- emotion statistics Modal-->
+    <div class="modal fade" id="emotion_stats_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document" style="max-width: 1400px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Emotion Statistics</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center">
+                    <div id="emotion_stats_chart" style="height: 370px; width: 100%"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end of activity statistics modal -->
+
+
+    <!-- gaze estimation Modal-->
+    <div class="modal fade" id="gaze_estimation_stats_modal" tabindex="-1" role="dialog"
+         aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document" style="max-width: 1400px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Gaze estimation Statistics</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center">
+                    <div id="gaze_estimation_stats_chart" style="height: 370px; width: 100%"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end of activity statistics modal -->
+
+
+    <!-- activity advanced analysis modal -->
+    <div class="modal fade" id="activity_advanced_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document" style="max-width: 700px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Activity Advanced Analysis</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center">
+                    <h3 class="font-weight-bold">Student Activity VS. Lecturer Activity</h3>
+
+
+                    <!-- ajax loader -->
+                    <div class="text-center" id="activity_corr_loader" hidden>
+                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="Loader">
+                    </div>
+
+                    <!-- correlation table -->
+                    <table class="table table-striped mt-4" id="activity_corr_table" hidden>
+                        <thead>
+                        <tr>
+                            <th>Student Activity</th>
+                            <th>Lecturer Activity</th>
+                            <th>Correlation Score</th>
+                        </tr>
+                        </thead>
+
+                        <tbody id="activity_corr_tbody">
+
+                        </tbody>
+                    </table>
+                    <!-- end of correlation table -->
+
+                    <!-- Heading row -->
+                    <div class="row mt-3 ml-1" id="advanced_activity_color_palette_heading" hidden>
+                        <h5 class="float-left font-italic">Correlation color palette</h5>
+                    </div>
+                    <!-- End of Heading row -->
+
+                    <!-- Color palette (row 1) -->
+                    <div class="row mt-2 border-top" id="advanced_activity_color_palette_1" hidden>
+                        <div class="col-lg-4">
+                            <p class="text-center">Very High (81-100)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-success rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">High (61-80)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-primary rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">Moderate (41-60)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-warning rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 1) -->
+
+                    <!-- Color palette (row 2) -->
+                    <div class="row mt-4 mb-4 border-top" id="advanced_activity_color_palette_2" hidden>
+                        <div class="col-lg-6">
+                            <p class="text-center">Low (21-40)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-danger rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <p class="text-center">Weak (0-20)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-dark rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 2) -->
+
+
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end of activity advanced analysis modal -->
+
+    <!-- emotion advanced analysis modal -->
+    <div class="modal fade" id="emotion_advanced_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document" style="max-width: 700px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Emotion Advanced Analysis</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center">
+                    <h3 class="font-weight-bold">Student Emotions VS. Lecturer Activity</h3>
+
+                    <!-- ajax loader -->
+                    <div class="text-center" id="emotion_corr_loader" hidden>
+                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="Loader">
+                    </div>
+
+                    <!-- correlation table -->
+                    <table class="table table-striped" id="emotion_corr_table" hidden>
+                        <thead>
+                        <tr>
+                            <th>Student Emotion</th>
+                            <th>Lecturer Activity</th>
+                            <th>Correlation Score</th>
+                        </tr>
+                        </thead>
+
+                        <tbody id="emotion_corr_tbody">
+
+                        </tbody>
+                    </table>
+                    <!-- end of correlation table -->
+
+                    <!-- Heading row -->
+                    <div class="row mt-3 ml-1" id="advanced_emotion_color_palette_heading" hidden>
+                        <h5 class="float-left font-italic">Correlation color palette</h5>
+                    </div>
+                    <!-- End of Heading row -->
+
+                    <!-- Color palette (row 1) -->
+                    <div class="row mt-2 border-top" id="advanced_emotion_color_palette_1" hidden>
+                        <div class="col-lg-4">
+                            <p class="text-center">Very High (81-100)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-success rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">High (61-80)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-primary rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">Moderate (41-60)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-warning rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 1) -->
+
+                    <!-- Color palette (row 2) -->
+                    <div class="row mt-4 mb-4 border-top" id="advanced_emotion_color_palette_2" hidden>
+                        <div class="col-lg-6">
+                            <p class="text-center">Low (21-40)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-danger rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <p class="text-center">Weak (0-20)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-dark rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 2) -->
+
+
+
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end of emotion advanced analysis modal -->
+
+    <!-- gaze advanced analysis modal -->
+    <div class="modal fade" id="gaze_advanced_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document" style="max-width: 700px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Gaze Advanced Analysis</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center">
+                    <h3 class="font-weight-bold">Student Gaze estimation VS. Lecturer Activity</h3>
+
+                    <!-- ajax loader -->
+                    <div class="text-center" id="gaze_corr_loader" hidden>
+                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="Loader">
+                    </div>
+
+                    <!-- correlation table -->
+                    <table class="table table-striped" id="gaze_corr_table" hidden>
+                        <thead>
+                        <tr>
+                            <th>Student Gaze estimation</th>
+                            <th>Lecturer Activity</th>
+                            <th>Correlation Score</th>
+                        </tr>
+                        </thead>
+
+                        <tbody id="gaze_corr_tbody">
+
+                        </tbody>
+                    </table>
+                    <!-- end of correlation table -->
+
+
+                    <!-- Heading row -->
+                    <div class="row mt-3 ml-1" id="advanced_gaze_color_palette_heading" hidden>
+                        <h5 class="float-left font-italic">Correlation color palette</h5>
+                    </div>
+                    <!-- End of Heading row -->
+
+                    <!-- Color palette (row 1) -->
+                    <div class="row mt-2 border-top" id="advanced_gaze_color_palette_1" hidden>
+                        <div class="col-lg-4">
+                            <p class="text-center">Very High (81-100)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-success rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">High (61-80)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-primary rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">Moderate (41-60)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-warning rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 1) -->
+
+                    <!-- Color palette (row 2) -->
+                    <div class="row mt-4 mb-4 border-top" id="advanced_gaze_color_palette_2" hidden>
+                        <div class="col-lg-6">
+                            <p class="text-center">Low (21-40)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-danger rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <p class="text-center">Weak (0-20)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-dark rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 2) -->
+
+
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end of gaze advanced analysis modal -->
+
+
+    <!-- student activity-emotion advanced analysis modal -->
+    <div class="modal fade" id="student_activity_emotion_advanced_modal" tabindex="-1" role="dialog"
+         aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document" style="max-width: 700px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5>Student Behavior Correlations</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center">
+                    <h3 class="font-weight-bold">Student Activity vs. Student Emotion</h3>
+
+                    <!-- ajax loader -->
+                    <div class="text-center" id="student_activity_emotion_corr_loader" hidden>
+                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="Loader">
+                    </div>
+
+                    <!-- correlation table -->
+                    <table class="table table-striped" id="student_activity_emotion_corr_table" hidden>
+                        <thead>
+                        <tr>
+                            <th>Student Activity</th>
+                            <th>Student Emotion</th>
+                            <th>Correlation Score</th>
+                        </tr>
+                        </thead>
+
+                        <tbody id="student_activity_emotion_corr_tbody">
+
+                        </tbody>
+                    </table>
+                    <!-- end of correlation table -->
+
+                    <!-- Heading row -->
+                    <div class="row mt-3 ml-1" id="student_activity_emotion_color_palette_heading" hidden>
+                        <h5 class="float-left font-italic">Correlation color palette</h5>
+                    </div>
+                    <!-- End of Heading row -->
+
+                    <!-- Color palette (row 1) -->
+                    <div class="row mt-2 border-top" id="student_activity_emotion_color_palette_1" hidden>
+                        <div class="col-lg-4">
+                            <p class="text-center">Very High (81-100)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-success rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">High (61-80)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-primary rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">Moderate (41-60)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-warning rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 1) -->
+
+                    <!-- Color palette (row 2) -->
+                    <div class="row mt-4 mb-4 border-top" id="student_activity_emotion_color_palette_2" hidden>
+                        <div class="col-lg-6">
+                            <p class="text-center">Low (21-40)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-danger rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <p class="text-center">Weak (0-20)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-dark rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 2) -->
+
+
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- end of student activity-emotion advanced analysis modal -->
+
+    <!-- student activity-gaze advanced analysis modal -->
+    <div class="modal fade" id="student_activity_gaze_advanced_modal" tabindex="-1" role="dialog"
+         aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document" style="max-width: 700px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5>Student Behavior Correlations</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center">
+                    <h3 class="font-weight-bold">Student Activity vs. Student Gaze</h3>
+
+                    <!-- ajax loader -->
+                    <div class="text-center" id="student_activity_gaze_corr_loader" hidden>
+                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="Loader">
+                    </div>
+
+                    <!-- correlation table -->
+                    <table class="table table-striped" id="student_activity_gaze_corr_table" hidden>
+                        <thead>
+                        <tr>
+                            <th>Student Activity</th>
+                            <th>Student Gaze</th>
+                            <th>Correlation Score</th>
+                        </tr>
+                        </thead>
+
+                        <tbody id="student_activity_gaze_corr_tbody">
+
+                        </tbody>
+                    </table>
+                    <!-- end of correlation table -->
+
+
+                    <!-- Heading row -->
+                    <div class="row mt-3 ml-1" id="student_activity_gaze_color_palette_heading" hidden>
+                        <h5 class="float-left font-italic">Correlation color palette</h5>
+                    </div>
+                    <!-- End of Heading row -->
+
+                    <!-- Color palette (row 1) -->
+                    <div class="row mt-2 border-top" id="student_activity_gaze_color_palette_1" hidden>
+                        <div class="col-lg-4">
+                            <p class="text-center">Very High (81-100)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-success rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">High (61-80)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-primary rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">Moderate (41-60)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-warning rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 1) -->
+
+                    <!-- Color palette (row 2) -->
+                    <div class="row mt-4 mb-4 border-top" id="student_activity_gaze_color_palette_2" hidden>
+                        <div class="col-lg-6">
+                            <p class="text-center">Low (21-40)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-danger rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <p class="text-center">Weak (0-20)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-dark rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 2) -->
+
+
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- end of student activity-gaze advanced analysis modal -->
+
+    <!-- student emotion-gaze advanced analysis modal -->
+    <div class="modal fade" id="student_emotion_gaze_advanced_modal" tabindex="-1" role="dialog"
+         aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document" style="max-width: 700px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5>Student Behavior Correlations</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center">
+                    <h3 class="font-weight-bold">Student Emotion vs, Student Gaze</h3>
+
+                    <!-- ajax loader -->
+                    <div class="text-center" id="student_emotion_gaze_corr_loader" hidden>
+                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="Loader">
+                    </div>
+
+                    <!-- correlation table -->
+                    <table class="table table-striped" id="student_emotion_gaze_corr_table" hidden>
+                        <thead>
+                        <tr>
+                            <th>Student Emotion</th>
+                            <th>Student Gaze</th>
+                            <th>Correlation Score</th>
+                        </tr>
+                        </thead>
+
+                        <tbody id="student_emotion_gaze_corr_tbody">
+
+                        </tbody>
+                    </table>
+                    <!-- end of correlation table -->
+
+                    <!-- Heading row -->
+                    <div class="row mt-3 ml-1" id="student_emotion_gaze_color_palette_heading" hidden>
+                        <h5 class="float-left font-italic">Correlation color palette</h5>
+                    </div>
+                    <!-- End of Heading row -->
+
+                    <!-- Color palette (row 1) -->
+                    <div class="row mt-2 border-top" id="student_emotion_gaze_color_palette_1" hidden>
+                        <div class="col-lg-4">
+                            <p class="text-center">Very High (81-100)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-success rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">High (61-80)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-primary rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <p class="text-center">Moderate (41-60)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-warning rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 1) -->
+
+                    <!-- Color palette (row 2) -->
+                    <div class="row mt-4 mb-4 border-top" id="student_emotion_gaze_color_palette_2" hidden>
+                        <div class="col-lg-6">
+                            <p class="text-center">Low (21-40)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-danger rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <p class="text-center">Weak (0-20)%</p>
+                            <div class="d-flex justify-content-center">
+                                <div class="bg-dark rounded" style="height: 10px; width: 100px"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Color palette (row 2) -->
+
+
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end of student emotion-gaze advanced analysis modal -->
+
+
+
+{% endblock %}
+<!--scripts-->
+{% block 'scripts' %}
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+            integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+            integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+            crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+            integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+            crossorigin="anonymous"></script>
+
+    <script src="{% static 'FirstApp/vendor/jquery/jquery.min.js' %}"></script>
+    <script src="{% static 'FirstApp/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+
+    <!-- Core plugin JavaScript-->
+    <script src="{% static 'FirstApp/vendor/jquery-easing/jquery.easing.min.js' %}"></script>
+
+    <!-- Custom scripts for all pages-->
+    <script src="{% static 'FirstApp/js/sb-admin-2.min.js' %}"></script>
+
+    <!-- Page level plugins -->
+    <script src="{% static 'FirstApp/vendor/chart.js/Chart.min.js' %}"></script>
+
+    <!-- Page level custom scripts -->
+    <script src="{% static 'FirstApp/js/demo/chart-area-demo.js' %}"></script>
+    <script src="{% static 'FirstApp/js/demo/chart-pie-demo.js' %}"></script>
+
+{% endblock %}
+</body>
+</html>

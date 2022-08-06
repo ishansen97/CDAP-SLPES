@@ -1,0 +1,636 @@
+{% extends 'FirstApp/template.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<body id="page-top">
+<!-- Page Wrapper -->
+
+{% block javascript %}
+    {% load static %}
+
+    <!-- Bootstrap core JavaScript-->
+    <script src="{% static 'FirstApp/vendor/jquery/jquery.min.js' %}"></script>
+    <script src="{% static 'FirstApp/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+
+    <!-- Page level plugins -->
+    <script src="{% static 'FirstApp/vendor/datatables/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'FirstApp/vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+
+    <!-- Page level custom scripts -->
+    <script src="{% static 'FirstApp/js/demo/datatables-demo.js' %}"></script>
+
+    <!-- Core plugin JavaScript-->
+    <script src="{% static 'FirstApp/vendor/jquery-easing/jquery.easing.min.js' %}"></script>
+
+
+    <script type="text/javascript">
+
+
+        var global_subject = '';
+        var global_lecturer = '';
+        var global_lecture_video_id = '';
+        var global_video_name = '';
+        var global_lecturer_subject_index = 0;
+        var global_lecture_date = '';
+
+        var class1 = 'col-4 smpl-step-step complete';
+        var class2 = 'col-4 smpl-step-step active';
+        var class3 = 'col-4 smpl-step-step disabled';
+
+        //jquery
+        $(document).ready(function () {
+            let folder = '';
+
+            {#$('#activity_loader').attr('hidden', false);#}
+            {#$('#emotion_loader').attr('hidden', false);#}
+            {#$('#gaze_loader').attr('hidden', false);#}
+
+            //select a particular subject
+            //select a particular subject
+            $('input[type=radio]').click(function () {
+                let subject_id = $(this).attr('id');
+                global_subject = subject_id;
+                let lecturer = $(this).attr('data-lecturer');
+                global_lecturer = lecturer;
+                let subject_name = $(this).attr('data-name');
+
+                {#$('#timetable').attr('hidden', true);#}
+                $('#no_timetable_content').attr('hidden', true);
+                $('.student-detection-rows').remove();
+
+                $('#timetable_body').children().map(function () {
+                    $(this).remove();
+                });
+
+
+                $('#no_subject_selected').attr('hidden', true);
+
+                $('#timetable_caption').text('subject: ' + subject_name);
+                $('#loader').attr('hidden', false);
+
+                //fetching the timetable from the db
+                fetch('http://127.0.0.1:8000/timetables')
+                    .then((res) => res.json())
+                    .then((out) => createTimeTable(out, subject_id, lecturer))
+                    .catch((error) => alert('this is the error: ' + error))
+
+            });
+
+
+            //this function will display the timetable for the lecturer
+            function createTimeTable(timetable, subject, lecturer) {
+                $('#loader').attr('hidden', true);
+                $('#timetable').attr('hidden', false);
+                let isTimetableSubject = false;
+
+                timetable.map((item, i) => {
+                    item.timetable.map((table, index) => {
+
+                        let lecturer_subject_index_arr = [];
+
+
+                        //to get the number of subjects taught by the lecturer in a day
+                        table.time_slots.forEach((slot1, ind) => {
+                            let isLecturer = slot1.lecturer.id === Number(lecturer);
+
+                            if (isLecturer) {
+                                lecturer_subject_index_arr.push(ind);
+                            }
+                        });
+
+                        //iterating each slot (for a given day)
+                        table.time_slots.forEach((slot, in1) => {
+                            let isLecturer = slot.lecturer.id === Number(lecturer);
+                            let isLecSubject = slot.subject.subject_code === subject;
+                            let message = '';
+                            if (isLecturer && isLecSubject) {
+                                let html = '';
+                                let isProcessPerformed = false;
+                                global_lecturer_subject_index = lecturer_subject_index_arr.findIndex((inner) => inner === in1);
+                                isTimetableSubject = true;
+
+                                {#check for the lecture video status#}
+                                let date = table.date;
+                                //assign the date
+                                global_lecture_date = date;
+
+                                fetch('http://127.0.0.1:8000/get-lecture-video/?lecturer=' + global_lecturer + '&date=' + date + '&index=' + global_lecturer_subject_index)
+                                    .then((res) => res.json())
+                                    .then((out) => {
+                                        isProcessPerformed = out.response.isActivityFound;
+                                        alert('response: ' + out.response.isActivityFound);
+
+                                        if (isProcessPerformed) {
+                                            message = '<td><span class="font-italic font-weight-bold text-primary" id="message">Already processed</span></td>';
+                                        } else {
+                                            message = '<td><button type="button" class="btn btn-success">Process</button></td>';
+                                        }
+
+                                        html += "<tr class='lecture-details'><td class='slot_date'>" + table.date + "</td>"
+                                            + "<td>" + slot.location + "</td>"
+                                            + "<td>" + slot.start_time + "</td>"
+                                            + "<td>" + slot.end_time + "</td>"
+                                            + message
+                                            + "</tr>";
+
+                                        $('#timetable_body').append(html);
+
+                                    })
+                                    .catch((error) => alert('an error occurred: ' + error));
+
+
+                            }
+                        });
+                    });
+
+                    if (!isTimetableSubject) {
+                        $('#timetable').attr('hidden', true);
+                        $('#no_timetable_content').attr('hidden', false);
+                    }
+
+
+                });
+            }
+
+
+            //this function will retrieve the lecture video for a given lecture
+            $(document).on('click', '.btn-info', function (e) {
+
+                let clicked_class = e.target.className;
+                let object = e;
+                let real_class = clicked_class.split(' ')[1];
+                real_class = '.' + real_class;
+
+                let date = e.target.parentNode.parentNode.firstChild.innerHTML;
+                //assign the date
+                global_lecture_date = date;
+
+                fetch('http://127.0.0.1:8000/get-lecture-video/?lecturer=' + global_lecturer + '&date=' + date + '&index=' + global_lecturer_subject_index)
+                    .then((res) => res.json())
+                    .then((out) => displayLectureVideoDetails(out, object))
+                    .catch((error) => alert('an error occurred: ' + error));
+            });
+
+
+            //function to display lecture video details
+            function displayLectureVideoDetails(lectureVideo, e) {
+
+                //get the lecture video response
+                let video = lectureVideo.response;
+
+                $('#video_name').text(video.video_name);
+                $('#video_duration').text(video.video_length);
+                $('#video_date').text(video.date);
+                global_lecture_video_id = video.lecture_video_id;
+                global_video_name = video.video_name;
+
+
+                if (lectureVideo.isActivityFound) {
+                    {#e.target.parentNode.parentNode.lastChild.innerHTML = '<span class="font-italic font-weight-bold text-primary" id="message">Already processed</span>';#}
+                    alert('I was found');
+                } else {
+                    {#e.target.parentNode.parentNode.lastChild.innerHTML = '<button type="button" class="btn btn-success">Process</button>';#}
+                    alert('I am not here');
+                }
+            }
+
+
+            // this function simulate the process workflow
+            $('#simulate_process').click(function () {
+
+
+                let classname = $('#step_1').attr('class');
+
+                setTimeout(() => {
+                    $('#step_1').attr('class', class1)
+                }, 2000);
+
+                setTimeout(() => {
+                    $('#step_2').attr('class', class1)
+                }, 4000);
+
+                setTimeout(() => {
+                    $('#step_3').attr('class', class1)
+                }, 6000);
+
+                setTimeout(() => {
+                    $('#step_4').attr('class', class1)
+                }, 8000);
+
+
+            });
+
+            //this function will handle the batch process button
+            $('.batch_process').click(function () {
+                let video_id = $(this).attr("data-video-id");
+                let video_name = $(this).attr("data-video-name");
+
+                //display the 'processing' message
+                $('#processing').attr('hidden', false);
+
+                //hide the button
+                $(this).hide();
+
+                //display the activity loader
+                $('#activity_loader').attr("hidden", false);
+
+                global_lecture_video_id = video_id;
+                global_video_name = video_name;
+
+
+                //perform activity recognition
+                fetch('http://127.0.0.1:8000/process-lecture-activity/?lecture_video_name=' + global_video_name + '&lecture_video_id=' + global_lecture_video_id)
+                    .then((res) => res.json())
+                    .then((out) => handleActivityResponse(out.response))
+                    .catch((error) => alert('error: ' + error));
+
+            });
+
+
+            //this is to detect the response gained from activity recognition porcess
+            function handleActivityResponse(response, e) {
+                //change the button, if the response is positive
+                if (response) {
+                    //display the activity process as completed
+                    $('#step_1').attr('class', class1);
+
+                    //hide the activity loader
+                    $('#activity_loader').hide();
+
+                    //display the emotion loader
+                    $('#emotion_loader').attr('hidden', false);
+
+                    //sending the request to process the lecture emotions
+                    fetch('http://127.0.0.1:8000/process-lecture-emotion/?lecture_video_name=' + global_video_name + '&lecture_video_id=' + global_lecture_video_id)
+                        .then((res) => res.json())
+                        .then((out) => handleEmotionResponse(out.response))
+                        .catch((error) => alert('error: ' + error));
+                }
+            }
+
+
+            //this is to detect the response gained from emotion recognition process
+            function handleEmotionResponse(response) {
+                //change the button, if the response is positive
+                if (response) {
+                    //display the activity process as completed
+                    $('#step_2').attr('class', class1);
+
+                    //hide the emotion loader
+                    $('#emotion_loader').hide();
+
+                    //display the gaze loader
+                    $('#gaze_loader').attr('hidden', false);
+
+                    //sending the get request to process the lecture gaze estimations
+                    fetch('http://127.0.0.1:8000/process-lecture-gaze-estimation/?lecture_video_name=' + global_video_name + '&lecture_video_id=' + global_lecture_video_id)
+                        .then((res) => res.json())
+                        .then((out) => handleGazeResponse(out.response))
+                        .catch((error) => alert('error: ' + error));
+                }
+            }
+
+
+            //this is to detect the response gained from emotion recognition process
+            function handleGazeResponse(response) {
+                //change the button, if the response is positive
+                if (response) {
+                    //display the activity process as completed
+                    $('#step_3').attr('class', class1);
+
+                    //hide the activity loader
+                    $('#gaze_loader').hide();
+
+                }
+            }
+
+
+            //this is a test function (delete later)
+
+            var isDue = {{ isDue }};
+
+            if (isDue > 0) {
+                let interval = setInterval(() => {
+
+                    $('#activity_loader').attr('hidden', false);
+
+                    //get the due lecture video name
+                    var due_lecture_video_name = "{{ due_lecture_video_name }}";
+                    let url = 'http://127.0.0.1:8000/check-availability/?video_name=' + due_lecture_video_name;
+
+                    fetch(url)
+                        .then((res) => res.json())
+                        .then((out) => displayProcess(out))
+                        .catch((err) => alert('error: ' + err))
+
+                }, 5000);
+
+                //this function will handle the displaying loaders and status in the workflow
+                function displayProcess(response) {
+
+                    //if the lecture activity has completed processing
+                    if (response.isActivityExist) {
+
+                        $('#step_1').attr("class", class1);
+                        $('#activity_loader').hide();
+                        $('#emotion_loader').attr('hidden', false);
+
+                    }
+
+                    //if the lecture emotion has completed processing
+                    if (response.isEmotionExist) {
+
+                        $('#step_2').attr("class", class1);
+                        $('#emotion_loader').hide();
+                        $('#gaze_loader').attr('hidden', false);
+
+                    }
+
+                    //if the lecture gaze has completed processing
+                    if (response.isGazeExist) {
+
+                        $('#step_3').attr("class", class1);
+                        $('#gaze_loader').hide();
+                    }
+
+                    //if all the processes are completed
+                    if (response.isActivityExist && response.isEmotionExist && response.isGazeExist) {
+
+                        var x = document.getElementById("snackbar");
+                        x.className = "show";
+                        setTimeout(function () {
+                            x.className = x.className.replace("show", "");
+                        }, 3000);
+
+                        //clear the setInterval function
+                        clearInterval(interval);
+                    }
+
+
+                }
+            }
+
+
+        });
+
+    </script>
+
+
+{% endblock %}
+
+<div id="wrapper">
+    <!-- Sidebar -->
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+
+        <!-- Main Content -->
+        <div id="content">
+
+            <!-- Begin Page Content -->
+            {% block 'container-fluid' %}
+                <div class="container-fluid">
+                    {% load static %}
+
+                    <!-- Page Heading -->
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <h1 class="h3 mb-0 text-gray-800">Lecture Video Results</h1>
+                        <h2><span id="time_display"></span></h2>
+                    </div>
+
+                    <!--first row -->
+                    <div class="row p-2">
+
+
+                        <!--second column (timetable column) -->
+                        <div class="col-lg-8" style="overflow-x: scroll">
+                            <div class="card shadow mb-4">
+                                <!--card header -->
+                                <div class="card-header py-3">
+                                    <h5 class="m-0 font-weight-bold text-primary">Waiting List</h5>
+                                </div>
+
+                                <!--card body -->
+                                <div class="card-body">
+
+                                    <!--loading gif -->
+                                    {% if due_lectures|length == 0 %}
+                                        <div class="text-center" id="no_subject_selected">
+                                            <span class="font-italic">No lecture is to be processed</span>
+                                        </div>
+                                    {% endif %}
+                                    <!--no lecture selected message -->
+                                    <div class="text-center" id="loader" hidden>
+                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="Loader">
+                                    </div>
+                                    <!--no lecture selected message -->
+                                    <div class="text-center" id="no_timetable_content" hidden>
+                                        <span class="font-italic">Not included in the timetable</span>
+                                    </div>
+
+                                    <!-- if there are due lectures, display the table -->
+                                    {% if due_lectures %}
+
+                                        <!--displaying the timetable -->
+                                        <table class="table table-striped" id="timetable">
+                                            {#                                    <caption id="timetable_caption"></caption>#}
+                                            <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Subject</th>
+                                                <th>start time</th>
+                                                <th>end time</th>
+                                                <th></th>
+                                            </tr>
+                                            </thead>
+                                            <tbody id="timetable_body">
+                                            {% for lecture in due_lectures %}
+                                                <tr>
+                                                    <td class="font-weight-bolder">{{ lecture.date }}</td>
+                                                    {#                                                    <td>{{ lecture.subject }}</td>#}
+                                                    <td class="font-weight-bolder">{{ lecture.subject_name }}</td>
+                                                    <td class="font-weight-bolder">{{ lecture.start_time }}</td>
+                                                    <td class="font-weight-bolder">{{ lecture.end_time }}</td>
+                                                    <td>
+                                                        <span class="font-italic text-success" id="processing" hidden>Processing</span>
+{#                                                        <button type="button" class="btn btn-success batch_process"#}
+{#                                                                data-video-id="{{ lecture.video_id }}"#}
+{#                                                                data-video-name="{{ lecture.video_name }}"#}
+{#                                                                id="{{ lecture.subject }}">Process#}
+{#                                                        </button>#}
+                                                        {#                                                        <span class="font-italic font-weight-bolder text-success">Processing</span>#}
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    {% endif %}
+
+
+                                </div>
+                            </div>
+                        </div>
+                        <!--end of first column -->
+
+                    </div>
+
+                    <!-- progress row -->
+                    <div class="row p-2" id="progress_row">
+
+                        <!--first column-->
+                        <div class="col-lg-12">
+
+                            <!-- card content -->
+                            <div class="card shadow mb-4">
+
+                                <div class="card-header py-3 text-center">
+                                    <h5 class="m-0 font-weight-bold text-primary">Process Workflow</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="container">
+                                        <div class="row smpl-step" style="border-bottom: 0; min-width: 500px;">
+
+                                            <!-- step 1 -->
+                                            <div class="col-4 smpl-step-step disabled" id="step_1">
+                                                <div class="text-center smpl-step-num font-weight-bolder">Step 1</div>
+                                                <div class="progress">
+                                                    <div class="progress-bar"></div>
+                                                </div>
+                                                <a class="smpl-step-icon text-center"><i class="fa fa-chart-line"
+                                                                                         style="font-size: 40px; padding-top: 10px; color: white"></i></a>
+                                                <div class="smpl-step-info text-center">
+                                                    <span class="font-italic font-weight-bolder">Perform Activity Recognition</span>
+                                                    <br/>
+                                                    <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
+                                                         alt="Loader" class="mt-2" id="activity_loader" hidden>
+                                                </div>
+                                            </div>
+                                            <!-- end of step 1 -->
+
+                                            <!-- step 2 -->
+                                            <div class="col-4 smpl-step-step disabled" id="step_2">
+                                                <div class="text-center smpl-step-num font-weight-bolder">Step 2</div>
+                                                <div class="progress">
+                                                    <div class="progress-bar"></div>
+                                                </div>
+                                                <a class="smpl-step-icon text-center"><i class="fa fa-user"
+                                                                                         style="font-size: 50px; padding-top: 10px; color: white"></i></a>
+                                                <div class="smpl-step-info text-center">
+                                                    <span class="font-italic font-weight-bolder">Study Student Emotions</span>
+                                                    <br/>
+                                                    <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
+                                                         alt="Loader" class="mt-2" id="emotion_loader" hidden>
+                                                </div>
+                                            </div>
+                                            <!-- end of step 2 -->
+
+                                            <!-- step 3 -->
+                                            <div class="col-4 smpl-step-step disabled" id="step_3">
+                                                <div class="text-center smpl-step-num font-weight-bolder">Step 3</div>
+                                                <div class="progress">
+                                                    <div class="progress-bar"></div>
+                                                </div>
+                                                <a class="smpl-step-icon">
+                                                    <i class="fa fa-eye"
+                                                       style="font-size: 60px; padding-left: 7px; padding-top: 5px; color: white;"></i>
+                                                </a>
+                                                <div class="smpl-step-info text-center">
+                                                    <span class="font-italic font-weight-bolder">See students' Gazes</span>
+                                                    <br/>
+                                                    <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
+                                                         alt="Loader" class="mt-2" id="gaze_loader" hidden>
+                                                </div>
+                                            </div>
+                                            <!-- end of step 3 -->
+
+                                        </div>
+                                        <!-- end of progress row -->
+
+
+                                    </div>
+                                    <!-- end of container -->
+
+                                </div>
+                            </div>
+
+                        </div>
+                        <!-- end of 1st column -->
+
+                    </div>
+                    <!-- end of progress row -->
+
+                    <!-- snackbar -->
+                    <div id="snackbar">The lecture is completely processed..</div>
+                    <!-- end of snackbar -->
+
+                </div>
+            {% endblock %}
+            <!-- End of container-fluid -->
+
+        </div>
+        <!-- End of Main Content -->
+
+    </div>
+    <!-- End of Content Wrapper -->
+
+</div>
+
+{% block 'modal' %}
+    <div class="modal fade" id="video_modal" role="dialog" aria-labelledby="gif-body">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Video details</h2>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="font-weight-bold">Video Name</td>
+                            <td id="video_name"></td>
+                        </tr>
+                        <tr>
+                            <td class="font-weight-bold">Duration</td>
+                            <td id="video_duration"></td>
+                        </tr>
+                        <tr>
+                            <td class="font-weight-bold">Date of Creation</td>
+                            <td id="video_date"></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- modal footer -->
+                <div class="modal-footer">
+                    <button type="button" data-dismiss="modal" class="btn btn-danger text-white">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Logout Modal-->
+    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                    <a class="btn btn-primary" href="/logout">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+</body>
+</html>

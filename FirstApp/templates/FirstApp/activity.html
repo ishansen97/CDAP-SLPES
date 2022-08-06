@@ -1,0 +1,1457 @@
+{% extends 'FirstApp/template.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<body id="page-top">
+<!-- Page Wrapper -->
+
+{% block javascript %}
+    {% load static %}
+
+    <!-- Bootstrap core JavaScript-->
+    <script src="{% static 'FirstApp/vendor/jquery/jquery.min.js' %}"></script>
+    <script src="{% static 'FirstApp/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+
+    <!-- Page level plugins -->
+    <script src="{% static 'FirstApp/vendor/datatables/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'FirstApp/vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+
+    <!-- Page level custom scripts -->
+    <script src="{% static 'FirstApp/js/demo/datatables-demo.js' %}"></script>
+
+    <!-- Core plugin JavaScript-->
+    <script src="{% static 'FirstApp/vendor/jquery-easing/jquery.easing.min.js' %}"></script>
+
+    <!-- canvasJS implementation -->
+    <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+
+
+
+
+    <script type="text/javascript">
+
+        var global_subject = '';
+        var global_lecturer = '';
+        var global_lecture_video_id = '';
+        var global_video_name = '';
+        var global_lecturer_subject_index = 0;
+        var global_lecture_date = '';
+        var global_lecturer_video_name = '';
+        var lecturer_fps = 0;
+        var lecture_activity_frame_group_percentages = {};
+        var lecture_video_time_landmarks = [];
+        var CHART = '';
+
+
+        //jquery
+        $(document).ready(function () {
+
+            //disable the 'integrate_activity' button
+            $('#integrate_activity').hide();
+
+            //hide the 'Generate Report' button
+            {#$('#generate_report_before').hide();#}
+            $('#generate_report').hide();
+
+            //select a particular subject
+            $('input[type=radio]').click(function () {
+                let subject_id = $(this).attr('id');
+                global_subject = subject_id;
+                let lecturer = $(this).attr('data-lecturer');
+                global_lecturer = lecturer;
+                let subject_name = $(this).attr('data-name');
+
+                $('#timetable').attr('hidden', true);
+                $('#no_timetable_content').attr('hidden', true);
+                $('.student-detection-rows').remove();
+
+                $('#timetable_body').children().map(function () {
+                    $(this).remove();
+                });
+
+
+                $('#no_subject_selected').attr('hidden', true);
+
+                $('#timetable_caption').text('subject: ' + subject_name);
+                $('#loader').attr('hidden', false);
+
+                //fetching the timetable from the db
+                fetch('http://127.0.0.1:8000/timetables')
+                    .then((res) => res.json())
+                    .then((out) => createTimeTable(out, subject_id, lecturer))
+                    .catch((error) => alert('this is the error: ' + error))
+
+            });
+
+
+            $(document).on('click', '.btn-info', function (e) {
+
+                let clicked_class = e.target.className;
+                let object = e;
+                let real_class = clicked_class.split(' ')[1];
+                real_class = '.' + real_class;
+
+
+                let date = e.target.parentNode.parentNode.firstChild.innerHTML;
+                //assign the date
+                global_lecture_date = date;
+
+                fetch('http://127.0.0.1:8000/get-lecture-video/?lecturer=' + global_lecturer + '&date=' + date + '&index=' + global_lecturer_subject_index)
+                    .then((res) => res.json())
+                    .then((out) => displayLectureVideoDetails(out, object))
+                    .catch((error) => alert('an error occurred: ' + error));
+            });
+
+            //this function will display the timetable for the lecturer
+            function createTimeTable(timetable, subject, lecturer) {
+                $('#loader').attr('hidden', true);
+                $('#timetable').attr('hidden', false);
+                let isTimetableSubject = false;
+
+                timetable.map((item, i) => {
+                    item.timetable.map((table, index) => {
+
+                        let lecturer_subject_index_arr = [];
+
+
+                        //to get the number of subjects taught by the lecturer in a day
+                        table.time_slots.forEach((slot1, ind) => {
+                            let isLecturer = slot1.lecturer.id === Number(lecturer);
+
+                            if (isLecturer) {
+                                lecturer_subject_index_arr.push(ind);
+                            }
+                        });
+
+                        //iterating each slot (for a given day)
+                        table.time_slots.forEach((slot, in1) => {
+                            let isLecturer = slot.lecturer.id === Number(lecturer);
+                            let isLecSubject = slot.subject.subject_code === subject;
+                            if (isLecturer && isLecSubject) {
+                                let html = '';
+                                global_lecturer_subject_index = lecturer_subject_index_arr.findIndex((inner) => inner === in1);
+                                isTimetableSubject = true;
+                                html += "<tr class='lecture-details'><td class='slot_date'>" + table.date + "</td>"
+                                    + "<td>" + slot.location + "</td>"
+                                    + "<td>" + slot.start_time + "</td>"
+                                    + "<td>" + slot.end_time + "</td>"
+                                    + "<td><button type='button' class='btn btn-info'>Video</button></td>"
+                                    + "<td></td>"
+                                    + "</tr>";
+
+                                $('#timetable_body').append(html);
+
+                            }
+                        });
+                    });
+
+                    if (!isTimetableSubject) {
+                        $('#timetable').attr('hidden', true);
+                        $('#no_timetable_content').attr('hidden', false);
+                    }
+
+
+                });
+            }
+
+            //function to display lecture video details
+            function displayLectureVideoDetails(lectureVideo, e) {
+
+                //get the lecture video response
+                let video = lectureVideo.response;
+
+                $('#video_name').text(video.video_name);
+                $('#video_duration').text(video.video_length);
+                $('#video_date').text(video.date);
+                global_lecture_video_id = video.lecture_video_id;
+                global_video_name = video.video_name;
+
+
+                if (lectureVideo.isActivityFound) {
+                    e.target.parentNode.parentNode.lastChild.innerHTML = '<button type="button" class="btn btn-primary" id="result_btn">Results</button>';
+                } else {
+                    e.target.parentNode.parentNode.lastChild.innerHTML = '<button type="button" class="btn btn-success">Process</button>';
+                }
+
+                //enable the 'generate report' button
+                $('#generate_report_before').attr('disabled', false);
+
+                $('#video_modal').modal();
+
+                //display the 'integrate activity' button
+                $('#integrate_activity').show();
+            }
+
+            //binding a click event for 'btn-primary' buttons
+            $(document).on('click', '#result_btn', function (e) {
+
+                //removing the previous frames (if there is any)
+                $('#main_frames').remove();
+
+                //displaying the loader (for the frames)
+                $('#frame_loader').attr('hidden', false);
+                //hiding the temporary text
+                $('#temporary_text').attr('hidden', true);
+
+                fetch('http://127.0.0.1:8000/get-lecture-activity/?lecture_video_id=' + global_lecture_video_id)
+                    .then((res) => res.json())
+                    .then((out) => {
+                        {#let frames = createFrames(out);#}
+                        {#return frames#}
+                        displayActivity(out);
+                    })
+                    .then((obj) => {
+                        {#$('#video_frames').prepend(obj);#}
+                        $('#frame_loader').attr('hidden', true);
+                        {#$('#slidecontainer').attr('hidden', false);#}
+                    })
+                    .catch((error) => alert('this is the error: ' + error));
+            });
+
+            //displaying the activity percentages in the progress bars
+            function displayActivity(activity) {
+
+                //hiding the loader (for the frames)
+                $('#frame_loader').attr('hidden', true);
+
+                let src = "{% static '' %}FirstApp/videos/" + global_video_name;
+
+                //setting the video (set of frames)
+                $('video').attr({'hidden': false, 'src': src});
+
+
+                activity.response.map((act, index) => {
+                    //setting the percentage values
+                    $('#phone_perct').text(act.phone_perct + '%');
+                    $('#talking_perct').text(act.talking_perct + '%');
+                    $('#listening_perct').text(act.listening_perct + '%');
+                    $('#writing_perct').text(act.writing_perct + '%');
+
+                    //setting the width in the progress bars
+                    $('#phone_width').width(act.phone_perct + '%');
+                    $('#talking_width').width(act.talking_perct + '%');
+                    $('#listening_width').width(act.listening_perct + '%');
+                    $('#writing_width').width(act.writing_perct + '%');
+                });
+
+                //display the progress bar area
+                $('.progress_area').attr('hidden', false);
+            }
+
+            //to handle the 'btn-success' (process) button
+            $(document).on('click', '.btn-success', function (e) {
+
+                //sending the POST request to process the lecture activities
+                fetch('http://127.0.0.1:8000/process-lecture-activity/?lecture_video_name=' + global_video_name + '&lecture_video_id=' + global_lecture_video_id)
+                    .then((res) => res.json())
+                    .then((out) => handleActivityResponse(out.response, e))
+                    .catch((error) => alert('error: ' + error));
+            });
+
+            //this is to detect the response gained from activity recognition porcess
+            function handleActivityResponse(response, e) {
+                //change the button, if the response is positive
+                if (response) {
+                    e.target.parentNode.parentNode.lastChild.innerHTML = '<button type="button" class="btn btn-primary" id="result_btn">Results</button>';
+                }
+            }
+
+
+            //to handle the 'integrate' modal
+            $('#integrate_activity').click(function () {
+                //define the student video src
+                {#global_video_name = "Video_test_9.mp4";#}
+                {#global_video_name = "Video_test_9_annotated.mp4";#}
+                let video_src = "{% static '' %}FirstApp/videos/" + global_video_name;
+                {#let video_src = "{% static '' %}FirstApp/video/" + global_video_name;#}
+                {#let video_src = "{% static '' %}/FirstApp/activity/" + global_video_name;#}
+                {#let video_src = "{% static '' %}FirstApp/emotion/" + global_video_name;#}
+
+
+                //assign the video src
+                $('#student_video').attr('src', video_src);
+
+                //fetch the lecture recorded video name
+                fetch('http://127.0.0.1:8000/get-lecture-recorded-video-name/?lecturer=' + global_lecturer + '&subject=' + global_subject + '&date=' + global_lecture_date)
+                    .then((res) => res.json())
+                    .then((out) => assignLecturerRecordedVideoName(out))
+                    .catch((err) => alert('error: ' + err));
+
+                {#global_lecturer_video_name = "Test_1.mp4";#}
+                {#global_lecturer_video_name = "Test_2.mp4";#}
+                {#global_lecturer_video_name = "Test_3.mp4";#}
+
+
+                //fetch data from the API
+                fetch('http://127.0.0.1:8000/get-lecture-activity-for-frame?video_name=' + global_video_name)
+                    .then((res) => res.json())
+                    .then((out) => displayActivityRecognitionForFrame(out.response))
+                    .catch((err) => alert('error: ' + err));
+
+            });
+
+            //assign the lecturer recorded video name
+            function assignLecturerRecordedVideoName(res) {
+
+                global_lecturer_video_name = res.video_name;
+
+                //define the lecturer video src
+                let lecturer_video_src = "{% static '' %}FirstApp/lecturer_videos/" + global_lecturer_video_name;
+
+
+                //assign the video src
+                $('#lecturer_video').attr('src', lecturer_video_src);
+
+                $('#integrate_modal').modal();
+            }
+
+            //this function will load the activity recognition for frames
+            function displayActivityRecognitionForFrame(response) {
+                //hide the loader
+                $('#student_video_progress_loader').attr('hidden', true);
+                //show the progress bars
+                $('#student_video_progress').attr('hidden', false);
+
+                //creating the html string
+                let htmlString = "";
+
+                //creating the html string, iteratively
+                response.map((frame) => {
+                    let frame_name = frame.frame_name;
+                    let phone_perct = Math.round(frame.phone_perct, 0);
+                    let listen_perct = Math.round(frame.listen_perct, 0);
+                    {#let listen_perct = Math.round(frame.listening_perct, 0);#}
+                    let note_perct = Math.round(frame.note_perct, 0);
+
+                    //append to the html string
+                    //phone checking
+                    htmlString += "<div class='progress_area' id='progress_" + frame_name + "' hidden>";
+                    htmlString += "<h4 class='small font-weight-bold'>Phone checking</h4>";
+                    htmlString += "<span class='float-right' id='phone_checking_instant_" + frame_name + "'>" + phone_perct + "%</span>";
+                    htmlString += "<div class='progress mb-4'>";
+                    htmlString += "<div class='progress-bar bg-warning' role='progressbar' id='phone_checking_instant_value_" + frame_name + "' style='width: " + phone_perct + "%' aria-valuenow='40' aria-valuemin='0' aria-valuemax='100'></div>";
+                    htmlString += "</div>";
+
+                    //note taking
+                    htmlString += "<h4 class='small font-weight-bold'>Writing</h4>";
+                    htmlString += "<span class='float-right' id='note_taking_instant_" + frame_name + "'>" + note_perct + "%</span>";
+                    htmlString += "<div class='progress mb-4'>";
+                    htmlString += "<div class='progress-bar' role='progressbar' id='note_taking_instant_value_" + frame_name + "' style='width: " + note_perct + "%' aria-valuenow='0' aria-valuemin='0' aria-valuemax='100'></div>";
+                    htmlString += "</div>";
+
+                    //listening
+                    htmlString += "<h4 class='small font-weight-bold'>Listening</h4>";
+                    htmlString += "<span class='float-right' id='listening_instant_" + frame_name + "'>" + listen_perct + "%</span>";
+                    htmlString += "<div class='progress mb-4'>";
+                    htmlString += "<div class='progress-bar bg-info' role='progressbar' id='listening_instant_value_" + frame_name + "' style='width: " + listen_perct + "%' aria-valuenow='80' aria-valuemin='0' aria-valuemax='100'></div>";
+                    htmlString += "</div>";
+
+                    //ending the progress area
+                    htmlString += "</div>";
+
+                });
+
+                //append the html
+                $('#student_video_column').append(htmlString);
+
+
+                //start retrieving lecturer activity frame recognition
+                fetch('http://127.0.0.1:8000/lecturer/get-lecturer-video-frame-recognitions/?video_name=' + global_lecturer_video_name)
+                    .then((res) => res.json())
+                    .then((out) => displayLecturerActivityRecognitionForFrame(out))
+                    .catch((err) => alert('error: ' + err))
+
+            }
+
+
+            //this function will load the activity recognition for frames
+            function displayLecturerActivityRecognitionForFrame(response) {
+                //hide the loader
+                $('#lecturer_video_progress_loader').attr('hidden', true);
+                //show the progress bars
+                $('#lecturer_video_progress').attr('hidden', false);
+
+                //creating the html string
+                let htmlString = "";
+
+                let duration = 1000 / response.fps;
+
+                lecturer_fps = Math.round(duration, 0);
+
+                console.log('lecturer fps: ', lecturer_fps);
+
+                //creating the html string, iteratively
+                response.frame_recognitions.map((frame) => {
+                    let frame_name = frame.frame_name;
+                    let sitting_perct = Math.round(frame.sitting_perct, 0);
+                    let standing_perct = Math.round(frame.standing_perct, 0);
+                    {#let listen_perct = Math.round(frame.listening_perct, 0);#}
+                    let walking_perct = Math.round(frame.walking_perct, 0);
+
+                    //append to the html string
+                    //sitting
+                    htmlString += "<div class='progress_area' id='progress_lecturer_" + frame_name + "' hidden>";
+                    htmlString += "<h4 class='small font-weight-bold'>Sitting</h4>";
+                    htmlString += "<span class='float-right' id='sitting_instant_" + frame_name + "'>" + sitting_perct + "%</span>";
+                    htmlString += "<div class='progress mb-4'>";
+                    htmlString += "<div class='progress-bar bg-warning' role='progressbar' id='sitting_instant_value_" + frame_name + "' style='width: " + sitting_perct + "%' aria-valuenow='40' aria-valuemin='0' aria-valuemax='100'></div>";
+                    htmlString += "</div>";
+
+                    //standing
+                    htmlString += "<h4 class='small font-weight-bold'>Standing</h4>";
+                    htmlString += "<span class='float-right' id='standing_instant_" + frame_name + "'>" + standing_perct + "%</span>";
+                    htmlString += "<div class='progress mb-4'>";
+                    htmlString += "<div class='progress-bar' role='progressbar' id='standing_instant_value_" + frame_name + "' style='width: " + standing_perct + "%' aria-valuenow='0' aria-valuemin='0' aria-valuemax='100'></div>";
+                    htmlString += "</div>";
+
+                    //walking
+                    htmlString += "<h4 class='small font-weight-bold'>Walking</h4>";
+                    htmlString += "<span class='float-right' id='walking_instant_" + frame_name + "'>" + walking_perct + "%</span>";
+                    htmlString += "<div class='progress mb-4'>";
+                    htmlString += "<div class='progress-bar bg-info' role='progressbar' id='walking_instant_value_" + frame_name + "' style='width: " + walking_perct + "%' aria-valuenow='80' aria-valuemin='0' aria-valuemax='100'></div>";
+                    htmlString += "</div>";
+
+                    //ending the progress area
+                    htmlString += "</div>";
+
+                });
+
+                //append the html
+                $('#lecturer_video_column').append(htmlString);
+
+
+            }
+
+
+            //to handle the 'integrate' play button
+            $('#play_integrate_button').click(function () {
+                let video = $('video')[0];
+                let video1 = $('video')[1];
+                let test_video = document.getElementsByTagName('video')[0];
+                let play_class = 'btn btn-outline-danger play';
+                let pause_class = 'btn btn-outline-danger pause';
+                let count = 0;
+                let count_lecturer = 0;
+
+                let classes = $(this).attr('class');
+
+
+                let video_interval = setInterval(() => {
+
+                    //=====STUDENTS COLUMN=====
+
+                    //get the relevant progress area
+                    let progress_area = "progress_frame-" + count;
+                    let progress_area_id = "#" + progress_area;
+
+                    //find the corresponding progress area
+                    let progress_area_html = document.getElementById(progress_area);
+
+                    //display the retrieved progress area
+                    $(progress_area_id).attr('hidden', false);
+
+                    //replace the current progress area with the selected one
+                    $('#student_video_progress').html(progress_area_html);
+
+
+                    //increment the count
+                    count++;
+
+                    console.log('current frame (student): ', count);
+
+
+                }, 33);
+
+                let video_interval_lecturer = setInterval(() => {
+
+                    //=====LECTURER COLUMN=====
+
+                    //get the relevant progress area
+                    let progress_area_lecturer = "progress_lecturer_frame-" + count_lecturer;
+                    let progress_area_id_lecturer = "#" + progress_area_lecturer;
+
+                    //find the corresponding progress area
+                    let progress_area_html_lecturer = document.getElementById(progress_area_lecturer);
+
+                    //display the retrieved progress area
+                    $(progress_area_id_lecturer).attr('hidden', false);
+
+                    //replace the current progress area with the selected one
+                    $('#lecturer_video_progress').html(progress_area_html_lecturer);
+
+
+                    //increment the count
+                    count_lecturer++;
+
+                    console.log('current frame (lecturer): ', count_lecturer);
+
+
+                }, lecturer_fps);
+
+                //check for the current class
+                if (classes === play_class) {
+                    $(this).text('Pause');
+                    $(this).attr('class', pause_class);
+                    video.play();
+                    video1.play();
+
+                } else if (classes === pause_class) {
+                    $(this).text('Play');
+                    $(this).attr('class', play_class);
+                    video.pause();
+                    video1.pause();
+
+                }
+                //function to do when the video is paused
+
+
+                //function to do when the video is ended
+                video.onended = function (e) {
+                    //stop changing the activity values
+                    clearInterval(video_interval);
+                };
+
+                //function to do when the lecturer video is ended
+                video1.onended = function (e) {
+                    //stop changing the activity values
+                    clearInterval(video_interval_lecturer);
+                };
+
+            });
+
+
+            //this method will call the API to generate activity report
+            $('#generate_report_btn').click(function () {
+                //call the fetch API
+
+                //hide the message
+                $('#generate_report_message').hide();
+
+
+                fetch('http://127.0.0.1:8000/lecture-activity-report-generation/?lecturer=' + global_lecturer + '&subject=' + global_subject + '&date=' + global_lecture_date)
+                    .then((res) => res.json())
+                    .then((out) => {
+                        //show the loader and loading message
+                        $('#generate_report_loader').attr('hidden', true);
+                        $('#generate_report_loading_message').attr('hidden', true);
+                        $('#generateReportModal').modal('hide');
+                    })
+                    .catch((err) => alert('error: ' + err))
+
+
+            });
+
+
+            //this function will handle the activity 'summary' button
+            $('#graph-tab').click(function (e) {
+
+                //display the graph loader
+                $('#graph_loader').attr('hidden', false);
+
+                //fetch the video time landmark details
+                fetch('http://127.0.0.1:8000/get-lecture-video-summary-time-landmarks/?video_name=' + global_video_name)
+                    .then((res) => res.json())
+                    .then((out) => assignTimeLandmarks(out.response))
+                    .catch((err) => alert('error: ' + err));
+
+                //change the innerHTML of the clicked button
+                {#e.target.innerHTML = "<span class='font-italic'>Processing</span>";#}
+
+                let phone_perct = $('#phone_perct').text().split("%")[0];
+                let listen_perct = $('#listening_perct').text().split("%")[0];
+                let note_perct = $('#writing_perct').text().split("%")[0];
+
+
+                //fetch the activity summary details
+                fetch('http://127.0.0.1:8000/get-lecture-activity-summary/?video_name=' + global_video_name + '&phone_perct=' + phone_perct + '&note_perct=' + note_perct + '&listen_perct=' + listen_perct)
+                    .then((res) => res.json())
+                    .then((out) => activityFrameGroupPercentages(out, e))
+                    .catch((err) => alert('error: ' + err));
+
+
+            });
+
+            //this function will assign lecture video time landmarks
+            function assignTimeLandmarks(response) {
+
+                lecture_video_time_landmarks = response;
+            }
+
+            //this function will handle the retrieved activity frame group percentages
+            function activityFrameGroupPercentages(response, e) {
+
+
+                lecture_activity_frame_group_percentages = response.frame_group_percentages;
+                let frame_landmarks = response.frame_landmarks;
+                {#let frame_group_dict = response.frame_group_dict;#}
+                let activity_labels = response.activity_labels;
+                let comment_list = response.comments;
+
+
+                //render the chart onto the modal body
+                renderActivityChart(activity_labels);
+            }
+
+
+            //this function will call the activity chart function
+            function renderActivityChart(activity_labels) {
+
+                //hide the graph loader
+                $('#graph_loader').hide();
+
+                //get the activity label length
+                let activity_label_length = activity_labels.length;
+
+                let data = [];
+
+
+                //loop through the activity labels
+                for (let k = 0; k < activity_label_length; k++) {
+                    let label = activity_labels[k];
+                    let datapoints = [];
+
+                    let count = 0;
+
+                    //loop through the activity frame groups
+                    for (let key in lecture_activity_frame_group_percentages) {
+                        let frame_group_details = lecture_activity_frame_group_percentages[key];
+
+                        let activity_perct = frame_group_details[label];
+
+                        let point = {label: lecture_video_time_landmarks[count], y: activity_perct};
+
+                        datapoints.push(point);
+
+                        count++;
+                    }
+
+                    let obj = {
+                        type: "line",
+                        showInLegend: true,
+                        name: label,
+                        markerType: "square",
+                        {#xValueFormatString: "DD MMM, YYYY",#}
+                        xValueFormatString: "hh:mm:ss",
+                        color: getRandomColor(),
+                        dataPoints: datapoints
+                    };
+
+                    data.push(obj);
+
+                }
+
+
+                CHART = new CanvasJS.Chart("ActivityChartContainer", {
+                    animationEnabled: true,
+                    theme: "light2",
+                    title: {
+                        text: "Student Activity Behavior"
+                    },
+                    axisX: {
+                        title: "Duration",
+                        {#valueFormatString: "DD MMM",#}
+                        valueFormatString: "hh:mm:ss",
+                        crosshair: {
+                            enabled: true,
+                            snapToDataPoint: true
+                        }
+                    },
+                    axisY: {
+                        title: "Percentage",
+                        includeZero: true,
+                        crosshair: {
+                            enabled: true
+                        }
+                    },
+                    toolTip: {
+                        shared: true
+                    },
+                    legend: {
+                        cursor: "pointer",
+                        verticalAlign: "top",
+                        horizontalAlign: "right",
+                        dockInsidePlotArea: true,
+                        itemclick: toogleDataSeries
+                    },
+                    data: data
+                });
+                {#chart.render();#}
+                CHART.render();
+
+                //show the 'generate report' button
+                $('#generate_report').show();
+            }
+
+            //this function will generate random colors
+            function getRandomColor() {
+                var letters = '0123456789ABCDEF';
+                var color = '#';
+                for (var i = 0; i < 6; i++) {
+                    color += letters[Math.floor(Math.random() * 16)];
+                }
+                return color;
+            }
+
+            //this function will toggle the content
+            function toogleDataSeries(e) {
+                if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+                    e.dataSeries.visible = false;
+                } else {
+                    e.dataSeries.visible = true;
+                }
+                chart.render();
+            }
+
+
+            //this method will handle the 'Generate Report' button
+            $('#generate_report').click(function () {
+
+                let script = "<script src='https://canvasjs.com/assets/script/canvasjs.min.js'><\/script>";
+
+
+                CHART.print();
+
+
+
+                {#var prtContent = document.getElementById("ActivityChartContainer");#}
+                {#var WinPrint = window.open('', '', 'left=0,top=0,width=800,height=900,toolbar=0,scrollbars=0,status=0');#}
+                {#var WinPrint = window.open('');#}
+                {#WinPrint.document.write(prtContent.innerHTML);#}
+                {#WinPrint.document.write(script);#}
+                {#WinPrint.document.write('<h1>This is Ishan</h1>');#}
+                {#WinPrint.document.close();#}
+                {#WinPrint.focus();#}
+                {#WinPrint.print();#}
+                {#WinPrint.close();#}
+            });
+
+        });
+
+    </script>
+
+
+{% endblock %}
+
+<div id="wrapper">
+    <!-- Sidebar -->
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+
+        <!-- Main Content -->
+        <div id="content">
+
+            <!-- Begin Page Content -->
+            {% block 'container-fluid' %}
+                <div class="container-fluid">
+                    {% load static %}
+
+                    <!-- Page Heading -->
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <h1 class="h3 mb-0 text-gray-800">Student Activity Recognition</h1>
+                        <button type="button" class="btn btn-primary" id="generate_report">Generate Report</button>
+{#                        <button type="button"#}
+{#                                class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"#}
+{#                                id="generate_report_before"><i#}
+{#                                class="fas fa-download fa-sm text-white-50"></i> Generate Report#}
+{#                        </button>#}
+                    </div>
+
+
+                    <!--first row -->
+                    <div class="row p-2">
+
+                        <!--first column -->
+                        <div class="col-lg-6" style="overflow-x: scroll">
+                            <div class="card shadow mb-4">
+                                <!--card header -->
+                                <div class="card-header py-3">
+                                    <h5 class="m-0 font-weight-bold text-primary">Lecturer Subjects</h5>
+                                </div>
+
+                                <!--card body -->
+                                <div class="card-body">
+                                    {% if lecturer_subjects.count == 0 %}
+                                        <div class="text-center">
+                                            <span class="font-italic">No subjects</span>
+                                        </div>
+                                    {% else %}
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered" id="datatable">
+                                                <thead>
+                                                <tr>
+                                                    <th></th>
+                                                    <th>Subject Name</th>
+                                                    <th>Code</th>
+                                                    <th>Year</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                {% for subject in subjects %}
+                                                    <tr class="subjects not_clicked" id="{{ subject.0.subject_code }}">
+                                                        <td>
+                                                            <div class="radio">
+                                                                <label><input type="radio"
+                                                                              id="{{ subject.0.subject_code }}"
+                                                                              name="subject_radio"
+                                                                              data-name="{{ subject.0.name }}"
+                                                                              data-lecturer="{{ lecturer }}"></label>
+                                                            </div>
+                                                        </td>
+                                                        <td>{{ subject.0.name }}</td>
+                                                        <td>{{ subject.0.subject_code }}</td>
+                                                        <td>{{ subject.0.year }}</td>
+                                                    </tr>
+                                                {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <!--end of first column -->
+
+                        <!--second column (timetable column) -->
+                        <div class="col-lg-6" style="overflow-x: scroll">
+                            <div class="card shadow mb-4">
+                                <!--card header -->
+                                <div class="card-header py-3">
+                                    <h5 class="m-0 font-weight-bold text-primary">View timetable</h5>
+                                </div>
+
+                                <!--card body -->
+                                <div class="card-body">
+
+                                    <!--loading gif -->
+                                    <div class="text-center" id="no_subject_selected">
+                                        <span class="font-italic">No lecture is selected</span>
+                                    </div>
+                                    <!--no lecture selected message -->
+                                    <div class="text-center" id="loader" hidden>
+                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="Loader">
+                                    </div>
+                                    <!--no lecture selected message -->
+                                    <div class="text-center" id="no_timetable_content" hidden>
+                                        <span class="font-italic">Not included in the timetable</span>
+                                    </div>
+                                    <!--displaying the timetable -->
+                                    <table class="table table-striped" id="timetable" hidden>
+                                        {#                                    <caption id="timetable_caption"></caption>#}
+                                        <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Hall No.</th>
+                                            <th>start time</th>
+                                            <th>end time</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="timetable_body">
+
+                                        </tbody>
+                                    </table>
+
+
+                                </div>
+                            </div>
+                        </div>
+                        <!--end of second column -->
+
+                    </div>
+                    <!--end of 1st row -->
+
+                    <!--2nd row -->
+                    <div class="row p-2">
+
+                        <!--1st column -->
+                        <div class="col-lg-6">
+                            <!--card content -->
+                            <div class="card shadow mb-4">
+                                <!--card header -->
+                                <div class="card-header py-3">
+                                    <h5 class="m-0 font-weight-bold text-primary">Activity Recognition</h5>
+                                </div>
+
+                                <!--card body -->
+                                <div class="card-body">
+
+                                    <!--nav tabs-->
+                                    <ul class="nav nav-tabs nav-fill" id="nav_bar" role="tablist">
+                                        <li class="nav-item">
+                                            <a class="nav-link active" id="frame-tab" data-toggle="tab" href="#frame"
+                                               role="tab" aria-controls="frame" aria-selected="true">Frame</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" id="graph-tab" data-toggle="tab" href="#graph"
+                                               role="tab" aria-controls="graph" aria-selected="false">Graphs</a>
+                                        </li>
+                                    </ul>
+
+                                    <!--tab content -->
+                                    <div class="tab-content" id="tabContentDetails">
+                                        <!--frame tab -->
+                                        <div class="tab-pane fade show active" id="frame" role="tabpanel"
+                                             aria-labelledby="home-tab">
+                                            <!--this area will display the frame -->
+                                            <div class="text-center" id="frame_area" style="height: 600px">
+                                                <!--temporary text -->
+                                                <span class="font-italic" id="temporary_text">Frame will be displayed here</span>
+
+                                                <!--loading buffer area-->
+                                                <div class="text-center" id="frame_loader" hidden>
+                                                    <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
+                                                         alt="Loader">
+                                                </div>
+
+                                                <!--this area will display the progress bars -->
+                                                <div class="progress_area mt-4" hidden>
+                                                    <!--talking with friends -->
+                                                    {#                                                    <a href="#" class="btn btn-link labels" data-number="1"#}
+                                                    {#                                                       data-label="talking-with-friends">#}
+                                                    {#                                                        <h4 class="small font-weight-bold">Talking with friends</h4>#}
+                                                    {#                                                    </a>#}
+                                                    {#                                                    <span class="float-right" id="talking_perct">40%</span>#}
+                                                    {#                                                    <div class="progress mb-4">#}
+                                                    {#                                                        <div class="progress-bar bg-danger" role="progressbar"#}
+                                                    {#                                                             id="talking_width"#}
+                                                    {#                                                             style="width: 20%"#}
+                                                    {#                                                             aria-valuenow="20" aria-valuemin="0"#}
+                                                    {#                                                             aria-valuemax="100"></div>#}
+                                                    {#                                                    </div>#}
+
+                                                    <!--phone checking -->
+                                                    <a href="#" class="btn btn-link labels" data-number="0"
+                                                       data-label="phone-checking">
+                                                        <h4 class="small font-weight-bold">Phone checking</h4>
+                                                    </a>
+                                                    <span class="float-right" id="phone_perct">45%</span>
+                                                    <div class="progress mb-4">
+                                                        <div class="progress-bar bg-warning" role="progressbar"
+                                                             id="phone_width"
+                                                             style="width: 40%"
+                                                             aria-valuenow="40" aria-valuemin="0"
+                                                             aria-valuemax="100"></div>
+                                                    </div>
+
+                                                    <!--note taking -->
+                                                    <a href="#" class="btn btn-link labels" data-number="2"
+                                                       data-label="note-taking">
+                                                        <h4 class="small font-weight-bold">Writing</h4>
+                                                    </a>
+                                                    <span class="float-right" id="writing_perct">50%</span>
+                                                    <div class="progress mb-4">
+                                                        <div class="progress-bar" role="progressbar" id="writing_width"
+                                                             style="width: 60%"
+                                                             aria-valuenow="60" aria-valuemin="0"
+                                                             aria-valuemax="100"></div>
+                                                    </div>
+
+                                                    <!--listening-->
+                                                    <a href="#" class="btn btn-link labels">
+                                                        <h4 class="small font-weight-bold">Listening</h4>
+                                                    </a>
+                                                    <span class="float-right" id="listening_perct">60%</span>
+                                                    <div class="progress mb-4">
+                                                        <div class="progress-bar bg-info" role="progressbar"
+                                                             id="listening_width" style="width: 80%"
+                                                             aria-valuenow="80" aria-valuemin="0"
+                                                             aria-valuemax="100"></div>
+                                                    </div>
+
+                                                </div>
+
+
+                                            </div>
+
+
+                                        </div>
+
+                                        <!--graph tab -->
+                                        <div class="tab-pane fade" id="graph" role="tabpanel"
+                                             aria-labelledby="profile-tab">
+
+                                            <!-- graph loader -->
+                                            <div class="text-center mt-3" id="graph_loader" hidden>
+                                                <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"
+                                                     alt="Loader">
+                                            </div>
+                                            <!-- end of graph loader -->
+
+
+                                            <!--card content -->
+                                            <div class="card shadow mb-4 p-3">
+                                                {#                                                <!-- Card Header - Dropdown -->#}
+                                                {#                                                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">#}
+                                                {#                                                    <h6 class="m-0 font-weight-bold text-primary">Student#}
+                                                {#                                                        Activities</h6>#}
+                                                {#                                                    <div class="dropdown no-arrow">#}
+                                                {#                                                        <a class="dropdown-toggle" href="#" role="button"#}
+                                                {#                                                           id="dropdownMenuLink" data-toggle="dropdown"#}
+                                                {#                                                           aria-haspopup="true" aria-expanded="false">#}
+                                                {#                                                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>#}
+                                                {#                                                        </a>#}
+                                                {#                                                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"#}
+                                                {#                                                             aria-labelledby="dropdownMenuLink">#}
+                                                {#                                                            <div class="dropdown-header">Dropdown Header:</div>#}
+                                                {#                                                            <a class="dropdown-item" href="#">Action</a>#}
+                                                {#                                                            <a class="dropdown-item" href="#">Another action</a>#}
+                                                {#                                                            <div class="dropdown-divider"></div>#}
+                                                {#                                                            <a class="dropdown-item" href="#">Something else here</a>#}
+                                                {#                                                        </div>#}
+                                                {#                                                    </div>#}
+                                                {#                                                </div>#}
+
+                                                <!-- Card Body -->
+                                                <div class="card-body">
+                                                    <div id="ActivityChartContainer"
+                                                         style="height: 370px; max-width: 920px; margin: 0px auto;"></div>
+                                                </div>
+                                                <!-- End of Card Body -->
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!--2nd column -->
+                        <div class="col-lg-6">
+                            <!--card -->
+                            <div class="card shadow mb-4">
+                                <!--card header -->
+                                <div class="card-header">
+                                    <h5 class="m-0 font-weight-bold text-primary">Integrated Evaluation</h5>
+                                </div>
+
+                                <!--card body -->
+                                <div class="card-body">
+                                    <div class="text-center" id="integrate_message">
+                                        <span class="font-italic">The integrated version student and lecturer evaluations will display here.</span>
+                                    </div>
+
+                                    <!--button -->
+                                    <div class="text-right m-4">
+                                        <button type="button" class="btn btn-outline-success" id="integrate_activity">
+                                            Process
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!--end of 2nd column -->
+
+
+                    </div>
+                    <!-- end of 2nd row -->
+
+                    <!--3rd row -->
+                    <div class="row p-2">
+
+                        <!--1st column -->
+                        <div class="col-lg-6">
+                            {#                            <!--card -->#}
+                            {#                            <div class="card shadow mb-4">#}
+                            {#                                <!--card header -->#}
+                            {#                                <div class="card-header">#}
+                            {#                                    <h5 class="m-0 font-weight-bold text-primary">Evaluated Students</h5>#}
+                            {#                                </div>#}
+                            {##}
+                            {#                                <!--card body -->#}
+                            {#                                <div class="card-body" id="evaluation_students">#}
+                            {##}
+                            {#                                    <!--no content message-->#}
+                            {#                                    <div class="text-center p-2" id="no_evaluated_student_content">#}
+                            {#                                        <span class="font-italic">Press 'Evaluate' button to evaluate students</span>#}
+                            {#                                    </div>#}
+                            {##}
+                            {#                                    <!--the detection student loader -->#}
+                            {#                                    <div class="text-center p-2" id="evaluate_student_loader" hidden>#}
+                            {#                                        <img src="{% static 'FirstApp/images/ajax-loader.gif' %}"#}
+                            {#                                             alt="Loader">#}
+                            {#                                    </div>#}
+                            {#                                    <!--end of student detection loader -->#}
+                            {##}
+                            {##}
+                            {#                                </div>#}
+                            {##}
+                            {#                            </div>#}
+
+
+                        </div>
+                        <!--end of 1st column -->
+
+                    </div>
+                    <!--end of 3rd row -->
+
+
+                </div>
+            {% endblock %}
+            <!-- End of container-fluid -->
+
+        </div>
+        <!-- End of Main Content -->
+
+    </div>
+    <!-- End of Content Wrapper -->
+
+</div>
+
+{% block 'modal' %}
+    <!--Video detail modal -->
+    <div class="modal fade" id="video_modal" role="dialog" aria-labelledby="gif-body">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Video details</h2>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="font-weight-bold">Video Name</td>
+                            <td id="video_name"></td>
+                        </tr>
+                        <tr>
+                            <td class="font-weight-bold">Duration</td>
+                            <td id="video_duration"></td>
+                        </tr>
+                        <tr>
+                            <td class="font-weight-bold">Date of Creation</td>
+                            <td id="video_date"></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- modal footer -->
+                <div class="modal-footer">
+                    <button type="button" data-dismiss="modal" class="btn btn-danger text-white">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--end of Video details modal -->
+
+    <!-- individual evaluation modal -->
+    <div class="modal fade" id="student_individual_modal" role="dialog" aria-labelledby="gif-body">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Individual evaluation (Emotion)</h2>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="text-center">
+                        <!--progress area -->
+                        <div class="progress_area" hidden>
+                            <!--talking with friends -->
+                            <!--
+                            <h4 class="small font-weight-bold">Talking with friends</h4>
+                            <span class="float-right" id="talking_individual_perct">40%</span>
+                            <div class="progress mb-4">
+                                <div class="progress-bar bg-danger" role="progressbar"
+                                     id="talking_individual_width"
+                                     style="width: 20%"
+                                     aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            -->
+
+                            <!--phone checking -->
+                            <h4 class="small font-weight-bold">Phone checking</h4>
+                            <span class="float-right" id="phone_individual_perct">45%</span>
+                            <div class="progress mb-4">
+                                <div class="progress-bar bg-warning" role="progressbar"
+                                     id="phone_individual_width"
+                                     style="width: 40%"
+                                     aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+
+                            <!--writing -->
+                            <h4 class="small font-weight-bold">Writing</h4>
+                            <span class="float-right" id="writing_individual_perct">50%</span>
+                            <div class="progress mb-4">
+                                <div class="progress-bar" role="progressbar" id="writing_individual_width"
+                                     style="width: 60%"
+                                     aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+
+                            <!--listening-->
+                            <h4 class="small font-weight-bold">Listening</h4>
+                            <span class="float-right" id="listening_individual_perct">60%</span>
+                            <div class="progress mb-4">
+                                <div class="progress-bar bg-info" role="progressbar"
+                                     id="listening_individual_width" style="width: 80%"
+                                     aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- modal footer -->
+                <div class="modal-footer">
+                    <button type="button" data-dismiss="modal" class="btn btn-danger text-white">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end of individual evaluation modal -->
+
+
+    <!-- Logout Modal-->
+    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                    <a class="btn btn-primary" href="/logout">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- generate report Modal-->
+    <div class="modal fade" id="generateReportModal" tabindex="-1" role="dialog" aria-labelledby="generateReportModal"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Generate Activity Report</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="generate_report_message">
+                        Are you sure you want to generate the report without going through the content?
+                    </div>
+                    <div class="text-center" id="generate_report_loader" hidden>
+                        <img src="{% static 'FirstApp/images/ajax-loader-1.gif' %}" alt="loader">y
+                    </div>
+                    <div class="text-center" id="generate_report_loading_message" hidden>
+                        <span class="font-italic">This will take some time</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal" id="generate_report_btn">Yes
+                    </button>
+                    <button type="button" class="btn btn-danger" data-dismiss="modal">No</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!--integrate modal -->
+    <div class="modal fade" id="integrate_modal" tabindex="-1" role="dialog" aria-labelledby="integrate_modal">
+        <div class="modal-dialog" style="max-width: 1300px">
+            <div class="modal-content">
+                <!--modal header -->
+                <div class="modal-header">
+                    <h4 class="modal-title">Integrated Version</h4>
+                </div>
+
+                <!--modal body -->
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <!--1st column -->
+                            <div class="col-md-6" id="student_video_column" style="border-right: 1px solid black">
+                                <div class="text-center">
+                                    <span class="h3 font-italic font-weight-bold">Student Behavior</span>
+                                </div>
+
+                                <!--display student video -->
+                                <div class="text-center m-3" id="student_video_section">
+                                    <video width="500" height="300" id="student_video" controls>
+                                        <source src="#"
+                                                type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                    {#                                    <video width="500" height="300" id="student_video" controls>#}
+                                    {#                                        <source src="{% static 'FirstApp/videos/Video_test_2.mp4' %}"#}
+                                    {#                                                type="video/mp4">#}
+                                    {#                                        Your browser does not support the video tag.#}
+                                    {#                                    </video>#}
+                                </div>
+                                <!--end of student video section -->
+
+                                <!-- ajax loader section -->
+                                <div class="text-center mt-3" id="student_video_progress_loader">
+                                    <img src="{% static 'FirstApp/images/ajax-loader-1.gif' %}" alt="loader">
+                                </div>
+
+                                <!--progress bar section -->
+                                <div class="progress_area" id="student_video_progress" hidden>
+                                    <!--talking with friends -->
+                                    <h4 class="small font-weight-bold">Talking with friends</h4>
+                                    <span class="float-right" id="talking_instant">0%</span>
+                                    <div class="progress mb-4">
+                                        <div class="progress-bar bg-danger" role="progressbar"
+                                             id="talking_instant_value"
+                                                {#                                             style="width: 0%"#}
+                                             aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+
+                                    <!--phone checking -->
+
+                                    <h4 class="small font-weight-bold">Phone checking</h4>
+                                    <span class="float-right" id="phone_checking_instant">0%</span>
+                                    <div class="progress mb-4">
+                                        <div class="progress-bar bg-warning" role="progressbar"
+                                             id="phone_checking_instant_value"
+                                                {#                                             style="width: 0%"#}
+                                             aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+
+                                    <!--note taking -->
+
+                                    <h4 class="small font-weight-bold">Writing</h4>
+                                    <span class="float-right" id="note_taking_instant">0%</span>
+                                    <div class="progress mb-4">
+                                        <div class="progress-bar" role="progressbar"
+                                             id="note_taking_instant_value"
+                                                {#                                             style="width: 0%"#}
+                                             aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+
+                                    <!--listening-->
+
+                                    <h4 class="small font-weight-bold">Listening</h4>
+                                    <span class="float-right" id="listening_instant">0%</span>
+                                    <div class="progress mb-4">
+                                        <div class="progress-bar bg-info" role="progressbar"
+                                             id="listening_instant_value"
+                                                {#                                             style="width: 80%"#}
+                                             aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+
+                                </div>
+                                <!--end of progress bar section -->
+                            </div>
+                            <!--end of 1st column -->
+
+                            <!--2nd column -->
+                            <div class="col-md-6" id="lecturer_video_column">
+                                <div class="text-center">
+                                    <span class="h3 font-italic font-weight-bold">Lecturer Performance</span>
+                                </div>
+
+                                <!--display lecture video -->
+                                <div class="text-center m-3" id="lecturer_video_section">
+                                    {#                                    <!--temporary text -->#}
+                                    {#                                    <div class="text-center" id="temp_lecturer_text">#}
+                                    {#                                        <span class="font-italic">No video was found</span>#}
+                                    {#                                    </div>#}
+
+
+                                    <!--display lecturer video -->
+                                    <div class="text-center m-3" id="lecturer_video_section">
+                                        <video width="500" height="300" id="lecturer_video" controls>
+                                            <source src="#"
+                                                    type="video/mp4">
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </div>
+                                    <!--end of lecturer video section -->
+
+
+                                    <!-- ajax loader section -->
+                                    <div class="text-center mt-3" id="lecturer_video_progress_loader">
+                                        <img src="{% static 'FirstApp/images/ajax-loader-1.gif' %}" alt="loader">
+                                    </div>
+
+
+                                    <!--progress bar section -->
+                                    <div class="progress_area" id="lecturer_video_progress" hidden>
+                                        <!--sitting -->
+
+                                        <h4 class="small font-weight-bold">Sitting</h4>
+                                        <span class="float-right" id="sitting_instant">0%</span>
+                                        <div class="progress mb-4">
+                                            <div class="progress-bar bg-warning" role="progressbar"
+                                                 id="sitting_instant_value"
+                                                    {#                                             style="width: 0%"#}
+                                                 aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+
+                                        <!--standing -->
+
+                                        <h4 class="small font-weight-bold">Standing</h4>
+                                        <span class="float-right" id="standing_instant">0%</span>
+                                        <div class="progress mb-4">
+                                            <div class="progress-bar" role="progressbar"
+                                                 id="standing_instant_value"
+                                                    {#                                             style="width: 0%"#}
+                                                 aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+
+                                        <!--walking-->
+
+                                        <h4 class="small font-weight-bold">Walking</h4>
+                                        <span class="float-right" id="walking_instant">0%</span>
+                                        <div class="progress mb-4">
+                                            <div class="progress-bar bg-info" role="progressbar"
+                                                 id="walking_instant_value"
+                                                    {#                                             style="width: 80%"#}
+                                                 aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+
+                                    </div>
+                                    <!--end of progress bar section -->
+
+
+                                </div>
+                                <!--end of lecture video section -->
+                            </div>
+                            <!--end of 2nd column -->
+                        </div>
+                        <!--end of 1st row -->
+
+                        <!--2nd row -->
+                        <div class="row">
+                            <!--play button -->
+                            <div class="col-md-12">
+
+                                <div class="text-center p-3">
+                                    <button type="button" class="btn btn-outline-danger play"
+                                            id="play_integrate_button">Play
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <!--end of 2nd row -->
+                    </div>
+                </div>
+
+                <!-- modal footer -->
+                <div class="modal-footer">
+                    <button type="button" data-dismiss="modal" class="btn btn-danger text-white">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--end of integrate modal -->
+{% endblock %}
+
+</body>
+</html>

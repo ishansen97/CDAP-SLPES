@@ -1,0 +1,166 @@
+{% extends 'FirstApp/template.html' %}
+<!DOCTYPE html>
+<html lang="en">
+
+
+<body id="page-top">
+
+{% block 'javascript' %}
+{% load static %}
+<!-- Bootstrap core JavaScript-->
+<script src="{% static 'FirstApp/vendor/jquery/jquery.min.js'  %}"></script>
+<script src="{% static 'FirstApp/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+
+     <script type="text/javascript">
+        $(document).ready(function () {
+            $('.calc').click(function () {
+                let video_name = $(this).attr('id');
+
+                $('#loader').attr('hidden', false);
+
+                //hide the previous progress bars
+                $('#progress_bars').attr('hidden', true);
+
+                // alert('hello');
+
+                $('#no_content_message').attr('hidden', true);
+
+                //fetching data from the API
+                fetch('http://127.0.0.1:8000/lecturer/activities/?video_name=' + video_name)
+                .then((res) => res.json())
+                .then((out) => assignPerct(out.response))
+                .catch((error) => alert('error ' + error))
+            });
+
+
+            //to assign percentage values
+            function assignPerct(percentages) {
+                $('#no_content_message').attr('hidden', true);
+                $('#progress_bars').attr('hidden', false);
+                $('#loader').attr('hidden', true);
+
+                let sitting = Math.round(percentages.sitting_perct);
+                let standing = Math.round(percentages.standing_perct);
+                let walking = Math.round(percentages.walking_perct);
+
+                $('#sitting_val').width(sitting+'%');
+                $('#standing_val').width(standing+'%');
+                $('#walking_val').width(walking+'%');
+
+                $('#sitting_span').text(sitting + '%');
+                $('#standing_span').text(standing + '%');
+                $('#walking_span').text(walking + '%');
+
+
+            }
+
+        });
+    </script>
+{% endblock %}
+
+<!-- Page Wrapper -->
+  <div id="wrapper">
+    <!-- Sidebar -->
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+
+      <!-- Main Content -->
+      <div id="content">
+
+        <!-- Begin Page Content -->
+        {% block 'container-fluid' %}
+        <div class="container-fluid">
+          {% load static %}
+          <!-- Page Heading -->
+
+          <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 mb-0 text-gray-800">Lecturer Audio Analysis keywords.</h1>
+          </div>
+
+<!--          &lt;!&ndash; Content Row &ndash;&gt;-->
+          <div class="row">
+
+
+            <!-- Extraneous Word List -->
+              <div class="col-xl-6 col-lg-5">
+                  <div class="card shadow mb-4">
+                      <!-- Card Header - Dropdown -->
+                      <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                          <h6 class="m-0 font-weight-bold text-primary">Extraneous Key Words</h6>
+
+                      </div>
+                      <!-- Card Body -->
+                      <div class="card-body" style="overflow-y: scroll">
+                          <div class="chart-pie pt-4 pb-2">
+                              <table class="table table-striped">
+                                  <thead>
+                                    <tr>
+                                        <h5> The system will be using the following <b>Extraneous words</b> in order to process the lecturer audio. </h5>
+                                    </tr>
+                                  </thead>
+
+                                  <tbody>
+                                    <tr>
+                                        <td >
+                                            <h6> <b>ok, well, like, Actually, Basically, that, jest, only, really, very, now, simply, maybe, perhaps, somehow, almost, slightly, seemed, </b> .....</h6>
+                                        </td>
+                                    </tr>
+
+                                  </tbody>
+                              </table>
+                          </div>
+
+                      </div>
+                  </div>
+              </div>
+              <!--end of video list column -->
+
+              <!--Non-Lexical Key Words -->
+            <div class="col-lg-6">
+      <!-- Illustrations -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Non-Lexical Key Words.</h6>
+                    </div>
+                    <div class="card-body" style="overflow-y: scroll">
+                        <div class="chart-pie pt-4 pb-2">
+                              <table class="table table-striped">
+                                  <thead>
+
+                                    <h5> The system will be using the following <b>Non-Lexical words</b> in order to process the lecturer audio. </h5>
+
+                                  </thead>
+
+                                  <tbody>
+                                    <tr>
+                                        <td>
+                                            <h6> <b>um, uh, erm, hmm, uuh, er, </b>  .... </h6>
+                                        </td>
+                                    </tr>
+
+                                  </tbody>
+                              </table>
+                          </div>
+
+
+                    </div>
+                </div>
+            </div>
+
+          </div>
+
+        </div>
+        {% endblock %}
+        <!-- End of container-fluid -->
+
+      </div>
+      <!-- End of Main Content -->
+
+    </div>
+    <!-- End of Content Wrapper -->
+
+  </div>
+
+</body>
+</html>

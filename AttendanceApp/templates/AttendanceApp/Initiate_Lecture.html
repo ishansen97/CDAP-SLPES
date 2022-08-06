@@ -1,0 +1,240 @@
+{% extends 'FirstApp/template.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+{% block javascript %}
+{% load static %}
+
+<!-- Bootstrap core JavaScript-->
+<script src="{% static 'FirstApp/vendor/jquery/jquery.min.js' %}"></script>
+<script src="{% static 'FirstApp/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+
+<!-- Page level plugins -->
+<script src="{% static 'FirstApp/vendor/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'FirstApp/vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+
+<!-- Page level custom scripts -->
+<script src="{% static 'FirstApp/js/demo/datatables-demo.js' %}"></script>
+
+<!-- Core plugin JavaScript-->
+<script src="{% static 'FirstApp/vendor/jquery-easing/jquery.easing.min.js' %}"></script>
+
+<!-- Load TensorFlow.js -->
+<script src="https://unpkg.com/@tensorflow/tfjs"></script>
+<!-- Load Posenet -->
+<script src="https://unpkg.com/@tensorflow-models/posenet">
+</script>
+
+
+<script>
+
+
+function toggleLectureLive() {
+  var x = document.getElementById("liveStreamLecture");
+  var y = document.getElementById("liveStreamLectureStartButton");
+  if (x.style.display === "none") {
+    x.style.display = "block";
+    y.style.display = "block";
+  } else {
+    x.style.display = "none";
+    y.style.display = "none";
+  }
+}
+var timer = false;
+//this is a test function
+function testAPI() {
+    timer = true
+    startTimer()
+    let subject_code = "{{ upcomingLecture.subject_code }}";
+    let subject_name = "{{ upcomingLecture.subject_name }}";
+    let subject_id = "{{ upcomingLecture.subject_id }}";
+    let lecturerId = {{ lecturerId }};
+    let lecturerName = "{{ lecturerName }}";
+
+    let year = new Date().getFullYear();
+    let month = new Date().getMonth();
+    let date = new Date().getDate();
+
+    month = ("0" + (month + 1)).slice(-2);
+    date = ("0" + date).slice(-2);
+
+
+
+
+    let dateFormat = year + "-" + month + "-" + date;
+
+
+    let param = {
+        'subject_code': subject_code? subject_code: null,
+        'subject_name': subject_name? subject_name: null,
+        'lecturerId': lecturerId? Number.parseInt(lecturerId): null,
+        'lecturerName': lecturerName? lecturerName: null,
+        'dateFormat': dateFormat? dateFormat: null,
+        'subject_id': Number.parseInt(subject_id)
+    };
+
+    let paramObj = JSON.stringify(param);
+        {#let param = 'sachith'#}
+    //call the API
+    {#fetch('http://127.0.0.1:8000/attendance/test-api/?param=' + param)#}
+    {#.then((res) => res.json())#}
+    {#.then((out) => {})#}
+    {#.catch((err) => alert('error: ' + err));#}
+
+    fetch('http://127.0.0.1:8000/attendance/test-api', {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: paramObj
+    })
+    .then((res) => res.json())
+    .then((out) => {})
+    .catch((err) => alert('error: ' + err));
+
+}
+
+function saveLectureRecording(obj) {
+
+    fetch('http://127.0.0.1:8000/attendance/lecture-video-api', {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: obj
+    })
+    .then((res) => res.json())
+    .then((out) => {})
+    .catch((err) => alert('error: ' + err));
+
+    //audio
+    var audio_name = 'Lecture';
+    fetch('http://127.0.0.1:8000/summary/lecture-audio/?audio_name=' + audio_name)
+    then((res) => res.json())
+    .then((out) => {})
+    .catch((err) => alert('error: ' + err));
+
+}
+
+var time = 'time';
+
+function train() {
+    fetch('http://127.0.0.1:8000/attendance/training-api/').then((value) => value.json()).then((data) => alert(data.response)).catch((err) => alert(error))
+}
+function f() {
+    let year = new Date().getFullYear();
+    let month = new Date().getMonth();
+    let date = new Date().getDate();
+
+    if (month < 9) {
+        month = "0" + month + 1;
+    }
+    else {
+        month = month + 1;
+    }
+
+
+
+
+
+
+    let dateFormat = year + "-" + month + "-" + date;
+    {#let param = {#}
+    {#    'subject_code': subject_code? subject_code: null,#}
+    {#    'subject_name': subject_name? subject_name: null,#}
+    {#    'lecturerId': lecturerId? lecturerId: null,#}
+    {#    'lecturerName': lecturerName? lecturerName: null,#}
+    {#    'dateFormat': dateFormat? dateFormat: null#}
+    {#};#}
+        let param = 'sachith'
+    //call the API
+    fetch('http://127.0.0.1:8000/attendance/stop-api/?param=' + param)
+    .then((res) => res.json())
+    .then((out) => {
+        {#timer = false#}
+        {#stopLectureVideoRecording();#}
+
+    })
+    .catch((err) => alert('error: ' + err));
+}
+
+
+function stopLectureVideoRecording() {
+
+    fetch('http://127.0.0.1:8000/attendance/stop-lecture-api/')
+    .then((res) => res.json())
+    .then((out) => {
+        alert(out)
+    })
+    .catch((err) => alert('error: ' + err));
+}
+
+function startTimer() {
+    var min = 0;
+    var seconds = 0;
+    if (timer) {
+        var sec = 0;
+        function pad ( val ) { return val > 9 ? val : "0" + val; }
+        setInterval( function(){
+            min = pad(parseInt(sec/60,10));
+            seconds = pad(++sec%60)
+            document.getElementById("seconds").innerHTML=pad(++sec%60);
+            document.getElementById("minutes").innerHTML=pad(parseInt(sec/60,10));
+        }, 1000);
+    } else {
+            document.getElementById("secondsStop").innerHTML=seconds;
+            document.getElementById("minutesStop").innerHTML=min;
+    }
+}
+
+</script>
+
+{% endblock %}
+
+
+{% block 'container-fluid' %}
+<div class="container">
+    <div class="row p-4">
+        <div class="col-lg-12">
+            <div class="text-center">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title">{{ upcomingLecture.subject_code }} {{ upcomingLecture.subject_name }} Live</h4>
+                    </div>
+
+                    <div class="card-body">
+                        <button type="button" class="btn btn-success" id="initiate_btn" onclick="toggleLectureLive()">Show Live Stream</button>
+{#                        <button type="button" class="btn btn-success" id="test_btn" onclick="testAPI()">Test</button>#}
+                    </div>
+                    <span id="minutes"></span>:<span id="seconds"></span>
+                    <span id="minutesStop"></span>:<span id="secondsStop"></span>
+                    <div style="vertical-align: middle; border-style: none; background-color: #055270; height: 500px; width: 100%">
+                        <div class="row justify-content-center">
+                            <img id="liveStreamLecture" style="display: none; height: inherit; margin-bottom: -25px;" src="{% url 'webcam_feed' %}">
+                        </div>
+                        <div class="row justify-content-center">
+                            <div class="col">
+                                <button style="display: none; width: 70px; height: 70px;" id="liveStreamLectureStartButton" class="btn btn-warning btn-circle" onclick="testAPI()"><i class="fas fa-video"></i></button>
+                            </div>
+                            <div class="col">
+                                <button style="display: block; width: 70px; height: 70px;" id="liveStreamLectureStartButton" class="btn btn-warning btn-circle" onclick="f()"><i class="fas fa-square"></i></button>
+                            </div>
+                            <div class="col">
+                                <button style="display: block; width: 70px; height: 70px;" id="train" class="btn btn-warning btn-circle" onclick="train()"><i class="fas fa-plus"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+</body>
+</html>

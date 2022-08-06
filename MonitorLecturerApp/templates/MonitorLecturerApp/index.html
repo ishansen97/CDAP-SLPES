@@ -1,0 +1,858 @@
+{% extends 'FirstApp/template.html' %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<body id="page-top">
+
+{% block javascript %}
+{% load static %}
+<!-- Bootstrap core JavaScript-->
+<script src="{% static 'FirstApp/vendor/jquery/jquery.min.js' %}"></script>
+<script src="{% static 'FirstApp/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+
+<!-- canvasJS implementation -->
+<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+
+<script type="text/javascript">
+
+    var global_lecturer_id = 0;
+    var lecture_audio_text_summary = {};
+
+    $(document).ready(function () {
+        $('.calc').click(function (e) {
+            let video_name = $(this).attr('data-name');
+
+            $('#no_content_message').attr('hidden', true);
+
+            $('#video_loader').attr('hidden', false);
+
+            // alert('hello');
+
+
+
+            //fetching data from the API
+            fetch('http://127.0.0.1:8000/lecturer/activities/?video_name=' + video_name)
+                .then((res) => res.json())
+                .then((out) => assignPerct(out.response, e))
+                .catch((error) => alert('error ' + error));
+
+
+
+        });
+
+
+        //this function will handle the lecturer video results button
+        $('.results').click(function (e) {
+            let video_id = $(this).attr('data-id');
+
+            $('#no_content_message').attr('hidden', true);
+
+            $('#video_loader').attr('hidden', false);
+
+            //fetch the results
+            fetch('http://127.0.0.1:8000/lecturer/get-lecturer-video-results/?video_id=' + video_id)
+            .then((res) => res.json())
+            .then((out) => assignPerct(out.response, e))
+            .catch((err) => alert('error: ' + err))
+
+        });
+
+
+
+        //to assign percentage values
+        function assignPerct(percentages, e) {
+            $('#no_content_message').attr('hidden', true);
+            $('#progress_bars').attr('hidden', false);
+            $('#loader').attr('hidden', true);
+
+            //display the 'results' button
+
+            {#e.target.parentNode.innerHTML = "<span class='font-italic bg-success'>Processed</span>";#}
+
+            {#alert("Result button error");#}
+
+            {#let sitting = Math.round(percentages.sitting_perct);#}
+            let sitting = Math.round(percentages.sitting_perct);
+            let standing = Math.round(percentages.standing_perct);
+            let walking = Math.round(percentages.walking_perct);
+
+            $('#sitting_val').width(sitting + '%');
+            $('#standing_val').width(standing + '%');
+            $('#walking_val').width(walking + '%');
+
+            $('#sitting_span').text(sitting + '%');
+            $('#standing_span').text(standing + '%');
+            $('#walking_span').text(walking + '%');
+
+            $('#video_loader').hide();
+        }
+
+
+/*
+        //this is for the temporay button (delete later)
+        $('#temp_btn').click(function () {
+            //using the fecth API
+
+            //hide the message
+            $('#no_content_audio_message').attr('hidden', true);
+
+            //show the loader
+            $('#audio_loader').attr('hidden', false);
+
+            fetch('http://127.0.0.1:8000/lecturer/get-audio-analysis')
+                .then((res) => res.json())
+                .then((out) => displayAudioAnalysis(out.response))
+                .catch((err) => alert('this is a error: ' + err))
+        });
+
+*/
+        //this function will display the retrieved audio analysis values
+        function displayAudioAnalysis(response) {
+
+
+            if (response) {
+
+                $('#num_of_words').text(response.lecturer_audio_text_wordcount);
+                $('#lexical_count').text(response.lecturer_audio_text_lexical_wordcount);
+                $('#non_lexical_count').text(response.lecturer_audio_text_non_lexical_wordcount);
+
+                //hide the loader
+                $('#audio_loader').attr('hidden', true);
+
+                //show the content
+                $('#audio_summary_details').attr('hidden', false);
+            } else {
+                alert("No audio summary details... Try again!");
+            }
+
+
+        }
+
+        $('#summary_btn').click(function () {
+            //open the modal
+            $('#audio_summary_modal').modal();
+        });
+
+
+        //this function will handle the audio list radio buttons
+        $('.audio_radio').click(function () {
+            lec_audio_id = $(this).attr('data-id');
+            global_lecturer_id = Number($(this).attr('data-lecturer'));
+
+
+            //hide the message
+            $('#no_content_audio_message').attr('hidden', true);
+
+            //show the loader
+            $('#audio_loader').attr('hidden', false);
+
+            //display the modal
+            {#$('#lecturer_behavior_view_summary_modal').modal();#}
+
+            fetch('http://127.0.0.1:8000/lecturer/get-audio-analysis/?audio_id=' + lec_audio_id)
+                .then((res) => res.json())
+                .then((out) => displayAudioAnalysis(out.response))
+                .catch((err) => alert('this is a error: ' + err))
+
+
+        });
+
+
+        $('#audio_graph').click(function () {
+
+            //display the option modal
+            $('#lecturer_behavior_view_summary_modal').modal();
+
+
+        });
+
+
+        //this function will handle the view summary option form
+        $('#view_summary_option_form').submit(function (e) {
+            let option = $("input[name='option']:checked").val();
+
+            e.preventDefault();
+
+
+            //send the data using fetch API
+
+            fetch('http://127.0.0.1:8000/lecturer/get-lecturer-audio-summary-for-period/?option=' + option)
+                .then((res) => res.json())
+                .then((out) => displayPeriodStudentActivitySummary(out))
+                .catch((err) => alert('error: ' + err))
+        });
+
+
+        //this function will display the summary graph
+        function displayPeriodStudentActivitySummary(res) {
+
+            if (res.isRecordFound) {
+                lecture_audio_text_summary = res;
+                renderLectureAudioTextStatistics();
+
+                //hide the previous modal
+                $('#lecturer_behavior_view_summary_modal').modal("hide");
+
+                //display the modal
+                $('#audio_text_stats_modal').modal();
+
+            } else {
+                alert('nothing found');
+            }
+        }
+
+        //this function will render the chart for Activity statistics
+        function renderLectureAudioTextStatistics() {
+
+            let individual_activities = lecture_audio_text_summary.statistics;
+            let activity_labels = lecture_audio_text_summary.labels;
+            let activity_length = lecture_audio_text_summary.statistics.length;
+            let label_length = activity_labels.length;
+
+            let data = [];
+
+
+            for (let i = 0; i < label_length; i++) {
+
+
+                let label = activity_labels[i];
+                let datapoints = [];
+
+                for (let j = 0; j < activity_length; j++) {
+                    let activity = individual_activities[j];
+                    datapoints.push({label: "lecture " + (j + 1), y: activity[label]});
+                }
+
+
+                let obj = {
+                    type: "line",
+                    showInLegend: true,
+                    name: label,
+                    markerType: "square",
+                    {#xValueFormatString: "DD MMM, YYYY",#}
+                    xValueFormatString: "Lec " + (i + 1),
+                    color: getRandomColor(),
+                    dataPoints: datapoints
+                };
+
+                data.push(obj);
+            }
+
+            var chart = new CanvasJS.Chart("audio_text_stats_chart", {
+                animationEnabled: true,
+                theme: "light2",
+                title: {
+                    text: "Audio Statistics"
+                },
+                axisX: {
+                    title: "Lecture",
+                    {#valueFormatString: "DD MMM",#}
+                    valueFormatString: "lec",
+                    crosshair: {
+                        enabled: true,
+                        snapToDataPoint: true
+                    }
+                },
+                axisY: {
+                    title: "Count",
+                    includeZero: true,
+                    crosshair: {
+                        enabled: true
+                    }
+                },
+                toolTip: {
+                    shared: true
+                },
+                legend: {
+                    cursor: "pointer",
+                    verticalAlign: "bottom",
+                    horizontalAlign: "center",
+                    {#dockInsidePlotArea: true,#}
+                    itemclick: toogleDataSeries
+                },
+                data: data
+            });
+
+            chart.render();
+        }
+
+
+        //this function will generate random colors
+        function getRandomColor() {
+            var letters = '0123456789ABCDEF';
+            var color = '#';
+            for (var i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        //this function will toggle the content
+        function toogleDataSeries(e) {
+            if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+                e.dataSeries.visible = false;
+            } else {
+                e.dataSeries.visible = true;
+            }
+            chart.render();
+        }
+
+
+    });
+</script>
+
+{% endblock %}
+
+<!-- Page Wrapper -->
+<div id="wrapper">
+
+    <!-- Sidebar -->
+    <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+
+        <!-- Sidebar - Brand -->
+        <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
+            <div class="sidebar-brand-icon rotate-n-15">
+                <i class="fas fa-laugh-wink"></i>
+            </div>
+            <div class="sidebar-brand-text mx-3">SB Admin <sup>2</sup></div>
+        </a>
+
+        <!-- Divider -->
+        <hr class="sidebar-divider my-0">
+
+        <!-- Nav Item - Dashboard -->
+        <li class="nav-item active">
+            <a class="nav-link" href="/lecturer">
+                <i class="fas fa-fw fa-tachometer-alt"></i>
+                <span>Dashboard</span></a>
+        </li>
+
+
+        <!-- Divider -->
+        <hr class="sidebar-divider">
+
+        <!-- Heading -->
+        <div class="sidebar-heading">
+
+        </div>
+{##}
+{#        <!-- Nav Item - Pages Collapse Menu -->#}
+{#        <li class="nav-item">#}
+{#            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePages"#}
+{#               aria-expanded="true" aria-controls="collapsePages">#}
+{#                <i class="fas fa-fw fa-folder"></i>#}
+{#                <span>Pages</span>#}
+{#            </a>#}
+{#            <div id="collapsePages" class="collapse" aria-labelledby="headingPages" data-parent="#accordionSidebar">#}
+{#                <div class="bg-white py-2 collapse-inner rounded">#}
+{#                    <!--                    <h6 class="collapse-header">Login Screens:</h6>-->#}
+{#                    <a class="collapse-item" href="index.html">Dashboard</a>#}
+{#                    <a class="collapse-item" href="/lecturer/lecture-video">Video Page</a>#}
+{##}
+{#                </div>#}
+{#            </div>#}
+{#        </li>#}
+
+        <!-- Divider -->
+        <hr class="sidebar-divider d-none d-md-block">
+
+        <!-- Sidebar Toggler (Sidebar) -->
+        <div class="text-center d-none d-md-inline">
+            <button class="rounded-circle border-0" id="sidebarToggle"></button>
+        </div>
+
+    </ul>
+    <!-- End of Sidebar -->
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+
+        <!-- Main Content -->
+        <div id="content">
+
+            <!-- Topbar -->
+
+
+            <!-- End of Topbar -->
+            {% block 'container-fluid' %}
+                {% load static %}
+            <!-- Begin Page Content -->
+            <div class="container-fluid">
+
+                <!-- Page Heading -->
+                <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                    <h1 class="h3 mb-0 text-gray-800">Lecturer Performance Evaluation System</h1>
+{#                    <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i#}
+{#                            class="fas fa-download fa-sm text-white-50"></i> Generate Report</a>#}
+                </div>
+
+
+                <!-- Content Row -->
+
+                <div class="row">
+
+                    <!-- Area Chart -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card shadow mb-4">
+                            <!-- Card Header - Dropdown -->
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                <h6 class="m-0 font-weight-bold text-primary">Audio List</h6>
+                                <button type="button" class="btn btn-outline-primary" id="audio_graph">Statistics
+                                </button>
+
+
+                            </div>
+                            <!-- Card Body -->
+                            <div class="card-body">
+                                <div class="card-body" style="overflow-y: scroll">
+                                    <div class="chart-pie pt-4 pb-2">
+                                        <table class="table table-striped">
+                                            <thead>
+                                            <tr>
+                                                <th></th>
+                                                <th>Date</th>
+                                                <th>Subject</th>
+                                                <th>Lecturer</th>
+                                            </tr>
+                                            </thead>
+
+                                            <tbody>
+                                            <!--                                        {% for audio in lec_list %}-->
+                                                <tr>
+                                                    <td>
+                                                        <div class="radio">
+                                                            <label>
+                                                                <input type="radio" class="audio_radio"
+                                                                       name="audio_radio" id="{{ audio.date }}"
+                                                                       data-id="{{ audio.id }}"
+                                                                       data-lecturer="{{ audio.lecturer_id }}">
+                                                            </label>
+                                                        </div>
+                                                    </td>
+                                                    <td>{{ audio.date }}</td>
+                                                    <td>{{ audio.subject }}</td>
+                                                    <td>{{ audio.lecturer }}</td>
+                                                </tr>
+
+                                                <!--                                        {% endfor %}-->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <!--this is a temporary button -->
+                                    <div class="float-right m-3">
+
+                                        {#                                        <button type="button" class="btn btn-danger" id="temp_btn">Temp</button>#}
+                                    </div>
+                                </div>
+
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Video List -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card shadow mb-4">
+                            <!-- Card Header - Dropdown -->
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                <h6 class="m-0 font-weight-bold text-primary">Video List</h6>
+{#                                <button type="button" class="btn btn-outline-primary" id="video_graph">Statistics#}
+{#                                </button>#}
+
+                            </div>
+                            <!-- Card Body -->
+                            <div class="card-body" style="overflow-y: scroll">
+                                <div class="chart-pie pt-4 pb-2">
+                                    <table class="table table-striped">
+                                        <thead>
+                                        <tr>
+                                            <th>Video Name</th>
+                                            <th>Duration</th>
+                                        </tr>
+                                        </thead>
+
+                                        <tbody>
+                                        {% for video in Videos %}
+                                            <tr>
+                                                <td>{{ video.name }}</td>
+                                                <td>{{ video.duration }}</td>
+                                                {% if video.isAvailable %}
+                                                    <td class="btn_class">
+                                                        <button type="button" class="btn btn-primary results"
+                                                                data-name='{{ video.name }}'
+                                                                data-id="{{ video.video_id }}">Results
+                                                        </button>
+                                                    </td>
+                                                {% else %}
+                                                    <td class="btn_class">
+                                                    <button type="button" class="btn btn-success calc"
+                                                            data-name='{{ video.name }}'>Calculate
+                                                    </button>
+                                                </td>
+                                                {% endif %}
+
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Row -->
+                <div class="row">
+
+                    <!-- Content Column -->
+                    <div class="col-lg-6 mb-4">
+
+                        <!-- Project Card Example -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Audio Summary</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="text-center" id="no_content_audio_message">
+                                    <span class="font-italic">No audio content to be displayed</span>
+                                </div>
+                            </div>
+
+                            <!--loader -->
+                            <div class="text-center" id="audio_loader" hidden>
+
+                                <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="">
+
+                            </div>
+
+                            <div class="text-center" id="audio_summary_details" hidden>
+                                <table class="table table-borderless">
+                                    <thead>
+                                    <tr>
+                                        <th>Criteria</th>
+                                        <th>Value</th>
+                                    </tr>
+                                    </thead>
+                                    <!-- table body-->
+                                    <tbody>
+                                    <tr>
+                                        <td>No of Total words: </td>
+                                        <td id="num_of_words"></td>
+                                    </tr>
+                                    <tr>
+                                        <td>No of word expected: </td>
+                                        <td> 3600 - 4800</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+
+                                <div class="float-right">
+                                    <button type="button" class="btn btn-outline-primary m-3" id="summary_btn">View More
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-lg-6 mb-4">
+                        {% load static %}
+
+                        <!-- Illustrations -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Video Summary</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="text-center" id="no_content_message">
+                                    <span class="font-italic">No video content to be displayed</span>
+                                </div>
+
+                                <!--loader -->
+                                <div class="text-center" id="video_loader" hidden>
+
+                                    <img src="{% static 'FirstApp/images/ajax-loader.gif' %}" alt="Loader">
+
+                                </div>
+
+
+                                <!--progress -->
+                                <div id="progress_bars" hidden>
+
+                                    <h4 class="small font-weight-bold">Sitting <span class="float-right"
+                                                                                     id="sitting_span">20%</span></h4>
+                                    <div class="progress mb-4">
+                                        <div class="progress-bar bg-danger" id="sitting_val" role="progressbar"
+                                             style="width: 20%" aria-valuenow="20" aria-valuemin="0"
+                                             aria-valuemax="100"></div>
+                                    </div>
+                                    <h4 class="small font-weight-bold">Standing <span class="float-right"
+                                                                                      id="standing_span">40%</span></h4>
+                                    <div class="progress mb-4">
+                                        <div class="progress-bar bg-warning" id="standing_val" role="progressbar"
+                                             style="width: 40%" aria-valuenow="40" aria-valuemin="0"
+                                             aria-valuemax="100"></div>
+                                    </div>
+                                    <h4 class="small font-weight-bold">Walking<span class="float-right"
+                                                                                    id="walking_span">60%</span></h4>
+                                    <div class="progress mb-4">
+                                        <div class="progress-bar" id="walking_val" role="progressbar" style="width: 60%"
+                                             aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- Approach -->
+                        <!--                        <div class="card shadow mb-4">-->
+                        <!--                            <div class="card-header py-3">-->
+                        <!--                                <h6 class="m-0 font-weight-bold text-primary">Development Approach</h6>-->
+                        <!--                            </div>-->
+                        <!--                            <div class="card-body">-->
+                        <!--&lt;!&ndash;                                <p>SB Admin 2 makes extensive use of Bootstrap 4 utility classes in order to reduce CSS bloat and poor page performance. Custom CSS classes are used to create custom components and custom utility classes.</p>&ndash;&gt;-->
+                        <!--&lt;!&ndash;                                <p class="mb-0">Before working with this theme, you should become familiar with the Bootstrap framework, especially the utility classes.</p>&ndash;&gt;-->
+                        <!--                            </div>-->
+                        <!--                        </div>-->
+
+                    </div>
+                </div>
+
+            </div>
+            <!-- /.container-fluid -->
+            {% endblock %}
+
+        </div>
+        <!-- End of Main Content -->
+
+        <!-- Footer -->
+        <footer class="sticky-footer bg-white">
+            <div class="container my-auto">
+                <div class="copyright text-center my-auto">
+                    <span>Copyright &copy; Your Website 2019</span>
+                </div>
+            </div>
+        </footer>
+        <!-- End of Footer -->
+
+    </div>
+    <!-- End of Content Wrapper -->
+
+</div>
+<!-- End of Page Wrapper -->
+
+{% block 'modal' %}
+
+<!-- Scroll to Top Button-->
+<a class="scroll-to-top rounded" href="#page-top">
+    <i class="fas fa-angle-up"></i>
+</a>
+
+<!-- Logout Modal-->
+<div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                <a class="btn btn-primary" href="/logout">Logout</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- audio summary Modal qualitative analysis -->
+<div class="modal fade" id="audio_summary_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Audio summary</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-borderless">
+                    <tbody>
+                    <tr>
+                        <td>No. of extraneous words: </td>
+                        <td id="lexical_count"></td>
+                    </tr>
+                    <tr>
+                        <td>No. of non-lexical words: </td>
+                        <td id="non_lexical_count"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" type="button" data-dismiss="modal">Done</button>
+                <!--                <a class="btn btn-primary" href="login.html">Logout</a>-->
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!--  Graph audio summary  -->
+
+
+{#<div class="modal fade" id="audio_summary_graph" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"#}
+{#     aria-hidden="true">#}
+{#    <div class="modal-dialog" role="document" style="max-width: 900px; max-height: 750px">#}
+{#        <div class="modal-content">#}
+{#            <div class="modal-header">#}
+{#                <h5 class="modal-title">Audio Summary Graph</h5>#}
+{#                <button class="close" type="button" data-dismiss="modal" aria-label="Close">#}
+{#                    <span aria-hidden="true">×</span>#}
+{#                </button>#}
+{#            </div>#}
+{#            <div class="modal-body">#}
+{##}
+{#                <div id="chartContainer" style="height: 400px; max-width: 8000px; margin: 0px auto;"></div>#}
+{##}
+{#            </div>#}
+{#            <div class="modal-footer">#}
+{#                <button class="btn btn-danger" type="button" data-dismiss="modal">Done</button>#}
+{#            </div>#}
+{#        </div>#}
+{#    </div>#}
+{#</div>#}
+
+
+<!-- Graph Video Summary -->
+
+<div class="modal fade" id="video_summary_graph" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog" role="document" style="max-width: 900px; max-height: 750px">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Video Summary Graph</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+
+                <div id="chartContainerVideo" style="height: 400px; max-width: 8000px; margin: 0px auto;"></div>
+
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" type="button" data-dismiss="modal">Done</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- lecture behavior view summary modal -->
+<div class="modal fade" id="lecturer_behavior_view_summary_modal" tabindex="-1" role="dialog"
+     aria-labelledby="exampleModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog" role="document" style="max-width: 500px">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="exampleModalLabel">View Summary Options</h3>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <h5>View Summary for...</h5>
+                </div>
+
+                <!-- list of options -->
+                <form action="#" method="get" id="view_summary_option_form">
+                    <div class="custom-control custom-radio mt-2">
+                        <input type="radio" class="custom-control-input" id="customRadio" name="option" value="7">
+                        <label class="custom-control-label" for="customRadio">one week</label>
+                    </div>
+
+                    <div class="custom-control custom-radio mt-2">
+                        <input type="radio" class="custom-control-input" id="customRadio1" name="option" value="14">
+                        <label class="custom-control-label" for="customRadio1">2 weeks</label>
+                    </div>
+
+                    <div class="custom-control custom-radio mt-2">
+                        <input type="radio" class="custom-control-input" id="customRadio2" name="option" value="30">
+                        <label class="custom-control-label" for="customRadio2">one month</label>
+                    </div>
+
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-outline-success" id="submit_view_summary_option">
+                            Submit
+                        </button>
+                    </div>
+                </form>
+                <!-- end of list of options -->
+
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- end of lecturer behavior view summary modal -->
+
+
+<!-- Audio Data statistics Modal-->
+<div class="modal fade" id="audio_text_stats_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog" role="document" style="max-width: 1400px">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Audio Data Statistics</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="audio_text_stats_chart" style="height: 370px; width: 100%"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- end of activity statistics modal -->
+
+
+{% load static %}
+
+
+<!-- Core plugin JavaScript-->
+<script src="{% static 'FirstApp/vendor/jquery-easing/jquery.easing.min.js' %}"></script>
+
+<!-- Custom scripts for all pages-->
+<script src="{% static 'FirstApp/js/sb-admin-2.min.js' %}"></script>
+
+<!-- Page level plugins -->
+<script src="{% static 'FirstApp/vendor/chart.js/Chart.min.js' %}"></script>
+
+<!-- Page level custom scripts -->
+<script src="{% static 'FirstApp/js/demo/chart-area-demo.js' %}"></script>
+<script src="{% static 'FirstApp/js/demo/chart-pie-demo.js' %}"></script>
+
+
+{% endblock %}
+
+</body>
+
+</html>

@@ -1,0 +1,467 @@
+{% extends 'FirstApp/template.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Summarization</title>
+</head>
+<body>
+
+{% block javascript %}
+{% load static %}
+
+<!-- Bootstrap core JavaScript-->
+<script src="{% static 'FirstApp/vendor/jquery/jquery.min.js' %}"></script>
+<script src="{% static 'FirstApp/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+
+<!-- Page level plugins -->
+<script src="{% static 'FirstApp/vendor/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'FirstApp/vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+
+<!-- Page level custom scripts -->
+<script src="{% static 'FirstApp/js/demo/datatables-demo.js' %}"></script>
+
+<!-- Core plugin JavaScript-->
+<script src="{% static 'FirstApp/vendor/jquery-easing/jquery.easing.min.js' %}"></script>
+
+<!-- Load TensorFlow.js -->
+<script src="https://unpkg.com/@tensorflow/tfjs"></script>
+<!-- Load Posenet -->
+<script src="https://unpkg.com/@tensorflow-models/posenet">
+</script>
+
+<script type="text/javascript">
+
+    $(document).ready(function() {
+
+<!--        speech to text-->
+        $('.audio_to_text_process').click(function(e) {
+            alert('Converting');
+            let id = e.target.parentNode.parentNode.getAttribute('id');
+            let speech_to_text_name = e.target.parentNode.parentNode.getAttribute('data-noiseless-audio-name');
+<!--            speech_to_text_name = speech_to_text_name + ".txt";-->
+
+            alert('id: ' + id);
+            alert('speech to text file name: ' + speech_to_text_name);
+
+            //call the fetch API
+            fetch('http://127.0.0.1:8000/summary/lecture-text/?speech_to_text_name=' + speech_to_text_name + '&id=' + id)
+            .then((res) => res.json())
+            .then((out) => handleSpeechToText(out.response))
+            .catch((err) => alert('error: ' + err))
+
+        });
+          //this function will handle the success response for speech-to-text
+        function handleSpeechToText(response) {
+            if (response === 200) {
+                document.location.reload();
+            }
+        }
+
+<!--        background noise-->
+        $('.audio_process').click(function(e) {
+            alert('Processing');
+            let id = e.target.parentNode.parentNode.getAttribute('id');
+            let audio_name = e.target.parentNode.parentNode.getAttribute('data-audio-name');
+            audio_name = audio_name + ".wav";
+            alert('id: ' + id);
+            alert('audio name: ' + audio_name);
+            //call the fetch API
+
+            fetch('http://127.0.0.1:8000/summary/lecture-noise/?audio_name=' + audio_name + '&id=' + id)
+            .then((res) => res.json())
+            .then((out) => handleNoiseRemoved(out.response))
+            .catch((err) => alert('error: ' + err))
+
+        });
+
+
+        //this function will handle the success respopnse for noise removed
+        function handleNoiseRemoved(response) {
+
+            if (response === 200) {
+                document.location.reload();
+            }
+        }
+
+        <!--        To summary-->
+        $('.to_summary').click(function(e) {
+            alert('Processing');
+            let id = e.target.parentNode.parentNode.getAttribute('id');
+            let lecture_summary_name = e.target.parentNode.parentNode.getAttribute('data-summary-name');
+<!--            let lecture_summary_name = e.target.parentNode.parentNode.getAttribute('data-notice-name');-->
+<!--            lecture_summary_name = lecture_summary_name + ".txt";-->
+            lecture_summary_name = lecture_summary_name + ".wav.txt";
+            alert('id: ' + id);
+            alert('lecture_summary_name: ' + lecture_summary_name);
+
+        //call the fetch API
+
+            fetch('http://127.0.0.1:8000/summary/lecture-summary/?lecture_summary_name=' + lecture_summary_name + '&id=' + id)
+            .then((res) => res.json())
+            .then((out) => handleLectureRemoved(out.response))
+            .catch((err) => alert('error: ' + err))
+        });
+         //this function will handle the success response for summary
+        function handleLectureRemoved(response) {
+
+            if (response === 200) {
+                document.location.reload();
+            }
+        }
+
+        <!--        To Notice-->
+        $('.get_notices').click(function(e) {
+            alert('Processing');
+            let id = e.target.parentNode.parentNode.getAttribute('id');
+            let lecture_notice_name = e.target.parentNode.parentNode.getAttribute('data-notice-name');
+            lecture_notice_name = lecture_notice_name + ".wav.txt";
+            alert('id: ' + id);
+            alert('lecture_notice_name: ' + lecture_notice_name);
+
+        //call the fetch API
+
+            fetch('http://127.0.0.1:8000/summary/lecture-notices/?lecture_notice_name=' + lecture_notice_name + '&id=' + id)
+            .then((res) => res.json())
+            .then((out) => handleNoticeRemoved(out.response))
+            .catch((err) => alert('error: ' + err))
+        });
+         //this function will handle the success response for notices
+        function handleNoticeRemoved(response) {
+            if (response === 200) {
+                document.location.reload();
+            }
+        }
+
+    });
+
+</script>
+
+
+
+{% endblock %}
+
+<div id="wrapper">
+    <div id="content-wrapper" class="d-flex flex-column">
+        <div id="content">
+            {% block 'container-fluid' %}
+            <div class="container-fluid">
+                {% load static %}
+                <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                    <h1 class="h3 mb-0 text-gray-800">Lecture Summarization</h1>
+                </div>
+
+                <!--first row -->
+                <div class="row p-2">
+
+                    <!--first column -->
+                    <div class="col-lg-6" style="overflow-x: scroll">
+                        <div class="card shadow mb-4">
+                            <!--card header -->
+                            <div class="card-header py-3">
+                                <h5 class="m-0 font-weight-bold text-primary">Lecture Recording</h5>
+                            </div>
+
+                            <!--card body -->
+                            <div class="card-body">
+                                {% if lecture_audio_id.count == 0 %}
+                                <div class="text-center">
+                                    <span class="font-italic">No Recordings</span>
+                                </div>
+                                {% else %}
+                                <div class="table-responsive">
+                                    <table class="table table-bordered" id="datatable">
+                                        <thead>
+                                        <tr>
+                                            <th>Module</th>
+                                            <th>Date</th>
+                                            <th>Recording Name</th>
+                                            <th></th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+
+                                        {% for lec_audio in lec_audio_data %}
+                                        <tr class="recordings not_clicked" id="{{ lec_audio.id }}" data-audio-name="{{ lec_audio.lecture_audio_name }}">
+<!--                                            <td>-->
+<!--                                                <div class="radio">-->
+<!--                                                    <label><input type="radio"-->
+<!--                                                                  id="{{ lec_audio.lecture_audio_id }}"-->
+<!--                                                                  name="recording_radio"-->
+<!--                                                                  data-name="{{ lec_audio.lecture_audio_name }}"-->
+<!--                                                    ></label>-->
+<!--                                                </div>-->
+<!--                                            </td>-->
+                                            <td>{{ lec_audio.subject.name }}</td>
+                                            <td>{{ lec_audio.lecturer_date }}</td>
+                                            <td>{{ lec_audio.lecture_audio_name }}</td>
+                                            <td>
+                                                <button TYPE="button" class="btn btn-success audio_process">Process
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% endif %}
+
+
+                            </div>
+
+                        </div>
+                    </div>
+                    <!-- end of 1st column -->
+
+                    <!-- 2nd column -->
+                    <div class="col-lg-6" style="overflow-x: scroll">
+                        <div class="card shadow mb-4">
+                            <!--card header -->
+                            <div class="card-header py-3">
+                                <h5 class="m-0 font-weight-bold text-primary">Lecture Recording (Noise-Removed)</h5>
+                            </div>
+
+                            <!--card body -->
+                            <div class="card-body">
+                                {% if noiseless_data.count == 0 %}
+                                <div class="text-center">
+                                    <span class="font-italic">No Recordings</span>
+                                </div>
+                                {% else %}
+                                <div class="table-responsive">
+                                    <table class="table table-bordered" id="datatable">
+                                        <thead>
+                                        <tr>
+<!--                                            <th></th>-->
+                                            <th>Module</th>
+                                            <th>Date</th>
+                                            <th>Recording Name</th>
+                                            <th></th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+
+                                        {% for noiseless_audio in noiseless_data %}
+                                        <tr class="recordings not_clicked" id="{{ noiseless_audio.lecture_audio_id.id }}" data-noiseless-audio-name="{{ noiseless_audio.lecture_audio_name }}">
+<!--                                            <td>-->
+<!--                                                <div class="radio">-->
+<!--                                                    <label><input type="radio"-->
+<!--                                                                  id="{{ noiseless_audio.lecture_audio_id }}"-->
+<!--                                                                  name="recording_radio"-->
+<!--                                                                  data-name="{{ noiseless_audio.lecture_audio_name }}"-->
+<!--                                                    ></label>-->
+<!--                                                </div>-->
+<!--                                            </td>-->
+                                            <td>{{ noiseless_audio.lecture_audio_id.subject.name }}</td>
+                                            <td>{{ noiseless_audio.lecture_audio_id.lecturer_date }}</td>
+                                            <td>{{ noiseless_audio.lecture_audio_name }}</td>
+                                            <td>
+                                                <button type="button"
+                                                        class="btn btn-success audio_to_text_process">Convert
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+                    </div>
+                    <!-- end of 2nd column -->
+
+
+                </div>
+                <!-- end of 1st row-->
+
+                <!--2ND row -->
+                <div class="row p-2">
+
+                    <!--first column -->
+                    <div class="col-lg-6" style="overflow-x: scroll">
+                        <div class="card shadow mb-4">
+                            <!--card header -->
+                            <div class="card-header py-3">
+                                <h5 class="m-0 font-weight-bold text-primary">Converted Lecture (Text)</h5>
+                            </div>
+
+                            <!--card body -->
+                            <div class="card-body">
+                                {% if lecture_audio_id.count == 0 %}
+                                <div class="text-center">
+                                    <span class="font-italic">No Recordings</span>
+                                </div>
+                                {% else %}
+                                <div class="table-responsive">
+                                    <table class="table table-bordered" id="datatable">
+                                        <thead>
+                                        <tr>
+                                            <th>Module</th>
+                                            <th>Date</th>
+                                            <th>Text ID</th>
+                                            <th></th>
+                                            <th></th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+
+                                        {% for lec_text in lecture_text_data %}
+                                        <tr class="recordings not_clicked" id="{{ lec_text.lecture_audio_id.id }}" data-summary-name="{{lec_text.lecture_audio_id.lecture_audio_name}}" data-notice-name="{{lec_text.lecture_audio_id.lecture_audio_name}}" >
+<!--                                            <td>-->
+<!--                                                <div class="radio">-->
+<!--                                                    <label><input type="radio"-->
+<!--                                                                  id="{{ lec_text.lecture_audio_id }}"-->
+<!--                                                                  name="recording_radio"-->
+<!--                                                                  data-name="{{ lec_text.lecture_audio_name }}"-->
+<!--                                                    ></label>-->
+<!--                                                </div>-->
+<!--                                            </td>-->
+                                            <td>{{ lec_text.lecture_audio_id.subject.name }}</td>
+                                            <td>{{ lec_text.lecture_audio_id.lecturer_date }}</td>
+                                            <td>{{ lec_text.lecture_speech_to_text_id }}</td>
+                                            <td>
+                                                <button TYPE="button" class="btn btn-success to_summary">Summary
+                                                </button>
+                                            </td>
+                                            <td>
+                                                <button TYPE="button" class="btn btn-success get_notices">Notices
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% endif %}
+
+
+                            </div>
+
+                        </div>
+                    </div>
+                    <!-- end of 1st column -->
+            </div>
+                <!-- end of 2nd row-->
+
+                <!--3rd row -->
+                <div class="row p-2">
+
+                    <!--first column -->
+                    <div class="col-lg-6" style="overflow-x: scroll">
+                        <div class="card shadow mb-4">
+                            <!--card header -->
+                            <div class="card-header py-3">
+                                <h5 class="m-0 font-weight-bold text-primary">Lecture Summary</h5>
+                            </div>
+
+                            <!--card body -->
+                            <div class="card-body">
+                                {% if lecture_audio_summary_id.count == 0 %}
+                                <div class="text-center">
+                                    <span class="font-italic">No Summaries</span>
+                                </div>
+                                {% else %}
+                                <div class="table-responsive">
+                                    <table class="table table-bordered" id="datatable">
+                                        <thead>
+                                        <tr>
+                                            <th>Module</th>
+                                            <th>Date</th>
+                                            <th>Summary</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+
+                                        {% for lec_summary in lec_summary_data %}
+                                        <tr class="recordings not_clicked" id="{{ lec_summary.lecture_audio_id }}">
+<!--                                            <td>-->
+<!--                                                <div class="radio">-->
+<!--                                                    <label><input type="radio"-->
+<!--                                                                  id="{{ lec_summary.lecture_audio_id }}"-->
+<!--                                                                  name="recording_radio"-->
+<!--                                                                  data-name="{{ lec_summary.lecture_audio_name }}"-->
+<!--                                                    ></label>-->
+<!--                                                </div>-->
+<!--                                            </td>-->
+                                            <td>{{ lec_summary.lecture_audio_id.subject.name }}</td>
+                                            <td>{{ lec_summary.lecture_audio_id.lecturer_date }}</td>
+                                            <td>{{ lec_summary.lecture_audio_summary_id }}</td>
+                                        </tr>
+                                        {% endfor %}
+
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                        </div>
+                    </div>
+                    <!-- end of 1st column -->
+
+                    <!-- 2nd column -->
+                    <div class="col-lg-6" style="overflow-x: scroll">
+                        <div class="card shadow mb-4">
+                            <!--card header -->
+                            <div class="card-header py-3">
+                                <h5 class="m-0 font-weight-bold text-primary">Lecture Notices</h5>
+                            </div>
+
+                            <!--card body -->
+                            <div class="card-body">
+                                {% if noiseless_data.count == 0 %}
+                                <div class="text-center">
+                                    <span class="font-italic">No Recordings</span>
+                                </div>
+                                {% else %}
+                                <div class="table-responsive">
+                                    <table class="table table-bordered" id="datatable">
+                                        <thead>
+                                        <tr>
+                                            <th>Module</th>
+                                            <th>Date</th>
+                                            <th>Notices</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+
+                                        {% for lec_notice in lec_notice_data %}
+                                        <tr class="recordings not_clicked" id="{{ lec_notice.lecture_audio_id }}">
+<!--                                            <td>-->
+<!--                                                <div class="radio">-->
+<!--                                                    <label><input type="radio"-->
+<!--                                                                  id="{{ lec_notice.lecture_audio_id }}"-->
+<!--                                                                  name="recording_radio"-->
+<!--                                                                  data-name="{{ noiseless_audio.lecture_audio_name }}"-->
+<!--                                                    ></label>-->
+<!--                                                </div>-->
+<!--                                            </td>-->
+                                            <td>{{ lec_notice.lecture_audio_id.subject.name }}</td>
+                                            <td>{{ lec_notice.lecture_audio_id.lecturer_date }}</td>
+                                            <td>{{ lec_notice.lecture_notice_id }}</td>
+                                        </tr>
+                                        {% endfor %}
+
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+                    </div>
+                    <!-- end of 2nd column -->
+            {% endblock %}
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
